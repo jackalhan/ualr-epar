@@ -11,8 +11,11 @@ import org.springframework.core.env.SimpleCommandLinePropertySource;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collection;
+
 
 @SpringBootApplication
 public class UalrEparApplication {
@@ -36,9 +39,33 @@ public class UalrEparApplication {
 		}
 	}
 
+	/**
+	 * Main method, used to run the application.
+	 *
+	 * @param args the command line arguments
+	 * @throws UnknownHostException if the local host name could not be resolved into an address
+	 */
+	public static void main(String[] args) throws UnknownHostException {
+		SpringApplication app = new SpringApplication(UalrEparApplication.class);
+		SimpleCommandLinePropertySource source = new SimpleCommandLinePropertySource(args);
+		addDefaultProfile(app, source);
+		Environment env = app.run(args).getEnvironment();
+		log.info("\n----------------------------------------------------------\n\t" +
+						"Application '{}' is running! Access URLs:\n\t" +
+						"Local: \t\thttp://127.0.0.1:{}\n\t" +
+						"External: \thttp://{}:{}\n----------------------------------------------------------",
+				env.getProperty("spring.application.name"),
+				env.getProperty("server.port"),
+				InetAddress.getLocalHost().getHostAddress(),
+				env.getProperty("server.port"));
+
+	}
+/*
+
 	public static void main(String[] args) {
 		SpringApplication.run(UalrEparApplication.class, args);
 	}
+*/
 
 	/**
 	 * If no profile has been configured, set by default the "dev" profile.
