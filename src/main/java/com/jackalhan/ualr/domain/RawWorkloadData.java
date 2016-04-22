@@ -1,9 +1,6 @@
 package com.jackalhan.ualr.domain;
 
-import com.jackalhan.ualr.service.utils.StringUtilService;
-
 import javax.persistence.*;
-import javax.validation.constraints.Size;
 import java.io.Serializable;
 
 /**
@@ -31,8 +28,8 @@ public class RawWorkloadData extends AbstractAuditingEntity implements Serializa
         private String semesterTermYear; //2016*/
     private int crn;
     private String subjectCode;
-    private String courseType; // NEEDS TO BE CALCULATED : Undergraduate Course =========> ?
-    private String courseCode; // NEEDS TO BE CALCULATED : DL  =========> ?
+    private String courseTypeName; // NEEDS TO BE CALCULATED : Undergraduate Course =========> ?
+    private String courseTypeCode; // NEEDS TO BE CALCULATED : DL  =========> ?
     private int courseNumber; // USE TO CALCULATE CourseType, CourseCode, IU MUltipliers
     private int section;
     private int tst; // Just for info : What is that 0 =========> ?
@@ -111,20 +108,20 @@ public class RawWorkloadData extends AbstractAuditingEntity implements Serializa
         this.subjectCode = subjectCode;
     }
 
-    private String getCourseType() {
-        return courseType;
+    private String getCourseTypeName() {
+        return courseTypeName;
     }
 
-    private void setCourseType(String courseType) {
-        this.courseType = courseType;
+    private void setCourseTypeName(String courseTypeName) {
+        this.courseTypeName = courseTypeName;
     }
 
-    private String getCourseCode() {
-        return courseCode;
+    private String getCourseTypeCode() {
+        return courseTypeCode;
     }
 
-    private void setCourseCode(String courseCode) {
-        this.courseCode = courseCode;
+    private void setCourseTypeCode(String courseTypeCode) {
+        this.courseTypeCode = courseTypeCode;
     }
 
     public int getCourseNumber() {
@@ -297,8 +294,8 @@ public class RawWorkloadData extends AbstractAuditingEntity implements Serializa
                 ", semesterTermCode=" + semesterTermCode +
                 ", crn=" + crn +
                 ", subjectCode='" + subjectCode + '\'' +
-                ", courseType='" + courseType + '\'' +
-                ", courseCode='" + courseCode + '\'' +
+                ", courseTypeName='" + courseTypeName + '\'' +
+                ", courseTypeCode='" + courseTypeCode + '\'' +
                 ", courseNumber=" + courseNumber +
                 ", section=" + section +
                 ", tst=" + tst +

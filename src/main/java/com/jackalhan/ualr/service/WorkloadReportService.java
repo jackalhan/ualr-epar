@@ -1,5 +1,6 @@
 package com.jackalhan.ualr.service;
 
+import com.jackalhan.ualr.domain.CourseType;
 import com.jackalhan.ualr.domain.RawWorkloadData;
 import com.jackalhan.ualr.domain.SimplifiedWorkload;
 import com.jackalhan.ualr.service.utils.ListUtilService;
@@ -14,6 +15,7 @@ import jxl.format.BorderLineStyle;
 import jxl.format.Colour;
 import jxl.format.VerticalAlignment;
 import jxl.write.*;
+import org.codehaus.groovy.runtime.metaclass.ConcurrentReaderHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -54,6 +57,57 @@ public class WorkloadReportService {
 
         log.info(simplifyWorkloadData(rawWorkloadDataList).toString());
         log.info("RawWorkloadData Reports execution ended");
+    }
+
+    private int findNumberOfEnrolledStudents(List<RawWorkloadData> rawWorkloadDatas, int fromCourseCodeNumber, int toCourseCodeNumber)
+    {
+        return rawWorkloadDatas.stream().filter(x -> x.getCourseNumber() >= fromCourseCodeNumber &&  x.getCourseNumber() <=toCourseCodeNumber).collect(Collectors.toList()).size();
+    }
+
+    private CourseType getCourseType (String instructionType, String courseTitle, int courseCodeNumber, int numberOfEnrolledStudents)
+    {
+        CourseType courseType = new CourseType();
+        if (instructionType.toUpperCase().trim().contains("PED")) {
+            if (courseCodeNumber >= 1000 && courseCodeNumber < 5000) {
+                courseType.setCode("U");
+                courseType.setName("UNDERGRADUATE COURSE");
+            }
+            else if (courseCodeNumber >= 4000 && courseCodeNumber < 6000)
+            {
+                if (numberOfEnrolledStudents < 5)
+                {
+                    courseType.setCode("DL");
+                    courseType.setName("DUAL-LISTED COURSE");
+                }
+                else
+                {
+                    courseType.setCode("DU");
+                    courseType.setName("DUAL-LISTED COURSE");
+                }
+            }
+            else if (courseCodeNumber >= 7000 && courseCodeNumber < 8000)
+            {
+                courseType.setCode("G");
+                courseType.setName("GRADUATE COURSE");
+            }
+        }
+        else
+        {
+            if (courseTitle.toUpperCase().trim().contains("MASTER'S THESIS") || courseTitle.toUpperCase().trim().contains("MS THESIS"))
+            {
+                courseType.setCode("MS");
+            }
+            else if (courseTitle.toUpperCase().trim().contains("DOCTORAL RESEARCH") || courseTitle.toUpperCase().trim().contains("DISSERTATION"))
+            {
+                courseType.setCode("PhD");
+            }
+            else
+            {
+                courseType.setCode("O");
+            }
+
+        }
+        return courseType;
     }
 
     private List<SimplifiedWorkload> simplifyWorkloadData(List<RawWorkloadData> rawWorkloadDatas)
