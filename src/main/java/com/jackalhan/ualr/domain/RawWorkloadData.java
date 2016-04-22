@@ -10,8 +10,8 @@ import java.io.Serializable;
  * Created by jackalhan on 4/18/16.
  */
 @Entity
-@Table(name="workload")
-public class Workload extends AbstractAuditingEntity implements Serializable{
+@Table(name = "raw_workload_data")
+public class RawWorkloadData extends AbstractAuditingEntity implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 1L;
 
@@ -19,78 +19,40 @@ public class Workload extends AbstractAuditingEntity implements Serializable{
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    private String instructionType;
-    // PEDAGOGICAL or INDIVIDUALIZED
+    private String instructionType; // needs to be filtered for these records PEDAGOGICAL or INDIVIDUALIZED
 
     private String instructorTNumber;
-
+    private String instructorNameSurname; // NEEDS TO BE PARSED
+    /*private String instructorName; // NEEDS TO BE SET FROM instructorNameSurname BY PARSING DATA
+    private String instructorSurname; //NEEDS TO BE SET FROM instructorNameSurname BY PARSING DATA*/
     private String instructorDepartment;
-    // computer science
-
-    private int semesterTermCode;
-    // 201610  {SPRING, 2016}
-
+    private int semesterTermCode; // 201610  {SPRING, 2016}
+    /*    private String semesterTerm; //SPRING
+        private String semesterTermYear; //2016*/
     private int crn;
-    // 10480
-
     private String subjectCode;
-    // SYEN  =========> ?
-
-    private String courseType;
-    // Undergraduate Course =========> ?
-
-    private String courseCode;
-    // DL  =========> ?
-
-    private int courseNumber;
-    // 4373
-
+    private String courseType; // NEEDS TO BE CALCULATED : Undergraduate Course =========> ?
+    private String courseCode; // NEEDS TO BE CALCULATED : DL  =========> ?
+    private int courseNumber; // USE TO CALCULATE CourseType, CourseCode, IU MUltipliers
     private int section;
-    // 45  =========> ?
-
-    private int tst;
-    // 0 =========> ?
-
+    private int tst; // Just for info : What is that 0 =========> ?
     private String courseTitle;
-    // Fundamentals of Software Engr
-
-    private String collCode;
-    // SS =========> ?
-
+    private String collCode; // Just for info : What is that SS =========> ?
     private String taStudent;
-    // Mohammad Alimohammadi
-
-    private int taSupport;
-    // 10
-
-    private int taEleventhDayCount;
-    // 17
-
+    private int taSupport; // HOW IS IT CALCULATED? NO DATA FROM BANNER 10
+    private int taEleventhDayCount; // Just for info : What is that 17 =========> ?
     private int taCeditHours;
-    // 3
-
     private int taLectureHours;
-    // 3
-
-    private double iuMultipliertaLectureHours;
-    // 0.666
-
+    private double iuMultipliertaLectureHours; //NEEDS TO BE CALCULATED : ========>  0.666
     private int taLabHours;
-    // 0
-
-    private double iuMultipliertaLabHours;
-    // 1.3333
-
+    private double iuMultipliertaLabHours; //NEEDS TO BE CALCULATED : ========>  1.3333
+    private double totalIus; //NEEDS TO BE CALCULATED : ========>  1.3333
     private String otherInstructorsInTeam;
-
-
-    private int totalSsch;
-    // 51 =========> ?
-
+    private int totalSsch; // Just for info : What is that SS =========> 51 ?
     private String chair;
     private String dean;
 
-    public Workload() {
+    public RawWorkloadData() {
     }
 
     public Long getId() {
@@ -171,13 +133,6 @@ public class Workload extends AbstractAuditingEntity implements Serializable{
 
     public void setCourseNumber(int courseNumber) {
         this.courseNumber = courseNumber;
-/*        if (!StringUtilService.getInstance().isEmpty(String.valueOf(courseNumber)))
-        {
-            if (courseNumber >= 1000 && courseNumber < 5000)
-            {
-                setCourseType("UNDERGRADUATE COURSE");
-            }
-        }*/
     }
 
     public int getSection() {
@@ -308,7 +263,64 @@ public class Workload extends AbstractAuditingEntity implements Serializable{
         this.dean = dean;
     }
 
-    /*
+
+    public String getInstructorNameSurname() {
+        return instructorNameSurname;
+    }
+
+    public void setInstructorNameSurname(String instructorNameSurname) {
+        this.instructorNameSurname = instructorNameSurname;
+    }
+
+
+    public double getTotalIus() {
+        return totalIus;
+    }
+
+    public void setTotalIus(double totalIus) {
+        this.totalIus = totalIus;
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
+
+    @Override
+    public String toString() {
+        return "RawWorkloadData{" +
+                "id=" + id +
+                ", instructionType='" + instructionType + '\'' +
+                ", instructorTNumber='" + instructorTNumber + '\'' +
+                ", instructorNameSurname='" + instructorNameSurname + '\'' +
+                ", instructorDepartment='" + instructorDepartment + '\'' +
+                ", semesterTermCode=" + semesterTermCode +
+                ", crn=" + crn +
+                ", subjectCode='" + subjectCode + '\'' +
+                ", courseType='" + courseType + '\'' +
+                ", courseCode='" + courseCode + '\'' +
+                ", courseNumber=" + courseNumber +
+                ", section=" + section +
+                ", tst=" + tst +
+                ", courseTitle='" + courseTitle + '\'' +
+                ", collCode='" + collCode + '\'' +
+                ", taStudent='" + taStudent + '\'' +
+                ", taSupport=" + taSupport +
+                ", taEleventhDayCount=" + taEleventhDayCount +
+                ", taCeditHours=" + taCeditHours +
+                ", taLectureHours=" + taLectureHours +
+                ", iuMultipliertaLectureHours=" + iuMultipliertaLectureHours +
+                ", taLabHours=" + taLabHours +
+                ", iuMultipliertaLabHours=" + iuMultipliertaLabHours +
+                ", totalIus=" + totalIus +
+                ", otherInstructorsInTeam='" + otherInstructorsInTeam + '\'' +
+                ", totalSsch=" + totalSsch +
+                ", chair='" + chair + '\'' +
+                ", dean='" + dean + '\'' +
+                '}';
+    }
+
+/*
 
 
     @NotNull

@@ -25,7 +25,20 @@ public class StringUtilService {
     public boolean isEmpty(String text )
     {
         if(text != null && !text.isEmpty())
-            return true;
-        return false;
+            return false;
+        return true;
     }
+
+    public String switchText (String text, String splitChar)
+    {
+        log.debug(" Given text " + text + ", Given Split Char " + splitChar);
+        String switchedText = "";
+        if(!isEmpty(text)) {
+            String[] temp =text.split(splitChar);
+            switchedText = temp[1].trim() + " " + temp[0].trim();
+        }
+        log.debug(" Switched text " + switchedText + ", Given Split Char " + splitChar);
+        return switchedText;
+    }
+
 }
