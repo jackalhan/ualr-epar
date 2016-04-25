@@ -1,11 +1,12 @@
 package com.jackalhan.ualr.service;
 
-import com.jackalhan.ualr.domain.CourseType;
-import com.jackalhan.ualr.domain.CourseTypeIUValues;
-import com.jackalhan.ualr.domain.RawWorkloadData;
-import com.jackalhan.ualr.domain.SimplifiedWorkload;
+import com.jackalhan.ualr.config.Constants;
+import com.jackalhan.ualr.domain.*;
+import com.jackalhan.ualr.service.utils.FileUtilService;
 import com.jackalhan.ualr.service.utils.StringUtilService;
+import jxl.SheetSettings;
 import jxl.Workbook;
+import jxl.format.*;
 import jxl.format.Alignment;
 import jxl.format.Border;
 import jxl.format.BorderLineStyle;
@@ -38,6 +39,7 @@ public class WorkloadReportService {
     private MessageSource messageSource;
 
     private final Logger log = LoggerFactory.getLogger(WorkloadReportService.class);
+
     private final String splitChar = ",";
     private final int fromt5XXXCourseCode = 5000;
     private final int to5XXXCourseCode = 6000;
@@ -50,7 +52,12 @@ public class WorkloadReportService {
     private final String CourseTypeCodeMS = "MS";
     private final String CourseTypeCodePhD = "PhD";
     private final String CourseTypeCodeO = "O";
-
+    private final int excelZoomFactor = 85;
+    private final int excelScaleFactor = 50;
+    private final double excelLeftMargin = 0.75;
+    private final double excelRightMargin = 0.75;
+    private final double excelTopMargin = 0.30;
+    private final double excelBottomMargin = 0.33;
 
     // mergeCells(colStart, rowStart, colEnd, rowEnd)
     // new Label(col, row)
@@ -65,13 +72,48 @@ public class WorkloadReportService {
         log.info("RawWorkloadData Reports execution ended");
     }
 
-    private int findNumberOfEnrolledStudents(List<RawWorkloadData> rawWorkloadDatas, int fromCourseCodeNumber, int toCourseCodeNumber) {
+    // COUNTER IN GENERAL 5XXX
+/*
+        private int findNumberOfEnrolledStudents(List<RawWorkloadData> rawWorkloadDatas, int fromCourseCodeNumber, int toCourseCodeNumber) {
         log.info("Finding number of Enrolled Students from " + fromCourseCodeNumber + " to " + toCourseCodeNumber);
         int numberOfStudents = rawWorkloadDatas.stream().filter(x -> x.getCourseNumber() >= fromCourseCodeNumber && x.getCourseNumber() < toCourseCodeNumber).collect(Collectors.toList()).size();
         log.info(numberOfStudents + " number of Enrolled Students");
         return numberOfStudents;
 
+    }*/
+
+
+    private int convertToDualCourse(int courseCodeNumber, int dualStartWith) {
+        String newCourseNumberForDualCheck = "";
+        try {
+
+            newCourseNumberForDualCheck = dualStartWith + String.valueOf(courseCodeNumber).substring(1, 4);
+            log.info("Converted Dual Corse from : " + courseCodeNumber + " to " + newCourseNumberForDualCheck);
+
+        } catch (Exception ex) {
+            log.debug(ex.toString());
+        }
+        return Integer.parseInt(newCourseNumberForDualCheck);
     }
+
+    private CourseDualState calculateCourseDualState(List<RawWorkloadData> rawWorkloadDataList, int courseCodeNumber, int dualStartWith) {
+        CourseDualState courseDualState = new CourseDualState();
+        courseDualState.setHasDualCourse(false);
+        courseDualState.setNumberOfTotalEnrollmentInDualCourse(0);
+        int newCourseNumberForDualCheck = convertToDualCourse(courseCodeNumber, dualStartWith);
+        for (RawWorkloadData rawWorkloadData : rawWorkloadDataList) {
+            if (rawWorkloadData.getCourseNumber() == newCourseNumberForDualCheck) {
+                //Do we need to add other data in order to calculate ?
+                courseDualState.setHasDualCourse(true);
+                courseDualState.setDualCourseCode(newCourseNumberForDualCheck);
+                courseDualState.setNumberOfTotalEnrollmentInDualCourse(rawWorkloadData.getTaEleventhDayCount());
+                return courseDualState;
+            }
+        }
+        return courseDualState;
+
+    }
+
 
     private CourseTypeIUValues calculateIUMultiplier(boolean isLectureHour, int lectureHours, String courseTypeCode) {
         double result = 0;
@@ -107,29 +149,36 @@ public class WorkloadReportService {
 
     }
 
-    private CourseType getCourseType(String instructionType, String courseTitle, int courseCodeNumber, int numberOfEnrolledStudents) {
+    private CourseType getCourseType(String instructionType, String courseTitle, int courseCodeNumber, int numberOfEnrolledStudents, boolean hasDual) {
 
         CourseType courseType = new CourseType();
         if (instructionType.toUpperCase().trim().contains(instructionTypeContainsKeyWordPED)) {
-            if (courseCodeNumber >= 1000 && courseCodeNumber < 5000) {
-                courseType.setCode(CourseTypeCodeU);
-                courseType.setName("UNDERGRADUATE COURSE");
-            } else if (courseCodeNumber >= 4000 && courseCodeNumber < 6000) {
-                if (numberOfEnrolledStudents < 5) {
-                    courseType.setCode(CourseTypeCodeDL);
-                    courseType.setName("DUAL-LISTED COURSE");
-                } else {
-                    courseType.setCode(CourseTypeCodeDU);
-                    courseType.setName("DUAL-LISTED COURSE");
+            if (!hasDual) {
+                if (courseCodeNumber >= 1000 && courseCodeNumber < 5000) {
+                    courseType.setCode(CourseTypeCodeU);
+                    courseType.setName("UNDERGRADUATE COURSE");
+                } else if (courseCodeNumber >= 7000 && courseCodeNumber < 8000) {
+                    courseType.setCode(CourseTypeCodeG);
+                    courseType.setName("GRADUATE COURSE");
                 }
-            } else if (courseCodeNumber >= 7000 && courseCodeNumber < 8000) {
-                courseType.setCode(CourseTypeCodeG);
-                courseType.setName("GRADUATE COURSE");
+            } else {
+                if (courseCodeNumber >= 4000 && courseCodeNumber < 6000) {
+                    if (numberOfEnrolledStudents >= 1 && numberOfEnrolledStudents < 5) {
+                        courseType.setCode(CourseTypeCodeDL);
+                        courseType.setName("DUAL-LISTED COURSE");
+                    } else if (numberOfEnrolledStudents >= 5) {
+                        courseType.setCode(CourseTypeCodeDU);
+                        courseType.setName("DUAL-LISTED COURSE");
+                    } else {
+                        courseType.setCode(CourseTypeCodeU);
+                        courseType.setName("UNDERGRADUATE COURSE");
+                    }
+                }
             }
         } else {
-            if (courseTitle.toUpperCase().trim().contains("MASTER'S THESIS") || courseTitle.toUpperCase().trim().contains("MS THESIS")) {
+            if (courseTitle.toUpperCase().trim().contains("MASTER'S THESIS") || courseTitle.toUpperCase().trim().contains("MS THESIS") || courseTitle.toUpperCase().trim().contains("GRADUATE")) {
                 courseType.setCode(CourseTypeCodeMS);
-            } else if (courseTitle.toUpperCase().trim().contains("DOCTORAL RESEARCH") || courseTitle.toUpperCase().trim().contains("DISSERTATION")) {
+            } else if (courseTitle.toUpperCase().trim().contains("DOCTORAL RESEARCH") || courseTitle.toUpperCase().trim().contains("DISSERTATION") || courseTitle.toUpperCase().trim().contains("RESEARCH")) {
                 courseType.setCode(CourseTypeCodePhD);
             } else {
                 courseType.setCode(CourseTypeCodeO);
@@ -141,7 +190,7 @@ public class WorkloadReportService {
 
     private List<SimplifiedWorkload> simplifyWorkloadData(List<RawWorkloadData> rawWorkloadDatas) throws CloneNotSupportedException {
         log.info("Simplifying WorkLoad Data");
-        int numberofEnrolledStudents = findNumberOfEnrolledStudents(rawWorkloadDatas, fromt5XXXCourseCode, to5XXXCourseCode);
+        //int numberofEnrolledStudents = findNumberOfEnrolledStudents(rawWorkloadDatas, fromt5XXXCourseCode, to5XXXCourseCode);
         Map<String, List<RawWorkloadData>> distinctValuesInList = rawWorkloadDatas.stream()
                 .collect(Collectors.groupingBy(RawWorkloadData::getInstructorNameSurname));
         List<SimplifiedWorkload> simplifiedWorkloadList = new ArrayList<SimplifiedWorkload>();
@@ -161,8 +210,36 @@ public class WorkloadReportService {
             boolean isDepartmentNameGathered = false;
 
             for (RawWorkloadData rawData : entry.getValue()) {
+
+
                 newRawData = (RawWorkloadData) rawData.clone();
-                courseType = getCourseType(rawData.getInstructionType(), rawData.getCourseTitle(), rawData.getCourseNumber(), numberofEnrolledStudents);
+
+                if (String.valueOf(rawData.getCourseNumber()).startsWith("4") ||
+                        String.valueOf(rawData.getCourseNumber()).startsWith("5")) {
+
+                    if (String.valueOf(rawData.getCourseNumber()).startsWith("4")) {
+                        CourseDualState courseDualState = calculateCourseDualState(entry.getValue(), newRawData.getCourseNumber(), 5);
+                        courseType = getCourseType(newRawData.getInstructionType(), newRawData.getCourseTitle(), newRawData.getCourseNumber(), courseDualState.getNumberOfTotalEnrollmentInDualCourse(), courseDualState.hasDualCourse());
+
+                    } else if (String.valueOf(rawData.getCourseNumber()).startsWith("5")) {
+                        CourseDualState courseDualState = calculateCourseDualState(entry.getValue(), newRawData.getCourseNumber(), 4);
+
+                        if (courseDualState.hasDualCourse()) {
+                            continue;
+                        } else {
+                            newRawData = (RawWorkloadData) rawData.clone();
+                            courseType = getCourseType(newRawData.getInstructionType(), newRawData.getCourseTitle(), newRawData.getCourseNumber(), courseDualState.getNumberOfTotalEnrollmentInDualCourse(), courseDualState.hasDualCourse());
+
+                        }
+                    }
+
+
+                }
+                else {
+                    courseType = getCourseType(newRawData.getInstructionType(), newRawData.getCourseTitle(), newRawData.getCourseNumber(), 0, false);
+
+                }
+
                 newRawData.setCourseTypeCode(courseType.getCode());
                 newRawData.setCourseTypeName(courseType.getName());
                 courseTypeIUValues = calculateIUMultiplier(true, newRawData.getTaLectureHours(), newRawData.getCourseTypeCode());
@@ -201,7 +278,9 @@ public class WorkloadReportService {
                 simplifiedWorkload.setTotalCreditHours(simplifiedWorkload.getTotalCreditHours() + newRawData.getTaCeditHours());
                 simplifiedWorkload.setTotalIUMultiplierForLectureHours(simplifiedWorkload.getTotalIUMultiplierForLectureHours() + newRawData.getIuMultipliertaLectureHours());
                 simplifiedWorkload.setTotalLabHours(simplifiedWorkload.getTotalLabHours() + newRawData.getTaLabHours());
-                simplifiedWorkload.setTotalLectureHours(simplifiedWorkload.getTotalLectureHours() + newRawData.getTaLectureHours());
+                if (newRawData.getInstructionType().toUpperCase().trim().contains(instructionTypeContainsKeyWordPED)) {
+                    simplifiedWorkload.setTotalLectureHours(simplifiedWorkload.getTotalLectureHours() + newRawData.getTaLectureHours());
+                }
                 simplifiedWorkload.setTotalTaSupport(simplifiedWorkload.getTotalTaSupport() + newRawData.getTaSupport());
                 simplifiedWorkload.setTotalTotalIUs(simplifiedWorkload.getTotalTotalIUs() + newRawData.getTotalIus());
                 newRawDataList.add(newRawData);
@@ -224,12 +303,17 @@ public class WorkloadReportService {
 
     private void generateExcelContent(List<SimplifiedWorkload> simplifiedWorkloadList) throws IOException, WriteException {
 
+        FileUtilService.getInstance().createDirectory(Constants.workloadReportsTempPath);
+
         for (SimplifiedWorkload simplifiedWorkload : simplifiedWorkloadList) {
+
+            File file = new File(Constants.workloadReportsTempPath + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + ".xls");
 
             int startingColumnFrame = 1;
             int endingColumnFrame = 25;
             //Creates a writable workbook with the given file name
-            WritableWorkbook workbook = Workbook.createWorkbook(new File(simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + ".xls"));
+            //WritableWorkbook workbook = Workbook.createWorkbook(new File(simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + ".xls"));
+            WritableWorkbook workbook = Workbook.createWorkbook(file);
             WritableSheet sheet = workbook.createSheet(simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + "_" + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm(), 0);
 
             // Create cell font and format
@@ -524,10 +608,10 @@ public class WorkloadReportService {
             startingDataAdminColumnNumber = endingDataAdminColumnNumber + 1;
             endingDataAdminColumnNumber = startingDataAdminColumnNumber + 2;
             endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
-            for (int i = 1 ; i <6 ; i++ ) {
+            for (int i = 1; i < 6; i++) {
                 cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
                 cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
-                createText(sheet, "workloadReport.administrative"+i+"Col1.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
+                createText(sheet, "workloadReport.administrative" + i + "Col1.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
                 // mergeCells(colStart, rowStart, colEnd, rowEnd)1
                 sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
                 startingDataAdminRowNumber = endingDataAdminRowNumber + 1;
@@ -557,7 +641,7 @@ public class WorkloadReportService {
             startingDataAdminRowNumber = endingDataAdminRowNumber + 1;
             endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
 
-            for (int i = 1 ; i <4; i++ ) {
+            for (int i = 1; i < 4; i++) {
                 cellFont = createCellFont("workloadReport.administrativeCol2.name.fontsize", Colour.BLACK, true);
                 cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
                 createText(sheet, "", cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
@@ -581,7 +665,7 @@ public class WorkloadReportService {
             startingDataAdminRowNumber = endingDataAdminRowNumber + 1;
             endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
 
-            for (int i = 1 ; i <5 ; i++ ) {
+            for (int i = 1; i < 5; i++) {
                 cellFont = createCellFont("workloadReport.administrativeCol3.name.fontsize", Colour.BLACK, true);
                 cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
                 createText(sheet, "", cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
@@ -615,7 +699,6 @@ public class WorkloadReportService {
             sheet.mergeCells(startingColumnFrame, startingNonAdminRowNumber, endingColumnFrame, endingNonAdminRowNumber);
 
 
-
             // *****************************************************************************************************
             //DATA UNDER NON ADMINISTRATIVE
             int startingDataNonAdminRowNumber = endingNonAdminRowNumber + 1;
@@ -631,7 +714,7 @@ public class WorkloadReportService {
             createText(sheet, "workloadReport.item.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
             sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
-            for (int i = 1 ; i <15 ; i++ ) {
+            for (int i = 1; i < 15; i++) {
                 startingDataNonAdminRowNumber = endingDataNonAdminRowNumber + 1;
                 endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
                 cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
@@ -654,7 +737,7 @@ public class WorkloadReportService {
 
             endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber + 16;
 
-            for (int i = 1 ; i <15 ; i++ ) {
+            for (int i = 1; i < 15; i++) {
                 startingDataNonAdminRowNumber = endingDataNonAdminRowNumber + 1;
                 endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
                 cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
@@ -674,13 +757,13 @@ public class WorkloadReportService {
             createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
             sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
-            startingDataNonAdminRowNumber = endingNonAdminRowNumber + 1 ;
+            startingDataNonAdminRowNumber = endingNonAdminRowNumber + 1;
             endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
 
             startingDataNonAdminColumnNumber = endingDataNonAdminColumnNumber + 1;
             endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber;
 
-            for (int i = 1 ; i <15 ; i++ ) {
+            for (int i = 1; i < 15; i++) {
                 startingDataNonAdminRowNumber = endingDataNonAdminRowNumber + 1;
                 endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
                 cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
@@ -690,11 +773,11 @@ public class WorkloadReportService {
 
             }
 
-            startingDataNonAdminRowNumber = endingNonAdminRowNumber + 1 ;
+            startingDataNonAdminRowNumber = endingNonAdminRowNumber + 1;
             endingDataNonAdminRowNumber = startingDataNonAdminRowNumber + 14;
 
             startingDataNonAdminColumnNumber = endingDataNonAdminColumnNumber + 1;
-            endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber+1;
+            endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber + 1;
 
             cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
             cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
@@ -881,10 +964,10 @@ public class WorkloadReportService {
             startingSignatureRowNumber = endingSignatureRowNumber + 1;
             endingSignatureRowNumber = startingSignatureRowNumber;
 
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+            /*cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
             cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);*/
 
 
             startingSignatureColumnNumber = endingSignatureColumnNumber + 1;
@@ -917,10 +1000,10 @@ public class WorkloadReportService {
             startingSignatureRowNumber = endingSignatureRowNumber + 1;
             endingSignatureRowNumber = startingSignatureRowNumber;
 
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+           /* cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
             cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);*/
 
             startingSignatureColumnNumber = endingSignatureColumnNumber + 1;
             endingSignatureColumnNumber = startingSignatureColumnNumber + 1;
@@ -951,10 +1034,10 @@ public class WorkloadReportService {
             startingSignatureRowNumber = endingSignatureRowNumber + 1;
             endingSignatureRowNumber = startingSignatureRowNumber;
 
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+           /* cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
             cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);*/
 
             startingSignatureColumnNumber = endingSignatureColumnNumber + 1;
             endingSignatureColumnNumber = startingSignatureColumnNumber + 1;
@@ -985,10 +1068,10 @@ public class WorkloadReportService {
             startingSignatureRowNumber = endingSignatureRowNumber + 1;
             endingSignatureRowNumber = startingSignatureRowNumber;
 
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+           /* cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
             cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);*/
 
             startingSignatureColumnNumber = endingSignatureColumnNumber + 1;
             endingSignatureColumnNumber = endingColumnFrame;
@@ -1001,33 +1084,20 @@ public class WorkloadReportService {
             createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
             sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
-           /* startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber + 1;
-
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
-
-            startingSignatureColumnNumber = endingSignatureColumnNumber + 1;
-            endingSignatureColumnNumber = startingSignatureColumnNumber + 5;
-
-            startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber;
-
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "workloadReport.signatures.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
-*/
-
-           /* workloadReport.chair.name=CHAIR
-            workloadReport.dean.name=DEAN
-            workloadReport.signatures.name=SIGNATURES
-            workloadReport.date.name=DATE
-            workloadReport.names.name=NAMES*/
-
             //Writes out the data held in this workbook in Excel format
+            SheetSettings sheetSettings = sheet.getSettings();
+            sheetSettings.setShowGridLines(false);
+            sheetSettings.setZoomFactor(excelZoomFactor);
+            sheetSettings.setFitToPages(true);
+            sheetSettings.setScaleFactor(excelScaleFactor);
+            sheetSettings.setLeftMargin(excelLeftMargin);
+            sheetSettings.setRightMargin(excelRightMargin);
+            sheetSettings.setBottomMargin(excelBottomMargin);
+            sheetSettings.setTopMargin(excelTopMargin);
+            sheetSettings.setPaperSize(PaperSize.A4);
+            sheetSettings.setOrientation(PageOrientation.LANDSCAPE);
+            sheetSettings.setPrintArea(startingColumnFrame, 1, endingColumnFrame, endingSignatureRowNumber);
+
             workbook.write();
 
             //Close and free allocated memory
@@ -1134,6 +1204,32 @@ public class WorkloadReportService {
         rawWorkloadData.setId(index);
         rawWorkloadData.setChair("Anderson, Gary");
         rawWorkloadData.setCollCode("SS");
+        rawWorkloadData.setCourseNumber(5399);
+        rawWorkloadData.setCourseTitle("Mechanics of Materials Lab");
+        rawWorkloadData.setCrn(12194);
+        rawWorkloadData.setDean("Whitman, Lawrence");
+        rawWorkloadData.setInstructorNameSurname("Sandgren, Eric");
+        rawWorkloadData.setInstructionType("PED INSTUCT");
+        rawWorkloadData.setInstructorDepartment("System Engineering"); // PROVIDED NOT YET
+        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
+        rawWorkloadData.setSection(20);
+        rawWorkloadData.setSemesterTermCode(201610);
+        rawWorkloadData.setSubjectCode("SYEN");
+        rawWorkloadData.setTaCeditHours(1);
+        rawWorkloadData.setTaEleventhDayCount(8);
+        rawWorkloadData.setTaLabHours(2);
+        rawWorkloadData.setTaLectureHours(0);
+        rawWorkloadData.setTaStudent("Sang Sang");
+        rawWorkloadData.setTaSupport(5);
+        rawWorkloadData.setTotalSsch(8);
+        rawWorkloadData.setTst(0);
+        rawWorkloadDataList.add(rawWorkloadData);
+        index = index + 1;
+        rawWorkloadData = new RawWorkloadData();
+        rawWorkloadData.setInstructorTNumber("T1");
+        rawWorkloadData.setId(index);
+        rawWorkloadData.setChair("Anderson, Gary");
+        rawWorkloadData.setCollCode("SS");
         rawWorkloadData.setCourseNumber(4376);
         rawWorkloadData.setCourseTitle("Mechanics of Materials");
         rawWorkloadData.setCrn(12200);
@@ -1230,9 +1326,8 @@ public class WorkloadReportService {
         rawWorkloadData.setTaEleventhDayCount(2);
         rawWorkloadData.setTaLabHours(0);
         rawWorkloadData.setTaLectureHours(3);
-        rawWorkloadData.setTaStudent("BOSMUS");
         rawWorkloadData.setTaSupport(0);
-        rawWorkloadData.setTotalSsch(3);
+        rawWorkloadData.setTotalSsch(2);
         rawWorkloadData.setTst(2);
         rawWorkloadDataList.add(rawWorkloadData);
         index = index + 1;
