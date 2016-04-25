@@ -108,19 +108,19 @@ public class RawWorkloadData extends AbstractAuditingEntity implements Serializa
         this.subjectCode = subjectCode;
     }
 
-    private String getCourseTypeName() {
+    public String getCourseTypeName() {
         return courseTypeName;
     }
 
-    private void setCourseTypeName(String courseTypeName) {
+    public void setCourseTypeName(String courseTypeName) {
         this.courseTypeName = courseTypeName;
     }
 
-    private String getCourseTypeCode() {
+    public String getCourseTypeCode() {
         return courseTypeCode;
     }
 
-    private void setCourseTypeCode(String courseTypeCode) {
+    public void setCourseTypeCode(String courseTypeCode) {
         this.courseTypeCode = courseTypeCode;
     }
 
