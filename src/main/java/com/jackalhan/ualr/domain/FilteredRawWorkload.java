@@ -1,49 +1,43 @@
 package com.jackalhan.ualr.domain;
 
-import javax.persistence.*;
 import java.io.Serializable;
 
 /**
  * Created by jackalhan on 4/18/16.
  */
-public class RawWorkload extends AbstractAuditingEntity implements Serializable, Cloneable {
+public class FilteredRawWorkload implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 1L;
 
-    private String instructionType; // needs to be filtered for these records PEDAGOGICAL or INDIVIDUALIZED
-
+    private String instructionType;
     private String instructorTNumber;
-    private String instructorNameSurname; // NEEDS TO BE PARSED
-    /*private String instructorName; // NEEDS TO BE SET FROM instructorNameSurname BY PARSING DATA
-    private String instructorSurname; //NEEDS TO BE SET FROM instructorNameSurname BY PARSING DATA*/
+    private String instructorNameSurname;
     private String instructorDepartment;
-    private int semesterTermCode; // 201610  {SPRING, 2016}
-    /*    private String semesterTerm; //SPRING
-        private String semesterTermYear; //2016*/
+    private int semesterTermCode;
     private int crn;
     private String subjectCode;
-    private String courseTypeName; // NEEDS TO BE CALCULATED : Undergraduate Course =========> ?
-    private String courseTypeCode; // NEEDS TO BE CALCULATED : DL  =========> ?
-    private int courseNumber; // USE TO CALCULATE CourseType, CourseCode, IU MUltipliers
+    private String courseTypeName;
+    private String courseTypeCode;
+    private int courseNumber;
     private String section;
-    private int tst; // Just for info : What is that 0 =========> ?
+    private int tst;
     private String courseTitle;
-    private String collCode; // Just for info : What is that SS =========> ?
+    private String collCode;
     private String taStudent;
-    private int taSupport; // HOW IS IT CALCULATED? NO DATA FROM BANNER 10
-    private int taEleventhDayCount; // Just for info : What is that 17 =========> ?
+    private int taSupport;
+    private int taEleventhDayCount;
     private int taCeditHours;
     private int taLectureHours;
-    private double iuMultipliertaLectureHours; //NEEDS TO BE CALCULATED : ========>  0.666
+    private double iuMultipliertaLectureHours;
     private int taLabHours;
-    private double iuMultipliertaLabHours; //NEEDS TO BE CALCULATED : ========>  1.3333
-    private double totalIus; //NEEDS TO BE CALCULATED : ========>  1.3333
+    private double iuMultipliertaLabHours;
+    private double totalIus;
     private String otherInstructorsInTeam;
-    private int totalSsch; // Just for info : What is that SS =========> 51 ?
+    private int totalSsch;
     private String chair;
     private String dean;
 
-    public RawWorkload() {
+    public FilteredRawWorkload() {
     }
 
 
@@ -302,24 +296,4 @@ public class RawWorkload extends AbstractAuditingEntity implements Serializable,
                 ", dean='" + dean + '\'' +
                 '}';
     }
-
-/*
-
-
-    @NotNull
-    @Pattern(regexp = "^[a-z0-9]*$|(anonymousUser)")
-    @Size(min = 1, max = 50)
-    @Column(length = 50, unique = true, nullable = false)
-    private String login;
-
-    @JsonIgnore
-    @NotNull
-    @Size(min = 60, max = 60)
-    @Column(name = "password_hash",length = 60)
-    private String password;
-
-    @Size(max = 50)
-    @Column(name = "first_name", length = 50)
-    private String firstName;*/
-
 }

@@ -13,6 +13,7 @@ import jxl.format.BorderLineStyle;
 import jxl.format.Colour;
 import jxl.format.VerticalAlignment;
 import jxl.write.*;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -46,16 +48,15 @@ public class WorkloadReportService {
     private static final double excelRightMargin = 0.75;
     private static final double excelTopMargin = 0.30;
     private static final double excelBottomMargin = 0.33;
-
+    private static final String fileNamePattern = "2016_S";
 
     @Scheduled(fixedDelay = SchedulingConstants.WORKLOAD_REPORT_SERVICE_EXECUTE_FIXED_DELAY)
     private void executeService() throws IOException, WriteException, CloneNotSupportedException {
         log.info("RawWorkload Reports execution started");
-        System.out.println(FileUtilService.getInstance().getTestFile("2015_S").getAbsoluteFile());
-        /*List<RawWorkload> rawWorkloadList = prepareTestData();
+        List<RawWorkload> rawWorkloadList = prepareTestData(fileNamePattern);
         List<SimplifiedWorkload> simplifiedWorkloadList = simplifyWorkloadData(rawWorkloadList);
         generateExcelContent(simplifiedWorkloadList);
-        log.info(simplifyWorkloadData(rawWorkloadList).toString());*/
+        log.info(simplifyWorkloadData(rawWorkloadList).toString());
         log.info("RawWorkload Reports execution ended");
     }
 
@@ -173,12 +174,20 @@ public class WorkloadReportService {
 
     private List<SimplifiedWorkload> simplifyWorkloadData(List<RawWorkload> rawWorkloads) throws CloneNotSupportedException {
         log.info("Simplifying WorkLoad Data");
-        Map<String, List<RawWorkload>> distinctValuesInList = rawWorkloads.stream()
-                .collect(Collectors.groupingBy(RawWorkload::getInstructorNameSurname));
+        //Old Implementation with just prof. name
+        /* Map<String, List<RawWorkload>> distinctValuesInList = rawWorkloads.stream()
+                .collect(Collectors.groupingBy(RawWorkload::getInstructorNameSurname));*/
+
+        // Since list contains adjusct prof. who has courses in more than one department.
+        // had to group name and department.
+        Map<Pair<String, String>, List<RawWorkload>> distinctValuesInList = rawWorkloads.stream()
+                .collect(Collectors.groupingBy(p -> Pair.of(p.getInstructorNameSurname(), p.getInstructorDepartment())));
+
+
         List<SimplifiedWorkload> simplifiedWorkloadList = new ArrayList<SimplifiedWorkload>();
         SimplifiedWorkload simplifiedWorkload = null;
         List<RawWorkload> newRawDataList = null;
-        for (Map.Entry<String, List<RawWorkload>> entry : distinctValuesInList.entrySet()) {
+        for (Map.Entry<Pair<String, String>, List<RawWorkload>> entry : distinctValuesInList.entrySet()) {
             simplifiedWorkload = new SimplifiedWorkload();
             RawWorkload newRawData = null;
             CourseDetail courseDetail = null;
@@ -205,62 +214,62 @@ public class WorkloadReportService {
                 }
 
 
-            courseDetail = getCourseType(courseDetail);
-            newRawData.setCourseTypeCode(courseDetail.getCourseTypeCode());
-            newRawData.setCourseTypeName(courseDetail.getCourseTypeName());
+                courseDetail = getCourseType(courseDetail);
+                newRawData.setCourseTypeCode(courseDetail.getCourseTypeCode());
+                newRawData.setCourseTypeName(courseDetail.getCourseTypeName());
 
-            courseDetail = calculateIUMultiplier(true, courseDetail);
+                courseDetail = calculateIUMultiplier(true, courseDetail);
 
-            newRawData.setIuMultipliertaLectureHours(courseDetail.getIuMultiplierLectureHours());
-            newRawData.setTotalIus(courseDetail.getTotalSsch());
+                newRawData.setIuMultipliertaLectureHours(courseDetail.getIuMultiplierLectureHours());
+                newRawData.setTotalIus(courseDetail.getTotalSsch());
 
 
-            if (!isInstructorNameParsed) {
-                isInstructorNameParsed = true;
-                simplifiedWorkload.setInstructorNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getInstructorNameSurname(), Constants.COMA_CHARACTER));
-            }
-            if (!isDeanNameParsed) {
-                isDeanNameParsed = true;
-                simplifiedWorkload.setDeanNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getDean(), Constants.COMA_CHARACTER));
-            }
-            if (!isChairNameParsed) {
-                isChairNameParsed = true;
-                simplifiedWorkload.setChairNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getChair(), Constants.COMA_CHARACTER));
-            }
-            if (!isDateParsed) {
-                if (!StringUtilService.getInstance().isEmpty(String.valueOf(newRawData.getSemesterTermCode()))) {
-                    isDateParsed = true;
-                    simplifiedWorkload.setSemesterTerm(decidePeriod(Integer.parseInt(String.valueOf(newRawData.getSemesterTermCode()).substring(4, 5))));
-                    simplifiedWorkload.setSemesterYear(Integer.valueOf(String.valueOf(newRawData.getSemesterTermCode()).substring(0, 4)));
+                if (!isInstructorNameParsed) {
+                    isInstructorNameParsed = true;
+                    simplifiedWorkload.setInstructorNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getInstructorNameSurname(), Constants.COMA_CHARACTER));
                 }
-            }
-            if (!isDepartmentNameGathered) {
-                isDepartmentNameGathered = true;
-                simplifiedWorkload.setDepartmentName(newRawData.getInstructorDepartment());
-                simplifiedWorkload.setChairNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getChair(), Constants.COMA_CHARACTER));
-            }
+                if (!isDeanNameParsed) {
+                    isDeanNameParsed = true;
+                    simplifiedWorkload.setDeanNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getDean(), Constants.COMA_CHARACTER));
+                }
+                if (!isChairNameParsed) {
+                    isChairNameParsed = true;
+                    simplifiedWorkload.setChairNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getChair(), Constants.COMA_CHARACTER));
+                }
+                if (!isDateParsed) {
+                    if (!StringUtilService.getInstance().isEmpty(String.valueOf(newRawData.getSemesterTermCode()))) {
+                        isDateParsed = true;
+                        simplifiedWorkload.setSemesterTerm(decidePeriod(Integer.parseInt(String.valueOf(newRawData.getSemesterTermCode()).substring(4, 5))));
+                        simplifiedWorkload.setSemesterYear(Integer.valueOf(String.valueOf(newRawData.getSemesterTermCode()).substring(0, 4)));
+                    }
+                }
+                if (!isDepartmentNameGathered) {
+                    isDepartmentNameGathered = true;
+                    simplifiedWorkload.setDepartmentName(newRawData.getInstructorDepartment());
+                    simplifiedWorkload.setChairNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getChair(), Constants.COMA_CHARACTER));
+                }
 
 
-            simplifiedWorkload.setTotalSsch(simplifiedWorkload.getTotalSsch() + newRawData.getTotalSsch());
-            simplifiedWorkload.setTotal11thDayCount(simplifiedWorkload.getTotal11thDayCount() + newRawData.getTaEleventhDayCount());
-            simplifiedWorkload.setTotalCreditHours(simplifiedWorkload.getTotalCreditHours() + newRawData.getTaCeditHours());
-            simplifiedWorkload.setTotalIUMultiplierForLectureHours(simplifiedWorkload.getTotalIUMultiplierForLectureHours() + newRawData.getIuMultipliertaLectureHours());
-            simplifiedWorkload.setTotalLabHours(simplifiedWorkload.getTotalLabHours() + newRawData.getTaLabHours());
-            if (newRawData.getInstructionType().toUpperCase().trim().contains(Constants.INSTRUCTION_TYPE_CONTAINS_KEY_WORD_PED)) {
-                simplifiedWorkload.setTotalLectureHours(simplifiedWorkload.getTotalLectureHours() + newRawData.getTaLectureHours());
+                simplifiedWorkload.setTotalSsch(simplifiedWorkload.getTotalSsch() + newRawData.getTotalSsch());
+                simplifiedWorkload.setTotal11thDayCount(simplifiedWorkload.getTotal11thDayCount() + newRawData.getTaEleventhDayCount());
+                simplifiedWorkload.setTotalCreditHours(simplifiedWorkload.getTotalCreditHours() + newRawData.getTaCeditHours());
+                simplifiedWorkload.setTotalIUMultiplierForLectureHours(simplifiedWorkload.getTotalIUMultiplierForLectureHours() + newRawData.getIuMultipliertaLectureHours());
+                simplifiedWorkload.setTotalLabHours(simplifiedWorkload.getTotalLabHours() + newRawData.getTaLabHours());
+                if (newRawData.getInstructionType().toUpperCase().trim().contains(Constants.INSTRUCTION_TYPE_CONTAINS_KEY_WORD_PED)) {
+                    simplifiedWorkload.setTotalLectureHours(simplifiedWorkload.getTotalLectureHours() + newRawData.getTaLectureHours());
+                }
+                simplifiedWorkload.setTotalTaSupport(simplifiedWorkload.getTotalTaSupport() + newRawData.getTaSupport());
+                simplifiedWorkload.setTotalTotalIUs(simplifiedWorkload.getTotalTotalIUs() + newRawData.getTotalIus());
+                newRawDataList.add(newRawData);
             }
-            simplifiedWorkload.setTotalTaSupport(simplifiedWorkload.getTotalTaSupport() + newRawData.getTaSupport());
-            simplifiedWorkload.setTotalTotalIUs(simplifiedWorkload.getTotalTotalIUs() + newRawData.getTotalIus());
-            newRawDataList.add(newRawData);
+            simplifiedWorkload.setRawWorkloadDetails(newRawDataList);
+            simplifiedWorkloadList.add(simplifiedWorkload);
         }
-        simplifiedWorkload.setRawWorkloadDetails(newRawDataList);
-        simplifiedWorkloadList.add(simplifiedWorkload);
+
+        log.info("Simplifying WorkLoad Data Completed");
+        return simplifiedWorkloadList;
+
     }
-
-    log.info("Simplifying WorkLoad Data Completed");
-    return simplifiedWorkloadList;
-
-}
 
     private String decidePeriod(int codeNumber) {
 
@@ -1114,15 +1123,58 @@ public class WorkloadReportService {
         sheet.addCell(label);
     }
 
-    private List<RawWorkload> prepareTestData() {
+    private List<RawWorkload> prepareTestData(String filePattern) {
         log.info("Started to importing testdata data");
-        long index = 1;
-
+        BufferedReader br = FileUtilService.getInstance().getFile(filePattern).getCSVFileContent();
+        String line = ""; //lineDelimiter
+        String cvsSplitBy = ":"; //fieldDelimiter
         List<RawWorkload> rawWorkloadList = new ArrayList<RawWorkload>();
+        RawWorkload rawWorkload;
+        try {
+            while ((line = br.readLine()) != null) {
+                rawWorkload = new RawWorkload();
+                // use comma as separator
+                String[] workload = line.split(cvsSplitBy);
+
+                rawWorkload.setInstructionType(workload[0]);
+                //workload[1]) // INST_PIDM
+                rawWorkload.setInstructorTNumber(workload[2]);
+                rawWorkload.setInstructorNameSurname(workload[3]);
+                rawWorkload.setSemesterTermCode(Integer.parseInt(workload[4].trim()));
+                rawWorkload.setCrn(Integer.parseInt(workload[5].trim()));
+                rawWorkload.setSubjectCode(workload[6]);
+                rawWorkload.setCourseNumber(Integer.parseInt(workload[7].trim()));
+                rawWorkload.setSection(workload[8]);
+                //workload[9] // PCT RESPON
+                rawWorkload.setCourseTitle(workload[10]);
+                // workload[11] // COLL CODE
+                // workload[12] // COLL CODE
+                rawWorkload.setInstructorDepartment(workload[13]);
+                rawWorkload.setTaStudent(workload[14]);
+                rawWorkload.setChair(workload[15]);
+                rawWorkload.setDean(workload[16]);
+                rawWorkload.setTaEleventhDayCount(Integer.parseInt(workload[17].trim()));
+                rawWorkload.setTaCeditHours(Integer.parseInt(workload[18].trim()));
+                rawWorkload.setTaLectureHours(Integer.parseInt(workload[19].trim()));
+                rawWorkload.setTaLabHours(Integer.parseInt(workload[20].trim()));
+                rawWorkload.setTotalSsch(Integer.parseInt(workload[21].trim()));
+                rawWorkloadList.add(rawWorkload);
+            }
+            log.info("Finished importing");
+        } catch (IOException e) {
+            log.info("Error occured during importing");
+            log.error(e.toString());
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    log.warn(e.toString());
+                }
+            }
+        }
 
 
-
-        log.info("Finished importing");
         return rawWorkloadList;
     }
 

@@ -35,7 +35,7 @@ public class CourseDetail implements Cloneable {
     }
 
     public void setTitleName(String titleName) {
-        this.titleName = titleName;
+        this.titleName = titleName.trim();
     }
 
     public int getSection() {
@@ -51,7 +51,7 @@ public class CourseDetail implements Cloneable {
     }
 
     public void setTaName(String taName) {
-        this.taName = taName;
+        this.taName = taName.trim();
     }
 
     public String getCourseTypeName() {
@@ -59,7 +59,7 @@ public class CourseDetail implements Cloneable {
     }
 
     public void setCourseTypeName(String courseTypeName) {
-        this.courseTypeName = courseTypeName;
+        this.courseTypeName = courseTypeName.trim();
     }
 
     public String getCourseTypeCode() {
@@ -67,7 +67,7 @@ public class CourseDetail implements Cloneable {
     }
 
     public void setCourseTypeCode(String courseTypeCode) {
-        this.courseTypeCode = courseTypeCode;
+        this.courseTypeCode = courseTypeCode.trim();
     }
 
     public boolean isHasDualCourse() {

@@ -18,7 +18,7 @@ import java.time.ZonedDateTime;
  */
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
-public abstract class AbstractAuditingEntity implements Serializable{
+public abstract class AbstractAuditingEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -47,7 +47,7 @@ public abstract class AbstractAuditingEntity implements Serializable{
     }
 
     public void setCreatedBy(String createdBy) {
-        this.createdBy = createdBy;
+        this.createdBy = createdBy.trim();
     }
 
     public ZonedDateTime getCreatedDate() {
@@ -63,7 +63,7 @@ public abstract class AbstractAuditingEntity implements Serializable{
     }
 
     public void setLastModifiedBy(String lastModifiedBy) {
-        this.lastModifiedBy = lastModifiedBy;
+        this.lastModifiedBy = lastModifiedBy.trim();
     }
 
     public ZonedDateTime getLastModifiedDate() {

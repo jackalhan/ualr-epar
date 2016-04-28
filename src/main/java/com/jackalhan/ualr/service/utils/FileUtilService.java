@@ -8,7 +8,7 @@ import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
+import java.io.*;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -20,6 +20,7 @@ public class FileUtilService {
 
 
     private static FileUtilService singleton;
+    private File file;
 
     private FileUtilService() {
     }
@@ -46,7 +47,7 @@ public class FileUtilService {
         }
     }
 
-    public File getTestFile (String fileNamePattern)
+    public FileUtilService getFile (String fileNamePattern)
     {
         Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(
                 ClasspathHelper.forPackage("testdata")).setScanners(new ResourcesScanner()));
@@ -54,7 +55,36 @@ public class FileUtilService {
         Set<String> properties = reflections.getResources(Pattern.compile(fileNamePattern + ".*\\.csv"));
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource(properties.toArray()[0].toString()).getFile());
+        this.setFile(file);
+        return this;
+    }
+
+    public BufferedReader getCSVFileContent()
+    {
+        return getCSVFileContent(this.file);
+    }
+    public BufferedReader getCSVFileContent(File file)
+    {
+        BufferedReader br = null;
+
+        try {
+
+            br = new BufferedReader(new FileReader(file));
+        } catch (FileNotFoundException e) {
+            log.error(e.toString());
+        } catch (IOException e) {
+            log.error(e.toString());
+        }
+        return br;
+    }
+
+
+
+    public File getFile() {
         return file;
     }
 
+    public void setFile(File file) {
+        this.file = file;
+    }
 }

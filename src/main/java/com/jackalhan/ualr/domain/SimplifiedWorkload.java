@@ -7,15 +7,9 @@ import java.util.List;
 /**
  * Created by jackalhan on 4/21/16.
  */
-//@Entity
-//@Table(name = "simplified_workload")
 public class SimplifiedWorkload implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
-    //@Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
 
     private String instructorNameAndSurname;
     private String semesterTerm;
@@ -36,20 +30,12 @@ public class SimplifiedWorkload implements Serializable {
     public SimplifiedWorkload() {
     }
 
-    private Long getId() {
-        return id;
-    }
-
-    private void setId(Long id) {
-        this.id = id;
-    }
-
     public String getInstructorNameAndSurname() {
         return instructorNameAndSurname;
     }
 
     public void setInstructorNameAndSurname(String instructorNameAndSurname) {
-        this.instructorNameAndSurname = instructorNameAndSurname;
+        this.instructorNameAndSurname = instructorNameAndSurname.trim();
     }
 
     public String getSemesterTerm() {
@@ -73,7 +59,7 @@ public class SimplifiedWorkload implements Serializable {
     }
 
     public void setDepartmentName(String departmentName) {
-        this.departmentName = departmentName;
+        this.departmentName = departmentName.trim();
     }
 
     public String getChairNameAndSurname() {
@@ -81,7 +67,7 @@ public class SimplifiedWorkload implements Serializable {
     }
 
     public void setChairNameAndSurname(String chairNameAndSurname) {
-        this.chairNameAndSurname = chairNameAndSurname;
+        this.chairNameAndSurname = chairNameAndSurname.trim();
     }
 
     public String getDeanNameAndSurname() {
@@ -89,7 +75,7 @@ public class SimplifiedWorkload implements Serializable {
     }
 
     public void setDeanNameAndSurname(String deanNameAndSurname) {
-        this.deanNameAndSurname = deanNameAndSurname;
+        this.deanNameAndSurname = deanNameAndSurname.trim();
     }
 
     public int getTotalTaSupport() {
@@ -167,7 +153,6 @@ public class SimplifiedWorkload implements Serializable {
     @Override
     public String toString() {
         return "SimplifiedWorkload{" +
-                "id=" + id +
                 ", instructorNameAndSurname='" + instructorNameAndSurname + '\'' +
                 ", semesterTerm='" + semesterTerm + '\'' +
                 ", semesterYear=" + semesterYear +
