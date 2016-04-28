@@ -8,7 +8,7 @@ import java.io.Serializable;
  */
 @Entity
 @Table(name = "raw_workload_data")
-public class RawWorkloadData extends AbstractAuditingEntity implements Serializable, Cloneable {
+public class RawWorkload extends AbstractAuditingEntity implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 1L;
 
@@ -49,7 +49,7 @@ public class RawWorkloadData extends AbstractAuditingEntity implements Serializa
     private String chair;
     private String dean;
 
-    public RawWorkloadData() {
+    public RawWorkload() {
     }
 
     public Long getId() {
@@ -285,7 +285,7 @@ public class RawWorkloadData extends AbstractAuditingEntity implements Serializa
 
     @Override
     public String toString() {
-        return "RawWorkloadData{" +
+        return "RawWorkload{" +
                 "id=" + id +
                 ", instructionType='" + instructionType + '\'' +
                 ", instructorTNumber='" + instructorTNumber + '\'' +

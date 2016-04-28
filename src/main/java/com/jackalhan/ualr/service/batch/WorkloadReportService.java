@@ -1,6 +1,6 @@
-package com.jackalhan.ualr.service;
+package com.jackalhan.ualr.service.batch;
 
-import com.jackalhan.ualr.config.Constants;
+import com.jackalhan.ualr.config.*;
 import com.jackalhan.ualr.domain.*;
 import com.jackalhan.ualr.service.utils.FileUtilService;
 import com.jackalhan.ualr.service.utils.StringUtilService;
@@ -40,47 +40,24 @@ public class WorkloadReportService {
 
     private final Logger log = LoggerFactory.getLogger(WorkloadReportService.class);
 
-    private final String splitChar = ",";
-    private final int fromt5XXXCourseCode = 5000;
-    private final int to5XXXCourseCode = 6000;
-    private final String instructionTypeContainsKeyWordPED = "PED";
-    private final String instructionTypeContainsKeyWordIND = "IND";
-    private final String CourseTypeCodeU = "U";
-    private final String CourseTypeCodeDL = "DL";
-    private final String CourseTypeCodeDU = "DU";
-    private final String CourseTypeCodeG = "G";
-    private final String CourseTypeCodeMS = "MS";
-    private final String CourseTypeCodePhD = "PhD";
-    private final String CourseTypeCodeO = "O";
-    private final int excelZoomFactor = 85;
-    private final int excelScaleFactor = 50;
-    private final double excelLeftMargin = 0.75;
-    private final double excelRightMargin = 0.75;
-    private final double excelTopMargin = 0.30;
-    private final double excelBottomMargin = 0.33;
+    private static final int excelZoomFactor = 85;
+    private static final int excelScaleFactor = 50;
+    private static final double excelLeftMargin = 0.75;
+    private static final double excelRightMargin = 0.75;
+    private static final double excelTopMargin = 0.30;
+    private static final double excelBottomMargin = 0.33;
 
-    // mergeCells(colStart, rowStart, colEnd, rowEnd)
-    // new Label(col, row)
 
-    @Scheduled(fixedDelay = 5000)//Everyday 12 pm
-    private void executeWorkloadReports() throws IOException, WriteException, CloneNotSupportedException {
-        log.info("RawWorkloadData Reports execution started");
-        List<RawWorkloadData> rawWorkloadDataList = prepareTestData();
-        List<SimplifiedWorkload> simplifiedWorkloadList = simplifyWorkloadData(rawWorkloadDataList);
+    @Scheduled(fixedDelay = SchedulingConstants.WORKLOAD_REPORT_SERVICE_EXECUTE_FIXED_DELAY)
+    private void executeService() throws IOException, WriteException, CloneNotSupportedException {
+        log.info("RawWorkload Reports execution started");
+        System.out.println(FileUtilService.getInstance().getTestFile("2015_S").getAbsoluteFile());
+        /*List<RawWorkload> rawWorkloadList = prepareTestData();
+        List<SimplifiedWorkload> simplifiedWorkloadList = simplifyWorkloadData(rawWorkloadList);
         generateExcelContent(simplifiedWorkloadList);
-        log.info(simplifyWorkloadData(rawWorkloadDataList).toString());
-        log.info("RawWorkloadData Reports execution ended");
+        log.info(simplifyWorkloadData(rawWorkloadList).toString());*/
+        log.info("RawWorkload Reports execution ended");
     }
-
-    // COUNTER IN GENERAL 5XXX
-/*
-        private int findNumberOfEnrolledStudents(List<RawWorkloadData> rawWorkloadDatas, int fromCourseCodeNumber, int toCourseCodeNumber) {
-        log.info("Finding number of Enrolled Students from " + fromCourseCodeNumber + " to " + toCourseCodeNumber);
-        int numberOfStudents = rawWorkloadDatas.stream().filter(x -> x.getCourseNumber() >= fromCourseCodeNumber && x.getCourseNumber() < toCourseCodeNumber).collect(Collectors.toList()).size();
-        log.info(numberOfStudents + " number of Enrolled Students");
-        return numberOfStudents;
-
-    }*/
 
 
     private int convertToDualCourse(int courseCodeNumber, int dualStartWith) {
@@ -96,17 +73,18 @@ public class WorkloadReportService {
         return Integer.parseInt(newCourseNumberForDualCheck);
     }
 
-    private CourseDualState calculateCourseDualState(List<RawWorkloadData> rawWorkloadDataList, int courseCodeNumber, int dualStartWith) {
-        CourseDualState courseDualState = new CourseDualState();
+
+    private CourseDetail calculateCourseDualState(List<RawWorkload> rawWorkloadList, int courseCodeNumber, int dualStartWith) {
+        CourseDetail courseDualState = new CourseDetail();
         courseDualState.setHasDualCourse(false);
         courseDualState.setNumberOfTotalEnrollmentInDualCourse(0);
         int newCourseNumberForDualCheck = convertToDualCourse(courseCodeNumber, dualStartWith);
-        for (RawWorkloadData rawWorkloadData : rawWorkloadDataList) {
-            if (rawWorkloadData.getCourseNumber() == newCourseNumberForDualCheck) {
+        for (RawWorkload rawWorkload : rawWorkloadList) {
+            if (rawWorkload.getCourseNumber() == newCourseNumberForDualCheck) {
                 //Do we need to add other data in order to calculate ?
                 courseDualState.setHasDualCourse(true);
                 courseDualState.setDualCourseCode(newCourseNumberForDualCheck);
-                courseDualState.setNumberOfTotalEnrollmentInDualCourse(rawWorkloadData.getTaEleventhDayCount());
+                courseDualState.setNumberOfTotalEnrollmentInDualCourse(rawWorkload.getTaEleventhDayCount());
                 return courseDualState;
             }
         }
@@ -115,93 +93,96 @@ public class WorkloadReportService {
     }
 
 
-    private CourseTypeIUValues calculateIUMultiplier(boolean isLectureHour, int lectureHours, String courseTypeCode) {
+    private CourseDetail calculateIUMultiplier(boolean isLectureHour, CourseDetail courseDetail) {
         double result = 0;
         double multiplier = 0;
-        CourseTypeIUValues courseTypeIUValues = null;
+        CourseDetail courseTypeIUValues = null;
         if (isLectureHour) {
-            if (courseTypeCode.equals(CourseTypeCodeU)) {
+            if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_U)) {
                 multiplier = 1;
-                result = lectureHours * multiplier;
-            } else if (courseTypeCode.equals(CourseTypeCodeDL)) {
+                result = courseDetail.getIuMultiplierLectureHours() * multiplier;
+            } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_DL)) {
                 multiplier = 1;
-                result = lectureHours * multiplier;
-            } else if (courseTypeCode.equals(CourseTypeCodeDU)) {
+                result = courseDetail.getIuMultiplierLectureHours() * multiplier;
+            } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_DU)) {
                 multiplier = 1.33;
-                result = lectureHours * multiplier;
-            } else if (courseTypeCode.equals(CourseTypeCodeG)) {
+                result = courseDetail.getIuMultiplierLectureHours() * multiplier;
+            } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_G)) {
                 multiplier = 1.33;
-                result = lectureHours * multiplier;
-            } else if (courseTypeCode.equals(CourseTypeCodeMS)) {
+                result = courseDetail.getIuMultiplierLectureHours() * multiplier;
+            } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_MS)) {
                 multiplier = 0.75;
                 result = multiplier;
-            } else if (courseTypeCode.equals(CourseTypeCodePhD)) {
+            } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_PHD)) {
                 multiplier = 1;
                 result = multiplier;
-            } else if (courseTypeCode.equals(CourseTypeCodeO)) {
+            } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_O)) {
                 multiplier = 0.375;
                 result = multiplier;
             }
         }
-        courseTypeIUValues = new CourseTypeIUValues(multiplier, result);
+        courseTypeIUValues = new CourseDetail();
+        courseTypeIUValues.setIuMultiplierLectureHours(multiplier);
+        courseTypeIUValues.setIuMultiplicationResultOfLectureHours(result);
         return courseTypeIUValues;
 
 
     }
 
-    private CourseType getCourseType(String instructionType, String courseTitle, int courseCodeNumber, int numberOfEnrolledStudents, boolean hasDual) {
+    private CourseDetail getCourseType(CourseDetail courseDetail) {
 
-        CourseType courseType = new CourseType();
-        if (instructionType.toUpperCase().trim().contains(instructionTypeContainsKeyWordPED)) {
-            if (!hasDual) {
-                if (courseCodeNumber >= 1000 && courseCodeNumber < 5000) {
-                    courseType.setCode(CourseTypeCodeU);
-                    courseType.setName("UNDERGRADUATE COURSE");
-                } else if (courseCodeNumber >= 7000 && courseCodeNumber < 8000) {
-                    courseType.setCode(CourseTypeCodeG);
-                    courseType.setName("GRADUATE COURSE");
+        CourseDetail courseType = new CourseDetail();
+        if (courseDetail.getInstructionType().toUpperCase().trim().contains(Constants.INSTRUCTION_TYPE_CONTAINS_KEY_WORD_PED)) {
+            if (!courseDetail.isHasDualCourse()) {
+                if (courseDetail.getCodeNumber() >= 1000 && courseDetail.getCodeNumber() < 5000) {
+                    courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_U);
+                    courseType.setCourseTypeName(Constants.UNDERGRADUATE_COURSE);
+                } else if (courseDetail.getCodeNumber() >= 7000 && courseDetail.getCodeNumber() < 8000) {
+                    courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_G);
+                    courseType.setCourseTypeName(Constants.GRADUATE_COURSE);
                 }
             } else {
-                if (courseCodeNumber >= 4000 && courseCodeNumber < 6000) {
-                    if (numberOfEnrolledStudents >= 1 && numberOfEnrolledStudents < 5) {
-                        courseType.setCode(CourseTypeCodeDL);
-                        courseType.setName("DUAL-LISTED COURSE");
-                    } else if (numberOfEnrolledStudents >= 5) {
-                        courseType.setCode(CourseTypeCodeDU);
-                        courseType.setName("DUAL-LISTED COURSE");
+                if (courseDetail.getCodeNumber() >= 4000 && courseDetail.getCodeNumber() < 6000) {
+                    if (courseDetail.getNumberOfTotalEnrollmentInDualCourse() >= 1 && courseDetail.getNumberOfTotalEnrollmentInDualCourse() < 5) {
+                        courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_DL);
+                        courseType.setCourseTypeName(Constants.DUAL_LISTED_COURSE);
+                    } else if (courseDetail.getNumberOfTotalEnrollmentInDualCourse() >= 5) {
+                        courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_DU);
+                        courseType.setCourseTypeName(Constants.DUAL_LISTED_COURSE);
                     } else {
-                        courseType.setCode(CourseTypeCodeU);
-                        courseType.setName("UNDERGRADUATE COURSE");
+                        courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_U);
+                        courseType.setCourseTypeName(Constants.UNDERGRADUATE_COURSE);
                     }
                 }
             }
         } else {
-            if (courseTitle.toUpperCase().trim().contains("MASTER'S THESIS") || courseTitle.toUpperCase().trim().contains("MS THESIS") || courseTitle.toUpperCase().trim().contains("GRADUATE")) {
-                courseType.setCode(CourseTypeCodeMS);
-            } else if (courseTitle.toUpperCase().trim().contains("DOCTORAL RESEARCH") || courseTitle.toUpperCase().trim().contains("DISSERTATION") || courseTitle.toUpperCase().trim().contains("RESEARCH")) {
-                courseType.setCode(CourseTypeCodePhD);
+            if (courseDetail.getCodeNumber() >= 9000 && courseDetail.getCodeNumber() < 10000) {
+                courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_PHD);
+                courseType.setCourseTypeName(Constants.DOCTORAL_STUDIES);
+            } else if (courseDetail.getCodeNumber() >= 7000 && courseDetail.getCodeNumber() < 8000) {
+                courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_MS);
+                courseType.setCourseTypeName(Constants.MASTER_STUDIES);
             } else {
-                courseType.setCode(CourseTypeCodeO);
+                courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_O);
+                courseType.setCourseTypeName(Constants.OTHER_STUDIES);
             }
-
         }
+
         return courseType;
     }
 
-    private List<SimplifiedWorkload> simplifyWorkloadData(List<RawWorkloadData> rawWorkloadDatas) throws CloneNotSupportedException {
+    private List<SimplifiedWorkload> simplifyWorkloadData(List<RawWorkload> rawWorkloads) throws CloneNotSupportedException {
         log.info("Simplifying WorkLoad Data");
-        //int numberofEnrolledStudents = findNumberOfEnrolledStudents(rawWorkloadDatas, fromt5XXXCourseCode, to5XXXCourseCode);
-        Map<String, List<RawWorkloadData>> distinctValuesInList = rawWorkloadDatas.stream()
-                .collect(Collectors.groupingBy(RawWorkloadData::getInstructorNameSurname));
+        Map<String, List<RawWorkload>> distinctValuesInList = rawWorkloads.stream()
+                .collect(Collectors.groupingBy(RawWorkload::getInstructorNameSurname));
         List<SimplifiedWorkload> simplifiedWorkloadList = new ArrayList<SimplifiedWorkload>();
         SimplifiedWorkload simplifiedWorkload = null;
-        List<RawWorkloadData> newRawDataList = null;
-        for (Map.Entry<String, List<RawWorkloadData>> entry : distinctValuesInList.entrySet()) {
+        List<RawWorkload> newRawDataList = null;
+        for (Map.Entry<String, List<RawWorkload>> entry : distinctValuesInList.entrySet()) {
             simplifiedWorkload = new SimplifiedWorkload();
-            RawWorkloadData newRawData = null;
-            CourseType courseType = null;
-            CourseTypeIUValues courseTypeIUValues = null;
-            newRawDataList = new ArrayList<RawWorkloadData>();
+            RawWorkload newRawData = null;
+            CourseDetail courseDetail = null;
+            newRawDataList = new ArrayList<RawWorkload>();
 
             boolean isInstructorNameParsed = false;
             boolean isDeanNameParsed = false;
@@ -209,105 +190,96 @@ public class WorkloadReportService {
             boolean isDateParsed = false;
             boolean isDepartmentNameGathered = false;
 
-            for (RawWorkloadData rawData : entry.getValue()) {
+            for (RawWorkload rawData : entry.getValue()) {
 
+                newRawData = (RawWorkload) rawData.clone();
 
-                newRawData = (RawWorkloadData) rawData.clone();
+                if (String.valueOf(rawData.getCourseNumber()).startsWith("4")) {
+                    courseDetail = calculateCourseDualState(entry.getValue(), newRawData.getCourseNumber(), 5);
 
-                if (String.valueOf(rawData.getCourseNumber()).startsWith("4") ||
-                        String.valueOf(rawData.getCourseNumber()).startsWith("5")) {
-
-                    if (String.valueOf(rawData.getCourseNumber()).startsWith("4")) {
-                        CourseDualState courseDualState = calculateCourseDualState(entry.getValue(), newRawData.getCourseNumber(), 5);
-                        courseType = getCourseType(newRawData.getInstructionType(), newRawData.getCourseTitle(), newRawData.getCourseNumber(), courseDualState.getNumberOfTotalEnrollmentInDualCourse(), courseDualState.hasDualCourse());
-
-                    } else if (String.valueOf(rawData.getCourseNumber()).startsWith("5")) {
-                        CourseDualState courseDualState = calculateCourseDualState(entry.getValue(), newRawData.getCourseNumber(), 4);
-
-                        if (courseDualState.hasDualCourse()) {
-                            continue;
-                        } else {
-                            newRawData = (RawWorkloadData) rawData.clone();
-                            courseType = getCourseType(newRawData.getInstructionType(), newRawData.getCourseTitle(), newRawData.getCourseNumber(), courseDualState.getNumberOfTotalEnrollmentInDualCourse(), courseDualState.hasDualCourse());
-
-                        }
-                    }
-
-
-                }
-                else {
-                    courseType = getCourseType(newRawData.getInstructionType(), newRawData.getCourseTitle(), newRawData.getCourseNumber(), 0, false);
-
-                }
-
-                newRawData.setCourseTypeCode(courseType.getCode());
-                newRawData.setCourseTypeName(courseType.getName());
-                courseTypeIUValues = calculateIUMultiplier(true, newRawData.getTaLectureHours(), newRawData.getCourseTypeCode());
-                newRawData.setIuMultipliertaLectureHours(courseTypeIUValues.getIuMultiplier());
-                newRawData.setTotalIus(courseTypeIUValues.getIuMultiplicationResult());
-
-
-                if (!isInstructorNameParsed) {
-                    isInstructorNameParsed = true;
-                    simplifiedWorkload.setInstructorNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getInstructorNameSurname(), splitChar));
-                }
-                if (!isDeanNameParsed) {
-                    isDeanNameParsed = true;
-                    simplifiedWorkload.setDeanNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getDean(), splitChar));
-                }
-                if (!isChairNameParsed) {
-                    isChairNameParsed = true;
-                    simplifiedWorkload.setChairNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getChair(), splitChar));
-                }
-                if (!isDateParsed) {
-                    if (!StringUtilService.getInstance().isEmpty(String.valueOf(newRawData.getSemesterTermCode()))) {
-                        isDateParsed = true;
-                        simplifiedWorkload.setSemesterTerm(decidePeriod(Integer.parseInt(String.valueOf(newRawData.getSemesterTermCode()).substring(4, 5))));
-                        simplifiedWorkload.setSemesterYear(Integer.valueOf(String.valueOf(newRawData.getSemesterTermCode()).substring(0, 4)));
+                } else if (String.valueOf(rawData.getCourseNumber()).startsWith("5")) {
+                    courseDetail = calculateCourseDualState(entry.getValue(), newRawData.getCourseNumber(), 4);
+                    if (courseDetail.isHasDualCourse()) {
+                        continue;
                     }
                 }
-                if (!isDepartmentNameGathered) {
-                    isDepartmentNameGathered = true;
-                    simplifiedWorkload.setDepartmentName(newRawData.getInstructorDepartment());
-                    simplifiedWorkload.setChairNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getChair(), splitChar));
-                }
 
 
-                simplifiedWorkload.setTotalSsch(simplifiedWorkload.getTotalSsch() + newRawData.getTotalSsch());
-                simplifiedWorkload.setTotal11thDayCount(simplifiedWorkload.getTotal11thDayCount() + newRawData.getTaEleventhDayCount());
-                simplifiedWorkload.setTotalCreditHours(simplifiedWorkload.getTotalCreditHours() + newRawData.getTaCeditHours());
-                simplifiedWorkload.setTotalIUMultiplierForLectureHours(simplifiedWorkload.getTotalIUMultiplierForLectureHours() + newRawData.getIuMultipliertaLectureHours());
-                simplifiedWorkload.setTotalLabHours(simplifiedWorkload.getTotalLabHours() + newRawData.getTaLabHours());
-                if (newRawData.getInstructionType().toUpperCase().trim().contains(instructionTypeContainsKeyWordPED)) {
-                    simplifiedWorkload.setTotalLectureHours(simplifiedWorkload.getTotalLectureHours() + newRawData.getTaLectureHours());
-                }
-                simplifiedWorkload.setTotalTaSupport(simplifiedWorkload.getTotalTaSupport() + newRawData.getTaSupport());
-                simplifiedWorkload.setTotalTotalIUs(simplifiedWorkload.getTotalTotalIUs() + newRawData.getTotalIus());
-                newRawDataList.add(newRawData);
+            courseDetail = getCourseType(courseDetail);
+            newRawData.setCourseTypeCode(courseDetail.getCourseTypeCode());
+            newRawData.setCourseTypeName(courseDetail.getCourseTypeName());
+
+            courseDetail = calculateIUMultiplier(true, courseDetail);
+
+            newRawData.setIuMultipliertaLectureHours(courseDetail.getIuMultiplierLectureHours());
+            newRawData.setTotalIus(courseDetail.getTotalSsch());
+
+
+            if (!isInstructorNameParsed) {
+                isInstructorNameParsed = true;
+                simplifiedWorkload.setInstructorNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getInstructorNameSurname(), Constants.COMA_CHARACTER));
             }
-            simplifiedWorkload.setRawWorkloadDataDetails(newRawDataList);
-            simplifiedWorkloadList.add(simplifiedWorkload);
-        }
-        log.info("Simplifying WorkLoad Data Completed");
-        return simplifiedWorkloadList;
+            if (!isDeanNameParsed) {
+                isDeanNameParsed = true;
+                simplifiedWorkload.setDeanNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getDean(), Constants.COMA_CHARACTER));
+            }
+            if (!isChairNameParsed) {
+                isChairNameParsed = true;
+                simplifiedWorkload.setChairNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getChair(), Constants.COMA_CHARACTER));
+            }
+            if (!isDateParsed) {
+                if (!StringUtilService.getInstance().isEmpty(String.valueOf(newRawData.getSemesterTermCode()))) {
+                    isDateParsed = true;
+                    simplifiedWorkload.setSemesterTerm(decidePeriod(Integer.parseInt(String.valueOf(newRawData.getSemesterTermCode()).substring(4, 5))));
+                    simplifiedWorkload.setSemesterYear(Integer.valueOf(String.valueOf(newRawData.getSemesterTermCode()).substring(0, 4)));
+                }
+            }
+            if (!isDepartmentNameGathered) {
+                isDepartmentNameGathered = true;
+                simplifiedWorkload.setDepartmentName(newRawData.getInstructorDepartment());
+                simplifiedWorkload.setChairNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getChair(), Constants.COMA_CHARACTER));
+            }
 
+
+            simplifiedWorkload.setTotalSsch(simplifiedWorkload.getTotalSsch() + newRawData.getTotalSsch());
+            simplifiedWorkload.setTotal11thDayCount(simplifiedWorkload.getTotal11thDayCount() + newRawData.getTaEleventhDayCount());
+            simplifiedWorkload.setTotalCreditHours(simplifiedWorkload.getTotalCreditHours() + newRawData.getTaCeditHours());
+            simplifiedWorkload.setTotalIUMultiplierForLectureHours(simplifiedWorkload.getTotalIUMultiplierForLectureHours() + newRawData.getIuMultipliertaLectureHours());
+            simplifiedWorkload.setTotalLabHours(simplifiedWorkload.getTotalLabHours() + newRawData.getTaLabHours());
+            if (newRawData.getInstructionType().toUpperCase().trim().contains(Constants.INSTRUCTION_TYPE_CONTAINS_KEY_WORD_PED)) {
+                simplifiedWorkload.setTotalLectureHours(simplifiedWorkload.getTotalLectureHours() + newRawData.getTaLectureHours());
+            }
+            simplifiedWorkload.setTotalTaSupport(simplifiedWorkload.getTotalTaSupport() + newRawData.getTaSupport());
+            simplifiedWorkload.setTotalTotalIUs(simplifiedWorkload.getTotalTotalIUs() + newRawData.getTotalIus());
+            newRawDataList.add(newRawData);
+        }
+        simplifiedWorkload.setRawWorkloadDetails(newRawDataList);
+        simplifiedWorkloadList.add(simplifiedWorkload);
     }
 
-    private String decidePeriod(int month) {
+    log.info("Simplifying WorkLoad Data Completed");
+    return simplifiedWorkloadList;
 
-        if (month <= 6)
-            return "Spring";
-        return "Fall";
+}
+
+    private String decidePeriod(int codeNumber) {
+
+        if (codeNumber == 10)
+            return Constants.TERM_SPRING;
+        else if (codeNumber == 30)
+            return Constants.TERM_SUMMER;
+        else
+            return Constants.TERM_FALL;
 
     }
 
     private void generateExcelContent(List<SimplifiedWorkload> simplifiedWorkloadList) throws IOException, WriteException {
 
-        FileUtilService.getInstance().createDirectory(Constants.workloadReportsTempPath);
+        FileUtilService.getInstance().createDirectory(Constants.WORKLOAD_REPORTS_TEMP_PATH);
 
         for (SimplifiedWorkload simplifiedWorkload : simplifiedWorkloadList) {
 
-            File file = new File(Constants.workloadReportsTempPath + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + ".xls");
+            File file = new File(Constants.WORKLOAD_REPORTS_TEMP_PATH + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + ".xls");
 
             int startingColumnFrame = 1;
             int endingColumnFrame = 25;
@@ -390,8 +362,8 @@ public class WorkloadReportService {
 
             int rawPedaCounter = 0;
             // FOR LOOP WILL BE BUILDING FOR FILTERED PEDA DATA
-            for (RawWorkloadData pedWorkloadItems : simplifiedWorkload.getRawWorkloadDataDetails()) {
-                if (pedWorkloadItems.getInstructionType().toUpperCase().trim().contains(instructionTypeContainsKeyWordPED)) {
+            for (RawWorkload pedWorkloadItems : simplifiedWorkload.getRawWorkloadDetails()) {
+                if (pedWorkloadItems.getInstructionType().toUpperCase().trim().contains(Constants.INSTRUCTION_TYPE_CONTAINS_KEY_WORD_PED)) {
                     rawPedaCounter++;
                     startingDataPedaColumnNumber = 1;
                     boolean topBorder = true;
@@ -489,8 +461,8 @@ public class WorkloadReportService {
                     secondNotApplicableFromColumnNumber = 0,
                     secondNotApplicableToColumnNumber = 0;
             int rawIndivCounter = 0;
-            for (RawWorkloadData indWorkloadItems : simplifiedWorkload.getRawWorkloadDataDetails()) {
-                if (indWorkloadItems.getInstructionType().toUpperCase().trim().contains(instructionTypeContainsKeyWordIND)) {
+            for (RawWorkload indWorkloadItems : simplifiedWorkload.getRawWorkloadDetails()) {
+                if (indWorkloadItems.getInstructionType().toUpperCase().trim().contains(Constants.INSTRUCTION_TYPE_CONTAINS_KEY_WORD_IND)) {
                     rawIndivCounter++;
                     startingDataIndivColumnNumber = 1;
                     boolean topBorder = true;
@@ -1142,578 +1114,16 @@ public class WorkloadReportService {
         sheet.addCell(label);
     }
 
-    private List<RawWorkloadData> prepareTestData() {
-        log.info("Start to preparting test data");
+    private List<RawWorkload> prepareTestData() {
+        log.info("Started to importing testdata data");
         long index = 1;
 
-        List<RawWorkloadData> rawWorkloadDataList = new ArrayList<RawWorkloadData>();
-        RawWorkloadData rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T1");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Anderson, Gary");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(4176);
-        rawWorkloadData.setCourseTitle("Mechanics of Materials Lab");
-        rawWorkloadData.setCrn(12193);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Sandgren, Eric");
-        rawWorkloadData.setInstructionType("PED INSTUCT");
-        rawWorkloadData.setInstructorDepartment("System Engineering"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(10);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(1);
-        rawWorkloadData.setTaEleventhDayCount(3);
-        rawWorkloadData.setTaLabHours(2);
-        rawWorkloadData.setTaLectureHours(0);
-        rawWorkloadData.setTaStudent("Qian Lui");
-        rawWorkloadData.setTaSupport(5);
-        rawWorkloadData.setTotalSsch(3);
-        rawWorkloadData.setTst(0);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T1");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Anderson, Gary");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(4176);
-        rawWorkloadData.setCourseTitle("Mechanics of Materials Lab");
-        rawWorkloadData.setCrn(12194);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Sandgren, Eric");
-        rawWorkloadData.setInstructionType("PED INSTUCT");
-        rawWorkloadData.setInstructorDepartment("System Engineering"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(20);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(1);
-        rawWorkloadData.setTaEleventhDayCount(8);
-        rawWorkloadData.setTaLabHours(2);
-        rawWorkloadData.setTaLectureHours(0);
-        rawWorkloadData.setTaStudent("Qian Lui");
-        rawWorkloadData.setTaSupport(5);
-        rawWorkloadData.setTotalSsch(8);
-        rawWorkloadData.setTst(0);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T1");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Anderson, Gary");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(5399);
-        rawWorkloadData.setCourseTitle("Mechanics of Materials Lab");
-        rawWorkloadData.setCrn(12194);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Sandgren, Eric");
-        rawWorkloadData.setInstructionType("PED INSTUCT");
-        rawWorkloadData.setInstructorDepartment("System Engineering"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(20);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(1);
-        rawWorkloadData.setTaEleventhDayCount(8);
-        rawWorkloadData.setTaLabHours(2);
-        rawWorkloadData.setTaLectureHours(0);
-        rawWorkloadData.setTaStudent("Sang Sang");
-        rawWorkloadData.setTaSupport(5);
-        rawWorkloadData.setTotalSsch(8);
-        rawWorkloadData.setTst(0);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T1");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Anderson, Gary");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(4376);
-        rawWorkloadData.setCourseTitle("Mechanics of Materials");
-        rawWorkloadData.setCrn(12200);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Sandgren, Eric");
-        rawWorkloadData.setInstructionType("PED INSTUCT");
-        rawWorkloadData.setInstructorDepartment("System Engineering"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(1);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(3);
-        rawWorkloadData.setTaEleventhDayCount(16);
-        rawWorkloadData.setTaLabHours(0);
-        rawWorkloadData.setTaLectureHours(3);
-        rawWorkloadData.setTaStudent("Wissam Albaidi");
-        rawWorkloadData.setTaSupport(10);
-        rawWorkloadData.setTotalSsch(48);
-        rawWorkloadData.setTst(0);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T1");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Anderson, Gary");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(4399);
-        rawWorkloadData.setCourseTitle("Automative Engineering");
-        rawWorkloadData.setCrn(14610);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Sandgren, Eric");
-        rawWorkloadData.setInstructionType("PED INSTUCT");
-        rawWorkloadData.setInstructorDepartment("System Engineering"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(1);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(3);
-        rawWorkloadData.setTaEleventhDayCount(14);
-        rawWorkloadData.setTaLabHours(0);
-        rawWorkloadData.setTaLectureHours(3);
-        rawWorkloadData.setTaStudent("Sheng Sang");
-        rawWorkloadData.setTaSupport(10);
-        rawWorkloadData.setTotalSsch(42);
-        rawWorkloadData.setTst(0);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T1");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Anderson, Gary");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(7399);
-        rawWorkloadData.setCourseTitle("Advanced Engineering Mathematics");
-        rawWorkloadData.setCrn(12327);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Sandgren, Eric");
-        rawWorkloadData.setInstructionType("PED INSTUCT");
-        rawWorkloadData.setInstructorDepartment("System Engineering"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(10);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(3);
-        rawWorkloadData.setTaEleventhDayCount(10);
-        rawWorkloadData.setTaLabHours(0);
-        rawWorkloadData.setTaLectureHours(3);
-        rawWorkloadData.setTaStudent("BOSMUS");
-        rawWorkloadData.setTaSupport(0);
-        rawWorkloadData.setTotalSsch(30);
-        rawWorkloadData.setTst(0);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T1");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Anderson, Gary");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(5199);
-        rawWorkloadData.setCourseTitle("Research Tools");
-        rawWorkloadData.setCrn(13458);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Sandgren, Eric");
-        rawWorkloadData.setInstructionType("IND INSTUCT");
-        rawWorkloadData.setInstructorDepartment("System Engineering"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(10);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(1);
-        rawWorkloadData.setTaEleventhDayCount(2);
-        rawWorkloadData.setTaLabHours(0);
-        rawWorkloadData.setTaLectureHours(3);
-        rawWorkloadData.setTaSupport(0);
-        rawWorkloadData.setTotalSsch(2);
-        rawWorkloadData.setTst(2);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T1");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Anderson, Gary");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(7385);
-        rawWorkloadData.setCourseTitle("Graduate Project");
-        rawWorkloadData.setCrn(15349);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Sandgren, Eric");
-        rawWorkloadData.setInstructionType("IND INSTUCT");
-        rawWorkloadData.setInstructorDepartment("System Engineering"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(1);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(3);
-        rawWorkloadData.setTaEleventhDayCount(1);
-        rawWorkloadData.setTaLabHours(0);
-        rawWorkloadData.setTaLectureHours(3);
-        rawWorkloadData.setTaStudent("Dallas Thompkins");
-        rawWorkloadData.setTaSupport(0);
-        rawWorkloadData.setTotalSsch(3);
-        rawWorkloadData.setTst(2);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T1");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Anderson, Gary");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(9700);
-        rawWorkloadData.setCourseTitle("Doctoral Thesis Dissertation");
-        rawWorkloadData.setCrn(15073);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Sandgren, Eric");
-        rawWorkloadData.setInstructionType("IND INSTUCT");
-        rawWorkloadData.setInstructorDepartment("System Engineering"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(1);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(7);
-        rawWorkloadData.setTaEleventhDayCount(1);
-        rawWorkloadData.setTaLabHours(0);
-        rawWorkloadData.setTaLectureHours(3);
-        rawWorkloadData.setTaStudent("Khalid Aljabori");
-        rawWorkloadData.setTaSupport(0);
-        rawWorkloadData.setTotalSsch(7);
-        rawWorkloadData.setTst(2);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
+        List<RawWorkload> rawWorkloadList = new ArrayList<RawWorkload>();
 
 
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T1");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Anderson, Gary");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(9800);
-        rawWorkloadData.setCourseTitle("Doctoral Thesis Dissertation");
-        rawWorkloadData.setCrn(15340);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Sandgren, Eric");
-        rawWorkloadData.setInstructionType("IND INSTUCT");
-        rawWorkloadData.setInstructorDepartment("System Engineering"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(1);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(8);
-        rawWorkloadData.setTaEleventhDayCount(1);
-        rawWorkloadData.setTaLabHours(0);
-        rawWorkloadData.setTaLectureHours(3);
-        rawWorkloadData.setTaStudent("Homadi ALdulrahman");
-        rawWorkloadData.setTaSupport(0);
-        rawWorkloadData.setTotalSsch(8);
-        rawWorkloadData.setTst(2);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
 
-
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T1");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Anderson, Gary");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(9900);
-        rawWorkloadData.setCourseTitle("Doctoral Thesis Dissertation");
-        rawWorkloadData.setCrn(12697);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Sandgren, Eric");
-        rawWorkloadData.setInstructionType("IND INSTUCT");
-        rawWorkloadData.setInstructorDepartment("System Engineering"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(1);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(9);
-        rawWorkloadData.setTaEleventhDayCount(1);
-        rawWorkloadData.setTaLabHours(0);
-        rawWorkloadData.setTaLectureHours(3);
-        rawWorkloadData.setTaStudent("Wissam ALbaidi");
-        rawWorkloadData.setTaSupport(0);
-        rawWorkloadData.setTotalSsch(9);
-        rawWorkloadData.setTst(2);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-
-        // OTHER INSTRUCTOR
-
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T2");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Yoshigoe, Kenji");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(4176);
-        rawWorkloadData.setCourseTitle("Mechanics of Materials Lab");
-        rawWorkloadData.setCrn(12193);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Cakaloglu, Tolgahan");
-        rawWorkloadData.setInstructionType("PED INSTUCT");
-        rawWorkloadData.setInstructorDepartment("Computer Science"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(10);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(1);
-        rawWorkloadData.setTaEleventhDayCount(3);
-        rawWorkloadData.setTaLabHours(2);
-        rawWorkloadData.setTaLectureHours(0);
-        rawWorkloadData.setTaStudent("Qian Lui");
-        rawWorkloadData.setTaSupport(5);
-        rawWorkloadData.setTotalSsch(3);
-        rawWorkloadData.setTst(0);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Yoshigoe, Kenji");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(4176);
-        rawWorkloadData.setCourseTitle("Mechanics of Materials Lab");
-        rawWorkloadData.setCrn(12194);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Cakaloglu, Tolgahan");
-        rawWorkloadData.setInstructionType("PED INSTUCT");
-        rawWorkloadData.setInstructorDepartment("Computer Science"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(20);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(1);
-        rawWorkloadData.setTaEleventhDayCount(8);
-        rawWorkloadData.setTaLabHours(2);
-        rawWorkloadData.setTaLectureHours(0);
-        rawWorkloadData.setTaStudent("Qian Lui");
-        rawWorkloadData.setTaSupport(5);
-        rawWorkloadData.setTotalSsch(8);
-        rawWorkloadData.setTst(0);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T2");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Yoshigoe, Kenji");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(4376);
-        rawWorkloadData.setCourseTitle("Mechanics of Materials");
-        rawWorkloadData.setCrn(12200);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Cakaloglu, Tolgahan");
-        rawWorkloadData.setInstructionType("PED INSTUCT");
-        rawWorkloadData.setInstructorDepartment("Computer Science"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(1);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(3);
-        rawWorkloadData.setTaEleventhDayCount(16);
-        rawWorkloadData.setTaLabHours(0);
-        rawWorkloadData.setTaLectureHours(3);
-        rawWorkloadData.setTaStudent("Wissam Albaidi");
-        rawWorkloadData.setTaSupport(10);
-        rawWorkloadData.setTotalSsch(48);
-        rawWorkloadData.setTst(0);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T2");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Yoshigoe, Kenji");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(4399);
-        rawWorkloadData.setCourseTitle("Automative Engineering");
-        rawWorkloadData.setCrn(14610);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Cakaloglu, Tolgahan");
-        rawWorkloadData.setInstructionType("PED INSTUCT");
-        rawWorkloadData.setInstructorDepartment("Computer Science"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(1);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(3);
-        rawWorkloadData.setTaEleventhDayCount(14);
-        rawWorkloadData.setTaLabHours(0);
-        rawWorkloadData.setTaLectureHours(3);
-        rawWorkloadData.setTaStudent("Sheng Sang");
-        rawWorkloadData.setTaSupport(10);
-        rawWorkloadData.setTotalSsch(42);
-        rawWorkloadData.setTst(0);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T2");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Yoshigoe, Kenji");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(7399);
-        rawWorkloadData.setCourseTitle("Advanced Engineering Mathematics");
-        rawWorkloadData.setCrn(12327);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Cakaloglu, Tolgahan");
-        rawWorkloadData.setInstructionType("PED INSTUCT");
-        rawWorkloadData.setInstructorDepartment("Computer Science"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(10);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(3);
-        rawWorkloadData.setTaEleventhDayCount(10);
-        rawWorkloadData.setTaLabHours(0);
-        rawWorkloadData.setTaLectureHours(3);
-        rawWorkloadData.setTaStudent("BOSMUS");
-        rawWorkloadData.setTaSupport(0);
-        rawWorkloadData.setTotalSsch(30);
-        rawWorkloadData.setTst(0);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T2");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Yoshigoe, Kenji");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(5199);
-        rawWorkloadData.setCourseTitle("Research Tools");
-        rawWorkloadData.setCrn(13458);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Cakaloglu, Tolgahan");
-        rawWorkloadData.setInstructionType("IND INSTUCT");
-        rawWorkloadData.setInstructorDepartment("Computer Science"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(10);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(1);
-        rawWorkloadData.setTaEleventhDayCount(2);
-        rawWorkloadData.setTaLabHours(0);
-        rawWorkloadData.setTaLectureHours(3);
-        rawWorkloadData.setTaStudent("BOSMUS");
-        rawWorkloadData.setTaSupport(0);
-        rawWorkloadData.setTotalSsch(3);
-        rawWorkloadData.setTst(2);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T2");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Yoshigoe, Kenji");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(7385);
-        rawWorkloadData.setCourseTitle("Graduate Project");
-        rawWorkloadData.setCrn(15349);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Cakaloglu, Tolgahan");
-        rawWorkloadData.setInstructionType("IND INSTUCT");
-        rawWorkloadData.setInstructorDepartment("Computer Science"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(1);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(3);
-        rawWorkloadData.setTaEleventhDayCount(1);
-        rawWorkloadData.setTaLabHours(0);
-        rawWorkloadData.setTaLectureHours(3);
-        rawWorkloadData.setTaStudent("Dallas Thompkins");
-        rawWorkloadData.setTaSupport(0);
-        rawWorkloadData.setTotalSsch(3);
-        rawWorkloadData.setTst(2);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Yoshigoe, Kenji");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(9700);
-        rawWorkloadData.setCourseTitle("Doctoral Thesis Dissertation");
-        rawWorkloadData.setCrn(15073);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Cakaloglu, Tolgahan");
-        rawWorkloadData.setInstructionType("IND INSTUCT");
-        rawWorkloadData.setInstructorDepartment("Computer Science"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(1);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(7);
-        rawWorkloadData.setTaEleventhDayCount(1);
-        rawWorkloadData.setTaLabHours(0);
-        rawWorkloadData.setTaLectureHours(3);
-        rawWorkloadData.setTaStudent("Khalid Aljabori");
-        rawWorkloadData.setTaSupport(0);
-        rawWorkloadData.setTotalSsch(7);
-        rawWorkloadData.setTst(2);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-
-
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T2");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Yoshigoe, Kenji");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(9800);
-        rawWorkloadData.setCourseTitle("Doctoral Thesis Dissertation");
-        rawWorkloadData.setCrn(15340);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructorNameSurname("Cakaloglu, Tolgahan");
-        rawWorkloadData.setInstructionType("IND INSTUCT");
-        rawWorkloadData.setInstructorDepartment("Computer Science"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(1);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(8);
-        rawWorkloadData.setTaEleventhDayCount(1);
-        rawWorkloadData.setTaLabHours(0);
-        rawWorkloadData.setTaLectureHours(3);
-        rawWorkloadData.setTaStudent("Homadi ALdulrahman");
-        rawWorkloadData.setTaSupport(0);
-        rawWorkloadData.setTotalSsch(8);
-        rawWorkloadData.setTst(2);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-
-
-        rawWorkloadData = new RawWorkloadData();
-        rawWorkloadData.setInstructorTNumber("T2");
-        rawWorkloadData.setId(index);
-        rawWorkloadData.setChair("Yoshigoe, Kenji");
-        rawWorkloadData.setCollCode("SS");
-        rawWorkloadData.setCourseNumber(9900);
-        rawWorkloadData.setInstructorNameSurname("Cakaloglu, Tolgahan");
-        rawWorkloadData.setCourseTitle("Doctoral Thesis Dissertation");
-        rawWorkloadData.setCrn(12697);
-        rawWorkloadData.setDean("Whitman, Lawrence");
-        rawWorkloadData.setInstructionType("IND INSTUCT");
-        rawWorkloadData.setInstructorDepartment("Computer Science"); // PROVIDED NOT YET
-        rawWorkloadData.setOtherInstructorsInTeam("XXXXX YYYYY, AAAAA BBBBBB"); // NEEDS TO BE CHECKED OUT
-        rawWorkloadData.setSection(1);
-        rawWorkloadData.setSemesterTermCode(201610);
-        rawWorkloadData.setSubjectCode("SYEN");
-        rawWorkloadData.setTaCeditHours(9);
-        rawWorkloadData.setTaEleventhDayCount(1);
-        rawWorkloadData.setTaLabHours(0);
-        rawWorkloadData.setTaLectureHours(3);
-        rawWorkloadData.setTaStudent("Wissam ALbaidi");
-        rawWorkloadData.setTaSupport(0);
-        rawWorkloadData.setTotalSsch(9);
-        rawWorkloadData.setTst(2);
-        rawWorkloadDataList.add(rawWorkloadData);
-        index = index + 1;
-
-        log.info("Finishing preperation");
-        return rawWorkloadDataList;
+        log.info("Finished importing");
+        return rawWorkloadList;
     }
 
 

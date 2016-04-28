@@ -31,7 +31,7 @@ public class SimplifiedWorkload implements Serializable {
     private int totalLabHours;
     private double totalTotalIUs;
     private int totalSsch;
-    private List<RawWorkloadData> rawWorkloadDataDetails;
+    private List<RawWorkload> rawWorkloadDetails;
 
     public SimplifiedWorkload() {
     }
@@ -156,12 +156,12 @@ public class SimplifiedWorkload implements Serializable {
         this.totalSsch = totalSsch;
     }
 
-    public List<RawWorkloadData> getRawWorkloadDataDetails() {
-        return rawWorkloadDataDetails;
+    public List<RawWorkload> getRawWorkloadDetails() {
+        return rawWorkloadDetails;
     }
 
-    public void setRawWorkloadDataDetails(List<RawWorkloadData> rawWorkloadDataDetails) {
-        this.rawWorkloadDataDetails = rawWorkloadDataDetails;
+    public void setRawWorkloadDetails(List<RawWorkload> rawWorkloadDetails) {
+        this.rawWorkloadDetails = rawWorkloadDetails;
     }
 
     @Override
@@ -182,7 +182,7 @@ public class SimplifiedWorkload implements Serializable {
                 ", totalLabHours=" + totalLabHours +
                 ", totalTotalIUs=" + totalTotalIUs +
                 ", totalSsch=" + totalSsch +
-                ", rawWorkloadDataDetails=" + rawWorkloadDataDetails +
+                ", rawWorkloadDetails=" + rawWorkloadDetails +
                 '}';
     }
 }

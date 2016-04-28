@@ -1,18 +1,16 @@
 package com.jackalhan.ualr.service.utils;
 
-import com.jackalhan.ualr.config.Constants;
+
+import org.reflections.Reflections;
+import org.reflections.scanners.ResourcesScanner;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Created by jackalhan on 4/25/16.
@@ -46,8 +44,17 @@ public class FileUtilService {
         } catch (Exception ex) {
             log.warn(ex.toString());
         }
-
     }
 
+    public File getTestFile (String fileNamePattern)
+    {
+        Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(
+                ClasspathHelper.forPackage("testdata")).setScanners(new ResourcesScanner()));
+
+        Set<String> properties = reflections.getResources(Pattern.compile(fileNamePattern + ".*\\.csv"));
+        ClassLoader classLoader = getClass().getClassLoader();
+        File file = new File(classLoader.getResource(properties.toArray()[0].toString()).getFile());
+        return file;
+    }
 
 }
