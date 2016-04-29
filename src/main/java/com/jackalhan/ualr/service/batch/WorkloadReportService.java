@@ -2,6 +2,7 @@ package com.jackalhan.ualr.service.batch;
 
 import com.jackalhan.ualr.config.*;
 import com.jackalhan.ualr.domain.*;
+import com.jackalhan.ualr.domain.validate.RawWorkloadValidator;
 import com.jackalhan.ualr.service.utils.FileUtilService;
 import com.jackalhan.ualr.service.utils.StringUtilService;
 import jxl.SheetSettings;
@@ -20,14 +21,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.MapBindingResult;
+import org.springframework.validation.ObjectError;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -52,12 +52,13 @@ public class WorkloadReportService {
 
     @Scheduled(fixedDelay = SchedulingConstants.WORKLOAD_REPORT_SERVICE_EXECUTE_FIXED_DELAY)
     private void executeService() throws IOException, WriteException, CloneNotSupportedException {
-        log.info("RawWorkload Reports execution started");
+        log.info("TypeSafeTypeSafeRawWorkload Reports execution started");
         List<RawWorkload> rawWorkloadList = prepareTestData(fileNamePattern);
-        List<SimplifiedWorkload> simplifiedWorkloadList = simplifyWorkloadData(rawWorkloadList);
+        log.info(String.valueOf(rawWorkloadList.size()));
+        /*List<SimplifiedWorkload> simplifiedWorkloadList = simplifyWorkloadData(TypeSafeTypeSafeRawWorkloadList);
         generateExcelContent(simplifiedWorkloadList);
-        log.info(simplifyWorkloadData(rawWorkloadList).toString());
-        log.info("RawWorkload Reports execution ended");
+        log.info(simplifyWorkloadData(TypeSafeTypeSafeRawWorkloadList).toString());*/
+        log.info("TypeSafeRawWorkload Reports execution ended");
     }
 
 
@@ -75,17 +76,17 @@ public class WorkloadReportService {
     }
 
 
-    private CourseDetail calculateCourseDualState(List<RawWorkload> rawWorkloadList, int courseCodeNumber, int dualStartWith) {
+    private CourseDetail calculateCourseDualState(List<TypeSafeRawWorkload> TypeSafeRawWorkloadList, int courseCodeNumber, int dualStartWith) {
         CourseDetail courseDualState = new CourseDetail();
         courseDualState.setHasDualCourse(false);
         courseDualState.setNumberOfTotalEnrollmentInDualCourse(0);
         int newCourseNumberForDualCheck = convertToDualCourse(courseCodeNumber, dualStartWith);
-        for (RawWorkload rawWorkload : rawWorkloadList) {
-            if (rawWorkload.getCourseNumber() == newCourseNumberForDualCheck) {
+        for (TypeSafeRawWorkload TypeSafeRawWorkload : TypeSafeRawWorkloadList) {
+            if (TypeSafeRawWorkload.getCourseNumber() == newCourseNumberForDualCheck) {
                 //Do we need to add other data in order to calculate ?
                 courseDualState.setHasDualCourse(true);
                 courseDualState.setDualCourseCode(newCourseNumberForDualCheck);
-                courseDualState.setNumberOfTotalEnrollmentInDualCourse(rawWorkload.getTaEleventhDayCount());
+                courseDualState.setNumberOfTotalEnrollmentInDualCourse(TypeSafeRawWorkload.getTaEleventhDayCount());
                 return courseDualState;
             }
         }
@@ -172,26 +173,26 @@ public class WorkloadReportService {
         return courseType;
     }
 
-    private List<SimplifiedWorkload> simplifyWorkloadData(List<RawWorkload> rawWorkloads) throws CloneNotSupportedException {
+    private List<SimplifiedWorkload> simplifyWorkloadData(List<TypeSafeRawWorkload> TypeSafeRawWorkloads) throws CloneNotSupportedException {
         log.info("Simplifying WorkLoad Data");
         //Old Implementation with just prof. name
-        /* Map<String, List<RawWorkload>> distinctValuesInList = rawWorkloads.stream()
-                .collect(Collectors.groupingBy(RawWorkload::getInstructorNameSurname));*/
+        /* Map<String, List<TypeSafeRawWorkload>> distinctValuesInList = TypeSafeRawWorkloads.stream()
+                .collect(Collectors.groupingBy(TypeSafeRawWorkload::getInstructorNameSurname));*/
 
         // Since list contains adjusct prof. who has courses in more than one department.
         // had to group name and department.
-        Map<Pair<String, String>, List<RawWorkload>> distinctValuesInList = rawWorkloads.stream()
+        Map<Pair<String, String>, List<TypeSafeRawWorkload>> distinctValuesInList = TypeSafeRawWorkloads.stream()
                 .collect(Collectors.groupingBy(p -> Pair.of(p.getInstructorNameSurname(), p.getInstructorDepartment())));
 
 
         List<SimplifiedWorkload> simplifiedWorkloadList = new ArrayList<SimplifiedWorkload>();
         SimplifiedWorkload simplifiedWorkload = null;
-        List<RawWorkload> newRawDataList = null;
-        for (Map.Entry<Pair<String, String>, List<RawWorkload>> entry : distinctValuesInList.entrySet()) {
+        List<TypeSafeRawWorkload> newRawDataList = null;
+        for (Map.Entry<Pair<String, String>, List<TypeSafeRawWorkload>> entry : distinctValuesInList.entrySet()) {
             simplifiedWorkload = new SimplifiedWorkload();
-            RawWorkload newRawData = null;
+            TypeSafeRawWorkload newRawData = null;
             CourseDetail courseDetail = null;
-            newRawDataList = new ArrayList<RawWorkload>();
+            newRawDataList = new ArrayList<TypeSafeRawWorkload>();
 
             boolean isInstructorNameParsed = false;
             boolean isDeanNameParsed = false;
@@ -199,9 +200,9 @@ public class WorkloadReportService {
             boolean isDateParsed = false;
             boolean isDepartmentNameGathered = false;
 
-            for (RawWorkload rawData : entry.getValue()) {
+            for (TypeSafeRawWorkload rawData : entry.getValue()) {
 
-                newRawData = (RawWorkload) rawData.clone();
+                newRawData = (TypeSafeRawWorkload) rawData.clone();
 
                 if (String.valueOf(rawData.getCourseNumber()).startsWith("4")) {
                     courseDetail = calculateCourseDualState(entry.getValue(), newRawData.getCourseNumber(), 5);
@@ -262,7 +263,7 @@ public class WorkloadReportService {
                 simplifiedWorkload.setTotalTotalIUs(simplifiedWorkload.getTotalTotalIUs() + newRawData.getTotalIus());
                 newRawDataList.add(newRawData);
             }
-            simplifiedWorkload.setRawWorkloadDetails(newRawDataList);
+            simplifiedWorkload.setTypeSafeRawWorkloads(newRawDataList);
             simplifiedWorkloadList.add(simplifiedWorkload);
         }
 
@@ -371,7 +372,7 @@ public class WorkloadReportService {
 
             int rawPedaCounter = 0;
             // FOR LOOP WILL BE BUILDING FOR FILTERED PEDA DATA
-            for (RawWorkload pedWorkloadItems : simplifiedWorkload.getRawWorkloadDetails()) {
+            for (TypeSafeRawWorkload pedWorkloadItems : simplifiedWorkload.getTypeSafeRawWorkloads()) {
                 if (pedWorkloadItems.getInstructionType().toUpperCase().trim().contains(Constants.INSTRUCTION_TYPE_CONTAINS_KEY_WORD_PED)) {
                     rawPedaCounter++;
                     startingDataPedaColumnNumber = 1;
@@ -470,7 +471,7 @@ public class WorkloadReportService {
                     secondNotApplicableFromColumnNumber = 0,
                     secondNotApplicableToColumnNumber = 0;
             int rawIndivCounter = 0;
-            for (RawWorkload indWorkloadItems : simplifiedWorkload.getRawWorkloadDetails()) {
+            for (TypeSafeRawWorkload indWorkloadItems : simplifiedWorkload.getTypeSafeRawWorkloads()) {
                 if (indWorkloadItems.getInstructionType().toUpperCase().trim().contains(Constants.INSTRUCTION_TYPE_CONTAINS_KEY_WORD_IND)) {
                     rawIndivCounter++;
                     startingDataIndivColumnNumber = 1;
@@ -1123,6 +1124,18 @@ public class WorkloadReportService {
         sheet.addCell(label);
     }
 
+  /*  private List<TypeSafeRawWorkload> validateRawData(List<RawWorkload> rawWorkloads)
+    {
+        log.info("Started to validate workload data");
+        List<TypeSafeRawWorkload> typeSafeRawWorkloadList = new ArrayList<TypeSafeRawWorkload>();
+        TypeSafeRawWorkload typeSafeRawWorkload;
+        for(RawWorkload rawWorkload : rawWorkloads)
+        {
+            if rawWorkload
+
+        }
+        return typeSafeRawWorkloadList;
+    }*/
     private List<RawWorkload> prepareTestData(String filePattern) {
         log.info("Started to importing testdata data");
         BufferedReader br = FileUtilService.getInstance().getFile(filePattern).getCSVFileContent();
@@ -1132,33 +1145,42 @@ public class WorkloadReportService {
         RawWorkload rawWorkload;
         try {
             while ((line = br.readLine()) != null) {
-                rawWorkload = new RawWorkload();
-                // use comma as separator
+
                 String[] workload = line.split(cvsSplitBy);
 
+                rawWorkload = new RawWorkload();
                 rawWorkload.setInstructionType(workload[0]);
-                //workload[1]) // INST_PIDM
+                rawWorkload.setIstructionPidm(workload[1]);
                 rawWorkload.setInstructorTNumber(workload[2]);
                 rawWorkload.setInstructorNameSurname(workload[3]);
-                rawWorkload.setSemesterTermCode(Integer.parseInt(workload[4].trim()));
-                rawWorkload.setCrn(Integer.parseInt(workload[5].trim()));
+                rawWorkload.setSemesterTermCode(workload[4]);
+                rawWorkload.setCrn(workload[5]);
                 rawWorkload.setSubjectCode(workload[6]);
-                rawWorkload.setCourseNumber(Integer.parseInt(workload[7].trim()));
+                rawWorkload.setCourseNumber(workload[7]);
                 rawWorkload.setSection(workload[8]);
-                //workload[9] // PCT RESPON
+                rawWorkload.setPct_response(workload[9]);
                 rawWorkload.setCourseTitle(workload[10]);
-                // workload[11] // COLL CODE
-                // workload[12] // COLL CODE
-                rawWorkload.setInstructorDepartment(workload[13]);
+                rawWorkload.setCollCode(workload[11]);
+                rawWorkload.setInstructorDepartmentCode(workload[12]);
+                rawWorkload.setInstructorDepartmentDescription(workload[13]);
                 rawWorkload.setTaStudent(workload[14]);
-                rawWorkload.setChair(workload[15]);
+                rawWorkload.setDeptChair(workload[15]);
                 rawWorkload.setDean(workload[16]);
-                rawWorkload.setTaEleventhDayCount(Integer.parseInt(workload[17].trim()));
-                rawWorkload.setTaCeditHours(Integer.parseInt(workload[18].trim()));
-                rawWorkload.setTaLectureHours(Integer.parseInt(workload[19].trim()));
-                rawWorkload.setTaLabHours(Integer.parseInt(workload[20].trim()));
-                rawWorkload.setTotalSsch(Integer.parseInt(workload[21].trim()));
+                rawWorkload.setTaEleventhDayCount(workload[17]);
+                rawWorkload.setTaCeditHours(workload[18]);
+                rawWorkload.setTaLectureHours(workload[19]);
+                rawWorkload.setTaLabHours(workload[20]);
+                rawWorkload.setTotalSsch(workload[21]);
+              /*  MapBindingResult err = new MapBindingResult(new HashMap<String,String>(), RawWorkload.class.getName());
+                RawWorkloadValidator.getInstance().validate(rawWorkload, err);
+                List<ObjectError> list = err.getAllErrors();
+                for(ObjectError objErr : list){
+                    System.out.println(objErr.getDefaultMessage());
+                }
+                if (list.size() == 0) {*/
                 rawWorkloadList.add(rawWorkload);
+                //}
+
             }
             log.info("Finished importing");
         } catch (IOException e) {
@@ -1173,10 +1195,10 @@ public class WorkloadReportService {
                 }
             }
         }
-
-
         return rawWorkloadList;
     }
+
+
 
 
 }

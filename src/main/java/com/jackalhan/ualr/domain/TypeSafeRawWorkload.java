@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * Created by jackalhan on 4/18/16.
  */
-public class FilteredRawWorkload implements Serializable, Cloneable {
+public class TypeSafeRawWorkload implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 1L;
 
@@ -16,8 +16,8 @@ public class FilteredRawWorkload implements Serializable, Cloneable {
     private int semesterTermCode;
     private int crn;
     private String subjectCode;
-    private String courseTypeName;
-    private String courseTypeCode;
+    private String courseTypeName; // NEEDS TO BE CALCULATED : Undergraduate Course =========> ?
+    private String courseTypeCode; // NEEDS TO BE CALCULATED : DL  =========> ?
     private int courseNumber;
     private String section;
     private int tst;
@@ -37,7 +37,7 @@ public class FilteredRawWorkload implements Serializable, Cloneable {
     private String chair;
     private String dean;
 
-    public FilteredRawWorkload() {
+    public TypeSafeRawWorkload() {
     }
 
 

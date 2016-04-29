@@ -1,6 +1,5 @@
 package com.jackalhan.ualr.domain;
 
-import javax.persistence.*;
 import java.io.Serializable;
 import java.util.List;
 
@@ -25,7 +24,7 @@ public class SimplifiedWorkload implements Serializable {
     private int totalLabHours;
     private double totalTotalIUs;
     private int totalSsch;
-    private List<RawWorkload> rawWorkloadDetails;
+    private List<TypeSafeRawWorkload> typeSafeRawWorkloads;
 
     public SimplifiedWorkload() {
     }
@@ -142,12 +141,12 @@ public class SimplifiedWorkload implements Serializable {
         this.totalSsch = totalSsch;
     }
 
-    public List<RawWorkload> getRawWorkloadDetails() {
-        return rawWorkloadDetails;
+    public List<TypeSafeRawWorkload> getTypeSafeRawWorkloads() {
+        return typeSafeRawWorkloads;
     }
 
-    public void setRawWorkloadDetails(List<RawWorkload> rawWorkloadDetails) {
-        this.rawWorkloadDetails = rawWorkloadDetails;
+    public void setTypeSafeRawWorkloads(List<TypeSafeRawWorkload> typeSafeRawWorkloads) {
+        this.typeSafeRawWorkloads = typeSafeRawWorkloads;
     }
 
     @Override
@@ -167,7 +166,7 @@ public class SimplifiedWorkload implements Serializable {
                 ", totalLabHours=" + totalLabHours +
                 ", totalTotalIUs=" + totalTotalIUs +
                 ", totalSsch=" + totalSsch +
-                ", rawWorkloadDetails=" + rawWorkloadDetails +
+                ", typeSafeRawWorkloads=" + typeSafeRawWorkloads +
                 '}';
     }
 }

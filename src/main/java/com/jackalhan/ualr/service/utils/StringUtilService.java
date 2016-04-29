@@ -41,4 +41,18 @@ public class StringUtilService {
         return switchedText;
     }
 
+    public boolean isANumber (String text)
+    {
+        boolean result = true;
+        try
+        {
+            int test = Integer.valueOf(text);
+
+        }catch (Exception ex)
+        {
+            result = false;
+        }
+        return result;
+    }
+
 }

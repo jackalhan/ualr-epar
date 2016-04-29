@@ -1,51 +1,47 @@
 package com.jackalhan.ualr.domain;
 
+import org.hibernate.validator.constraints.NotEmpty;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+
 import javax.persistence.*;
+import javax.validation.constraints.Size;
 import java.io.Serializable;
 
 /**
  * Created by jackalhan on 4/18/16.
  */
-public class RawWorkload extends AbstractAuditingEntity implements Serializable, Cloneable {
+
+public class RawWorkload implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 1L;
 
     private String instructionType; // needs to be filtered for these records PEDAGOGICAL or INDIVIDUALIZED
-
+    private String istructionPidm;
     private String instructorTNumber;
     private String instructorNameSurname; // NEEDS TO BE PARSED
-    /*private String instructorName; // NEEDS TO BE SET FROM instructorNameSurname BY PARSING DATA
-    private String instructorSurname; //NEEDS TO BE SET FROM instructorNameSurname BY PARSING DATA*/
-    private String instructorDepartment;
-    private int semesterTermCode; // 201610  {SPRING, 2016}
-    /*    private String semesterTerm; //SPRING
-        private String semesterTermYear; //2016*/
-    private int crn;
+    private String semesterTermCode; // 201610  {SPRING, 2016}
+    private String crn;
     private String subjectCode;
-    private String courseTypeName; // NEEDS TO BE CALCULATED : Undergraduate Course =========> ?
-    private String courseTypeCode; // NEEDS TO BE CALCULATED : DL  =========> ?
-    private int courseNumber; // USE TO CALCULATE CourseType, CourseCode, IU MUltipliers
+    private String courseNumber; // USE TO CALCULATE CourseType, CourseCode, IU MUltipliers
     private String section;
-    private int tst; // Just for info : What is that 0 =========> ?
+    private String pct_response;
     private String courseTitle;
     private String collCode; // Just for info : What is that SS =========> ?
+    private String instructorDepartmentCode;
+    private String instructorDepartmentDescription;
     private String taStudent;
-    private int taSupport; // HOW IS IT CALCULATED? NO DATA FROM BANNER 10
-    private int taEleventhDayCount; // Just for info : What is that 17 =========> ?
-    private int taCeditHours;
-    private int taLectureHours;
-    private double iuMultipliertaLectureHours; //NEEDS TO BE CALCULATED : ========>  0.666
-    private int taLabHours;
-    private double iuMultipliertaLabHours; //NEEDS TO BE CALCULATED : ========>  1.3333
-    private double totalIus; //NEEDS TO BE CALCULATED : ========>  1.3333
-    private String otherInstructorsInTeam;
-    private int totalSsch; // Just for info : What is that SS =========> 51 ?
-    private String chair;
+    private String deptChair;
     private String dean;
+    private String taEleventhDayCount; // Just for info : What is that 17 =========> ?
+    private String taCeditHours;
+    private String taLectureHours;
+    private String taLabHours;
+    private String totalSsch; // Just for info : What is that SS =========> 51 ?
+
 
     public RawWorkload() {
     }
-
 
     public String getInstructionType() {
         return instructionType;
@@ -53,6 +49,14 @@ public class RawWorkload extends AbstractAuditingEntity implements Serializable,
 
     public void setInstructionType(String instructionType) {
         this.instructionType = instructionType.trim();
+    }
+
+    public String getIstructionPidm() {
+        return istructionPidm;
+    }
+
+    public void setIstructionPidm(String istructionPidm) {
+        this.istructionPidm = istructionPidm.trim();
     }
 
     public String getInstructorTNumber() {
@@ -63,28 +67,28 @@ public class RawWorkload extends AbstractAuditingEntity implements Serializable,
         this.instructorTNumber = instructorTNumber.trim();
     }
 
-    public String getInstructorDepartment() {
-        return instructorDepartment;
+    public String getInstructorNameSurname() {
+        return instructorNameSurname;
     }
 
-    public void setInstructorDepartment(String instructorDepartment) {
-        this.instructorDepartment = instructorDepartment.trim();
+    public void setInstructorNameSurname(String instructorNameSurname) {
+        this.instructorNameSurname = instructorNameSurname.trim();
     }
 
-    public int getSemesterTermCode() {
+    public String getSemesterTermCode() {
         return semesterTermCode;
     }
 
-    public void setSemesterTermCode(int semesterTermCode) {
-        this.semesterTermCode = semesterTermCode;
+    public void setSemesterTermCode(String semesterTermCode) {
+        this.semesterTermCode = semesterTermCode.trim();
     }
 
-    public int getCrn() {
+    public String getCrn() {
         return crn;
     }
 
-    public void setCrn(int crn) {
-        this.crn = crn;
+    public void setCrn(String crn) {
+        this.crn = crn.trim();
     }
 
     public String getSubjectCode() {
@@ -95,28 +99,12 @@ public class RawWorkload extends AbstractAuditingEntity implements Serializable,
         this.subjectCode = subjectCode.trim();
     }
 
-    public String getCourseTypeName() {
-        return courseTypeName;
-    }
-
-    public void setCourseTypeName(String courseTypeName) {
-        this.courseTypeName = courseTypeName.trim();
-    }
-
-    public String getCourseTypeCode() {
-        return courseTypeCode;
-    }
-
-    public void setCourseTypeCode(String courseTypeCode) {
-        this.courseTypeCode = courseTypeCode.trim();
-    }
-
-    public int getCourseNumber() {
+    public String getCourseNumber() {
         return courseNumber;
     }
 
-    public void setCourseNumber(int courseNumber) {
-        this.courseNumber = courseNumber;
+    public void setCourseNumber(String courseNumber) {
+        this.courseNumber = courseNumber.trim();
     }
 
     public String getSection() {
@@ -127,12 +115,12 @@ public class RawWorkload extends AbstractAuditingEntity implements Serializable,
         this.section = section.trim();
     }
 
-    public int getTst() {
-        return tst;
+    public String getPct_response() {
+        return pct_response;
     }
 
-    public void setTst(int tst) {
-        this.tst = tst;
+    public void setPct_response(String pct_response) {
+        this.pct_response = pct_response.trim();
     }
 
     public String getCourseTitle() {
@@ -151,6 +139,22 @@ public class RawWorkload extends AbstractAuditingEntity implements Serializable,
         this.collCode = collCode.trim();
     }
 
+    public String getInstructorDepartmentCode() {
+        return instructorDepartmentCode;
+    }
+
+    public void setInstructorDepartmentCode(String instructorDepartmentCode) {
+        this.instructorDepartmentCode = instructorDepartmentCode.trim();
+    }
+
+    public String getInstructorDepartmentDescription() {
+        return instructorDepartmentDescription;
+    }
+
+    public void setInstructorDepartmentDescription(String instructorDepartmentDescription) {
+        this.instructorDepartmentDescription = instructorDepartmentDescription.trim();
+    }
+
     public String getTaStudent() {
         return taStudent;
     }
@@ -159,84 +163,12 @@ public class RawWorkload extends AbstractAuditingEntity implements Serializable,
         this.taStudent = taStudent.trim();
     }
 
-    public int getTaSupport() {
-        return taSupport;
+    public String getDeptChair() {
+        return deptChair;
     }
 
-    public void setTaSupport(int taSupport) {
-        this.taSupport = taSupport;
-    }
-
-    public int getTaEleventhDayCount() {
-        return taEleventhDayCount;
-    }
-
-    public void setTaEleventhDayCount(int taEleventhDayCount) {
-        this.taEleventhDayCount = taEleventhDayCount;
-    }
-
-    public int getTaCeditHours() {
-        return taCeditHours;
-    }
-
-    public void setTaCeditHours(int taCeditHours) {
-        this.taCeditHours = taCeditHours;
-    }
-
-    public int getTaLectureHours() {
-        return taLectureHours;
-    }
-
-    public void setTaLectureHours(int taLectureHours) {
-        this.taLectureHours = taLectureHours;
-    }
-
-    public double getIuMultipliertaLectureHours() {
-        return iuMultipliertaLectureHours;
-    }
-
-    public void setIuMultipliertaLectureHours(double iuMultipliertaLectureHours) {
-        this.iuMultipliertaLectureHours = iuMultipliertaLectureHours;
-    }
-
-    public int getTaLabHours() {
-        return taLabHours;
-    }
-
-    public void setTaLabHours(int taLabHours) {
-        this.taLabHours = taLabHours;
-    }
-
-    public double getIuMultipliertaLabHours() {
-        return iuMultipliertaLabHours;
-    }
-
-    public void setIuMultipliertaLabHours(double iuMultipliertaLabHours) {
-        this.iuMultipliertaLabHours = iuMultipliertaLabHours;
-    }
-
-    public String getOtherInstructorsInTeam() {
-        return otherInstructorsInTeam;
-    }
-
-    public void setOtherInstructorsInTeam(String otherInstructorsInTeam) {
-        this.otherInstructorsInTeam = otherInstructorsInTeam.trim();
-    }
-
-    public int getTotalSsch() {
-        return totalSsch;
-    }
-
-    public void setTotalSsch(int totalSsch) {
-        this.totalSsch = totalSsch;
-    }
-
-    public String getChair() {
-        return chair;
-    }
-
-    public void setChair(String chair) {
-        this.chair = chair.trim();
+    public void setDeptChair(String deptChair) {
+        this.deptChair = deptChair.trim();
     }
 
     public String getDean() {
@@ -247,79 +179,71 @@ public class RawWorkload extends AbstractAuditingEntity implements Serializable,
         this.dean = dean.trim();
     }
 
-
-    public String getInstructorNameSurname() {
-        return instructorNameSurname;
+    public String getTaEleventhDayCount() {
+        return taEleventhDayCount;
     }
 
-    public void setInstructorNameSurname(String instructorNameSurname) {
-        this.instructorNameSurname = instructorNameSurname.trim();
+    public void setTaEleventhDayCount(String taEleventhDayCount) {
+        this.taEleventhDayCount = taEleventhDayCount.trim();
     }
 
-
-    public double getTotalIus() {
-        return totalIus;
+    public String getTaCeditHours() {
+        return taCeditHours;
     }
 
-    public void setTotalIus(double totalIus) {
-        this.totalIus = totalIus;
+    public void setTaCeditHours(String taCeditHours) {
+        this.taCeditHours = taCeditHours.trim();
     }
 
-    @Override
-    public Object clone() throws CloneNotSupportedException {
-        return super.clone();
+    public String getTaLectureHours() {
+        return taLectureHours;
+    }
+
+    public void setTaLectureHours(String taLectureHours) {
+        this.taLectureHours = taLectureHours.trim();
+    }
+
+    public String getTaLabHours() {
+        return taLabHours;
+    }
+
+    public void setTaLabHours(String taLabHours) {
+        this.taLabHours = taLabHours.trim();
+    }
+
+    public String getTotalSsch() {
+        return totalSsch;
+    }
+
+    public void setTotalSsch(String totalSsch) {
+        this.totalSsch = totalSsch.trim();
     }
 
     @Override
     public String toString() {
         return "RawWorkload{" +
-                ", instructionType='" + instructionType + '\'' +
+                "instructionType='" + instructionType + '\'' +
+                ", istructionPidm='" + istructionPidm + '\'' +
                 ", instructorTNumber='" + instructorTNumber + '\'' +
                 ", instructorNameSurname='" + instructorNameSurname + '\'' +
-                ", instructorDepartment='" + instructorDepartment + '\'' +
-                ", semesterTermCode=" + semesterTermCode +
-                ", crn=" + crn +
+                ", semesterTermCode='" + semesterTermCode + '\'' +
+                ", crn='" + crn + '\'' +
                 ", subjectCode='" + subjectCode + '\'' +
-                ", courseTypeName='" + courseTypeName + '\'' +
-                ", courseTypeCode='" + courseTypeCode + '\'' +
-                ", courseNumber=" + courseNumber +
-                ", section=" + section +
-                ", tst=" + tst +
+                ", courseNumber='" + courseNumber + '\'' +
+                ", section='" + section + '\'' +
+                ", pct_response='" + pct_response + '\'' +
                 ", courseTitle='" + courseTitle + '\'' +
                 ", collCode='" + collCode + '\'' +
+                ", instructorDepartmentCode='" + instructorDepartmentCode + '\'' +
+                ", instructorDepartmentDescription='" + instructorDepartmentDescription + '\'' +
                 ", taStudent='" + taStudent + '\'' +
-                ", taSupport=" + taSupport +
-                ", taEleventhDayCount=" + taEleventhDayCount +
-                ", taCeditHours=" + taCeditHours +
-                ", taLectureHours=" + taLectureHours +
-                ", iuMultipliertaLectureHours=" + iuMultipliertaLectureHours +
-                ", taLabHours=" + taLabHours +
-                ", iuMultipliertaLabHours=" + iuMultipliertaLabHours +
-                ", totalIus=" + totalIus +
-                ", otherInstructorsInTeam='" + otherInstructorsInTeam + '\'' +
-                ", totalSsch=" + totalSsch +
-                ", chair='" + chair + '\'' +
+                ", deptChair='" + deptChair + '\'' +
                 ", dean='" + dean + '\'' +
+                ", taEleventhDayCount='" + taEleventhDayCount + '\'' +
+                ", taCeditHours='" + taCeditHours + '\'' +
+                ", taLectureHours='" + taLectureHours + '\'' +
+                ", taLabHours='" + taLabHours + '\'' +
+                ", totalSsch=" + totalSsch +
                 '}';
     }
-
-/*
-
-
-    @NotNull
-    @Pattern(regexp = "^[a-z0-9]*$|(anonymousUser)")
-    @Size(min = 1, max = 50)
-    @Column(length = 50, unique = true, nullable = false)
-    private String login;
-
-    @JsonIgnore
-    @NotNull
-    @Size(min = 60, max = 60)
-    @Column(name = "password_hash",length = 60)
-    private String password;
-
-    @Size(max = 50)
-    @Column(name = "first_name", length = 50)
-    private String firstName;*/
-
 }
