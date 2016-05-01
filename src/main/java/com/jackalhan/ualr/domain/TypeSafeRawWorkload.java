@@ -20,7 +20,7 @@ public class TypeSafeRawWorkload implements Serializable, Cloneable {
     private String courseTypeCode; // NEEDS TO BE CALCULATED : DL  =========> ?
     private int courseNumber;
     private String section;
-    private int tst;
+    private int tst; // ?
     private String courseTitle;
     private String collCode;
     private String taStudent;

@@ -1,10 +1,11 @@
 package com.jackalhan.ualr.domain;
 
+import com.jackalhan.ualr.config.ValidateMessages;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
+import org.hibernate.validator.constraints.Range;
 
-import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
 
@@ -16,27 +17,68 @@ public class RawWorkload implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 1L;
 
+    @NotNull
+    @NotEmpty
     private String instructionType; // needs to be filtered for these records PEDAGOGICAL or INDIVIDUALIZED
+
     private String istructionPidm;
+
     private String instructorTNumber;
+
+    @NotNull
+    @NotEmpty
     private String instructorNameSurname; // NEEDS TO BE PARSED
+
+    @Pattern(regexp="[\\d]{6}", message = ValidateMessages.VALIDATE_FIELD_FORMAT)
     private String semesterTermCode; // 201610  {SPRING, 2016}
     private String crn;
+
+    @NotNull
+    @NotEmpty
+    @Size(min=4, max = 4, message = ValidateMessages.VALIDATE_FIELD_FORMAT)
     private String subjectCode;
+
+    @Pattern(regexp="[\\d]{4}", message = ValidateMessages.VALIDATE_FIELD_FORMAT)
     private String courseNumber; // USE TO CALCULATE CourseType, CourseCode, IU MUltipliers
+
+    @NotNull
+    @NotEmpty
     private String section;
+
     private String pct_response;
+
+    @NotNull
+    @NotEmpty
     private String courseTitle;
     private String collCode; // Just for info : What is that SS =========> ?
+
+    @NotNull
+    @NotEmpty
+    @Size(min=4, max = 4, message = ValidateMessages.VALIDATE_FIELD_FORMAT)
     private String instructorDepartmentCode;
+
+    @NotNull
+    @NotEmpty
     private String instructorDepartmentDescription;
     private String taStudent;
+
+    @NotNull
+    @NotEmpty
     private String deptChair;
+
+    @NotNull
+    @NotEmpty
     private String dean;
+
+    @Range(min = 0, max= 1000, message = ValidateMessages.VALIDATE_FIELD_FORMAT)
     private String taEleventhDayCount; // Just for info : What is that 17 =========> ?
+    @Range(min = 0, max= 1000, message = ValidateMessages.VALIDATE_FIELD_FORMAT)
     private String taCeditHours;
+
     private String taLectureHours;
     private String taLabHours;
+
+    @Range(min = 0, max= 1000, message = ValidateMessages.VALIDATE_FIELD_FORMAT)
     private String totalSsch; // Just for info : What is that SS =========> 51 ?
 
 

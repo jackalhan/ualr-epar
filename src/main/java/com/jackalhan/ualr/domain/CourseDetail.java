@@ -11,7 +11,7 @@ public class CourseDetail implements Cloneable {
     private int codeNumber;
     private String instructionType;
     private String titleName;
-    private int section;
+    private String section;
     private String taName;
     private String courseTypeName;
     private String courseTypeCode;
@@ -38,11 +38,11 @@ public class CourseDetail implements Cloneable {
         this.titleName = titleName.trim();
     }
 
-    public int getSection() {
+    public String getSection() {
         return section;
     }
 
-    public void setSection(int section) {
+    public void setSection(String section) {
         this.section = section;
     }
 

@@ -2,7 +2,6 @@ package com.jackalhan.ualr.service.batch;
 
 import com.jackalhan.ualr.config.*;
 import com.jackalhan.ualr.domain.*;
-import com.jackalhan.ualr.domain.validate.RawWorkloadValidator;
 import com.jackalhan.ualr.service.utils.FileUtilService;
 import com.jackalhan.ualr.service.utils.StringUtilService;
 import jxl.SheetSettings;
@@ -17,13 +16,15 @@ import jxl.write.*;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.asm.Type;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
+
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.validation.MapBindingResult;
-import org.springframework.validation.ObjectError;
 
+
+import javax.validation.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -40,25 +41,43 @@ public class WorkloadReportService {
     @Autowired
     private MessageSource messageSource;
 
+    /*
+    To display custom message
+    @Autowired
+    private Validator validator;
+    */
+
+
     private final Logger log = LoggerFactory.getLogger(WorkloadReportService.class);
 
-    private static final int excelZoomFactor = 85;
-    private static final int excelScaleFactor = 50;
-    private static final double excelLeftMargin = 0.75;
-    private static final double excelRightMargin = 0.75;
-    private static final double excelTopMargin = 0.30;
-    private static final double excelBottomMargin = 0.33;
-    private static final String fileNamePattern = "2016_S";
+    private final int excelZoomFactor = 85;
+    private final int excelScaleFactor = 50;
+    private final double excelLeftMargin = 0.75;
+    private final double excelRightMargin = 0.75;
+    private final double excelTopMargin = 0.30;
+    private final double excelBottomMargin = 0.33;
+    private final String fileNamePattern = "2016_S";
+    private ValidatorFactory validatorFactory;
+    private Validator validator;
 
     @Scheduled(fixedDelay = SchedulingConstants.WORKLOAD_REPORT_SERVICE_EXECUTE_FIXED_DELAY)
     private void executeService() throws IOException, WriteException, CloneNotSupportedException {
-        log.info("TypeSafeTypeSafeRawWorkload Reports execution started");
-        List<RawWorkload> rawWorkloadList = prepareTestData(fileNamePattern);
-        log.info(String.valueOf(rawWorkloadList.size()));
-        /*List<SimplifiedWorkload> simplifiedWorkloadList = simplifyWorkloadData(TypeSafeTypeSafeRawWorkloadList);
-        generateExcelContent(simplifiedWorkloadList);
-        log.info(simplifyWorkloadData(TypeSafeTypeSafeRawWorkloadList).toString());*/
+        initializeValidator();
+        RawWorkloadWithValidationResult rawWorkloadWithValidationResult = prepareTestData(fileNamePattern);
+
+        if (!rawWorkloadWithValidationResult.isHasInvalidatedData()) {
+            List<TypeSafeRawWorkload> typeSafeRawWorkloadList = convertRawToTypeSafeData(rawWorkloadWithValidationResult.getRawWorkloadList());
+            log.info("Type Safe Raw Workload List Size : " + typeSafeRawWorkloadList.size());
+            List<SimplifiedWorkload> simplifiedWorkloadList = simplifyWorkloadData(typeSafeRawWorkloadList);
+            /*generateExcelContent(simplifiedWorkloadList);*/
+        }
+
         log.info("TypeSafeRawWorkload Reports execution ended");
+    }
+
+    private void initializeValidator() {
+        validatorFactory = Validation.buildDefaultValidatorFactory();
+        validator = validatorFactory.getValidator();
     }
 
 
@@ -203,7 +222,7 @@ public class WorkloadReportService {
             for (TypeSafeRawWorkload rawData : entry.getValue()) {
 
                 newRawData = (TypeSafeRawWorkload) rawData.clone();
-
+                courseDetail = new CourseDetail();
                 if (String.valueOf(rawData.getCourseNumber()).startsWith("4")) {
                     courseDetail = calculateCourseDualState(entry.getValue(), newRawData.getCourseNumber(), 5);
 
@@ -212,12 +231,33 @@ public class WorkloadReportService {
                     if (courseDetail.isHasDualCourse()) {
                         continue;
                     }
+                    else
+                    {
+                        courseDetail.setNumberOfTotalEnrollmentInDualCourse(newRawData.getTaEleventhDayCount());
+                    }
                 }
 
-
+                if (newRawData.getInstructorTNumber().equals("T00193113"))
+                {
+                    System.out.println("----------");
+                }
+                courseDetail.setInstructionType(newRawData.getInstructionType());
+                courseDetail.setSection(newRawData.getSection());
+                courseDetail.setCodeNumber(newRawData.getCourseNumber());
+                courseDetail.setTaName(newRawData.getTaStudent());
+                courseDetail.setTitleName(newRawData.getCourseTitle());
                 courseDetail = getCourseType(courseDetail);
-                newRawData.setCourseTypeCode(courseDetail.getCourseTypeCode());
-                newRawData.setCourseTypeName(courseDetail.getCourseTypeName());
+                try {
+                    newRawData.setCourseTypeCode(courseDetail.getCourseTypeCode());
+                    newRawData.setCourseTypeName(courseDetail.getCourseTypeName());
+
+                }
+                catch (Exception ex)
+                {
+                    log.error(newRawData.toString());
+                    log.error(ex.toString());
+                }
+
 
                 courseDetail = calculateIUMultiplier(true, courseDetail);
 
@@ -1124,25 +1164,46 @@ public class WorkloadReportService {
         sheet.addCell(label);
     }
 
-  /*  private List<TypeSafeRawWorkload> validateRawData(List<RawWorkload> rawWorkloads)
-    {
-        log.info("Started to validate workload data");
+    private List<TypeSafeRawWorkload> convertRawToTypeSafeData(List<RawWorkload> rawWorkloads) {
+        log.info("Started to convert raw data to type safe data");
         List<TypeSafeRawWorkload> typeSafeRawWorkloadList = new ArrayList<TypeSafeRawWorkload>();
         TypeSafeRawWorkload typeSafeRawWorkload;
-        for(RawWorkload rawWorkload : rawWorkloads)
-        {
-            if rawWorkload
-
+        for (RawWorkload rawWorkload : rawWorkloads) {
+            typeSafeRawWorkload = new TypeSafeRawWorkload();
+            typeSafeRawWorkload.setInstructionType(rawWorkload.getInstructionType());
+            typeSafeRawWorkload.setInstructorTNumber(rawWorkload.getInstructorTNumber());
+            typeSafeRawWorkload.setInstructorNameSurname(rawWorkload.getInstructorNameSurname());
+            typeSafeRawWorkload.setInstructorDepartment(rawWorkload.getInstructorDepartmentDescription());
+            typeSafeRawWorkload.setSemesterTermCode(Integer.parseInt(rawWorkload.getSemesterTermCode()));
+            typeSafeRawWorkload.setCrn(Integer.parseInt(rawWorkload.getCrn()));
+            typeSafeRawWorkload.setSubjectCode(rawWorkload.getSubjectCode());
+            typeSafeRawWorkload.setCourseNumber(Integer.parseInt(rawWorkload.getCourseNumber()));
+            typeSafeRawWorkload.setSection(rawWorkload.getSection());
+            typeSafeRawWorkload.setCourseTitle(rawWorkload.getCourseTitle());
+            typeSafeRawWorkload.setCollCode(rawWorkload.getCollCode());
+            typeSafeRawWorkload.setTaStudent(rawWorkload.getTaStudent());
+            typeSafeRawWorkload.setTaEleventhDayCount(Integer.parseInt(rawWorkload.getTaEleventhDayCount()));
+            typeSafeRawWorkload.setTaCeditHours(Integer.parseInt(rawWorkload.getTaCeditHours()));
+            typeSafeRawWorkload.setTaLectureHours(Integer.parseInt(StringUtilService.getInstance().isEmpty(rawWorkload.getTaLectureHours()) ? "0" : rawWorkload.getTaLectureHours()));
+            typeSafeRawWorkload.setTaLabHours(Integer.parseInt(StringUtilService.getInstance().isEmpty(rawWorkload.getTaLabHours()) ? "0" : rawWorkload.getTaLabHours()));
+            typeSafeRawWorkload.setTotalSsch(Integer.parseInt(rawWorkload.getTotalSsch()));
+            typeSafeRawWorkload.setChair(rawWorkload.getDeptChair());
+            typeSafeRawWorkload.setDean(rawWorkload.getDean());
+            typeSafeRawWorkloadList.add(typeSafeRawWorkload);
         }
+        log.info("FInish converting raw data to type safe data");
         return typeSafeRawWorkloadList;
-    }*/
-    private List<RawWorkload> prepareTestData(String filePattern) {
+    }
+
+    private RawWorkloadWithValidationResult prepareTestData(String filePattern) {
         log.info("Started to importing testdata data");
         BufferedReader br = FileUtilService.getInstance().getFile(filePattern).getCSVFileContent();
         String line = ""; //lineDelimiter
-        String cvsSplitBy = ":"; //fieldDelimiter
+        String cvsSplitBy = ";"; //fieldDelimiter
+        RawWorkloadWithValidationResult rawWorkloadWithValidationResult = new RawWorkloadWithValidationResult();
         List<RawWorkload> rawWorkloadList = new ArrayList<RawWorkload>();
         RawWorkload rawWorkload;
+        boolean hasInvalidatedData = false;
         try {
             while ((line = br.readLine()) != null) {
 
@@ -1171,21 +1232,25 @@ public class WorkloadReportService {
                 rawWorkload.setTaLectureHours(workload[19]);
                 rawWorkload.setTaLabHours(workload[20]);
                 rawWorkload.setTotalSsch(workload[21]);
-              /*  MapBindingResult err = new MapBindingResult(new HashMap<String,String>(), RawWorkload.class.getName());
-                RawWorkloadValidator.getInstance().validate(rawWorkload, err);
-                List<ObjectError> list = err.getAllErrors();
-                for(ObjectError objErr : list){
-                    System.out.println(objErr.getDefaultMessage());
-                }
-                if (list.size() == 0) {*/
-                rawWorkloadList.add(rawWorkload);
-                //}
 
+                Set<ConstraintViolation<RawWorkload>> constraintViolations = validator.validate(rawWorkload);
+                if (constraintViolations.size() > 0) {
+                    hasInvalidatedData = true;
+                    System.out.println(rawWorkload.toString());
+                    for (ConstraintViolation<RawWorkload> s : constraintViolations) {
+                        System.out.println(s.getPropertyPath() + " - " + s.getMessage()); // NOTIFICATION EMAIL WILL BE SENT ALONGSIDE WITH THE ERROR CODES.
+                    }
+                    break;
+                } else {
+                    rawWorkloadList.add(rawWorkload); // EVEN GETTING AN ERROR CAUSE IT TO CANCEL THE LOOP AND NOTIFY THE ADMINS
+                }
             }
             log.info("Finished importing");
+
         } catch (IOException e) {
             log.info("Error occured during importing");
             log.error(e.toString());
+            hasInvalidatedData = true;
         } finally {
             if (br != null) {
                 try {
@@ -1195,10 +1260,10 @@ public class WorkloadReportService {
                 }
             }
         }
-        return rawWorkloadList;
+
+        rawWorkloadWithValidationResult.setHasInvalidatedData(hasInvalidatedData);
+        rawWorkloadWithValidationResult.setRawWorkloadList(rawWorkloadList);
+        return rawWorkloadWithValidationResult;
     }
-
-
-
 
 }

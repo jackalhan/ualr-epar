@@ -11,6 +11,8 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.SimpleCommandLinePropertySource;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.validation.Validator;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 
@@ -103,5 +105,21 @@ public class UalrEparApplication {
 		source.setUseCodeAsDefaultMessage(true);
 		return source;
 	}
+
+
+	//In order to display custom error message please uncomment it.
+
+/*	@Bean(name = "validator")
+	public LocalValidatorFactoryBean beanValidation() {
+		LocalValidatorFactoryBean localValidatorFactoryBean = new LocalValidatorFactoryBean();
+		localValidatorFactoryBean.setValidationMessageSource(messageSource());
+		return localValidatorFactoryBean;
+	}
+
+	@Bean
+	public Validator getValidator()
+	{
+		return beanValidation();
+	}*/
 
 }
