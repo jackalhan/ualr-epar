@@ -14,6 +14,7 @@ public class SimplifiedWorkload implements Serializable {
     private String semesterTerm;
     private int semesterYear;
     private String departmentName;
+    private String departmentCode;
     private String chairNameAndSurname;
     private String deanNameAndSurname;
     private int totalTaSupport;
@@ -149,13 +150,22 @@ public class SimplifiedWorkload implements Serializable {
         this.typeSafeRawWorkloads = typeSafeRawWorkloads;
     }
 
+    public String getDepartmentCode() {
+        return departmentCode;
+    }
+
+    public void setDepartmentCode(String departmentCode) {
+        this.departmentCode = departmentCode;
+    }
+
     @Override
     public String toString() {
         return "SimplifiedWorkload{" +
-                ", instructorNameAndSurname='" + instructorNameAndSurname + '\'' +
+                "instructorNameAndSurname='" + instructorNameAndSurname + '\'' +
                 ", semesterTerm='" + semesterTerm + '\'' +
                 ", semesterYear=" + semesterYear +
                 ", departmentName='" + departmentName + '\'' +
+                ", departmentCode='" + departmentCode + '\'' +
                 ", chairNameAndSurname='" + chairNameAndSurname + '\'' +
                 ", deanNameAndSurname='" + deanNameAndSurname + '\'' +
                 ", totalTaSupport=" + totalTaSupport +

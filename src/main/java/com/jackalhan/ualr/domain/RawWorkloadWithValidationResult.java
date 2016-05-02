@@ -14,7 +14,9 @@ public class RawWorkloadWithValidationResult {
     }
 
     private boolean hasInvalidatedData;
+    private String caughtErrors;
     private List<RawWorkload> rawWorkloadList;
+
 
     public boolean isHasInvalidatedData() {
         return hasInvalidatedData;
@@ -32,10 +34,19 @@ public class RawWorkloadWithValidationResult {
         this.rawWorkloadList = rawWorkloadList;
     }
 
+    public String getCaughtErrors() {
+        return caughtErrors;
+    }
+
+    public void setCaughtErrors(String caughtErrors) {
+        this.caughtErrors = caughtErrors;
+    }
+
     @Override
     public String toString() {
         return "RawWorkloadWithValidationResult{" +
                 "hasInvalidatedData=" + hasInvalidatedData +
+                ", caughtErrors='" + caughtErrors + '\'' +
                 ", rawWorkloadList=" + rawWorkloadList +
                 '}';
     }

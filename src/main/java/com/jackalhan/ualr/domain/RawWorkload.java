@@ -288,4 +288,32 @@ public class RawWorkload implements Serializable, Cloneable {
                 ", totalSsch=" + totalSsch +
                 '}';
     }
+
+    public String toHTML() {
+        return "RawWorkload{" + "<br>" +
+                "instructionType=" + instructionType + "<br>" +
+                ", istructionPidm=" + istructionPidm + "<br>" +
+                ", instructorTNumber=" + instructorTNumber + "<br>" +
+                ", instructorNameSurname=" + instructorNameSurname + "<br>" +
+                ", semesterTermCode=" + semesterTermCode + "<br>" +
+                ", crn=" + crn + "<br>" +
+                ", subjectCode=" + subjectCode + "<br>" +
+                ", courseNumber=" + courseNumber + "<br>" +
+                ", section=" + section + "<br>" +
+                ", pct_response=" + pct_response + "<br>" +
+                ", courseTitle=" + courseTitle + "<br>" +
+                ", collCode=" + collCode + "<br>" +
+                ", instructorDepartmentCode=" + instructorDepartmentCode + "<br>" +
+                ", instructorDepartmentDescription=" + instructorDepartmentDescription + "<br>" +
+                ", taStudent=" + taStudent + "<br>" +
+                        ", deptChair=" + deptChair + "<br>" +
+                ", dean=" + dean + "<br>" +
+                ", taEleventhDayCount=" + taEleventhDayCount + "<br>" +
+                ", taCeditHours=" + taCeditHours + "<br>" +
+                ", taLectureHours=" + taLectureHours + "<br>" +
+                ", taLabHours=" + taLabHours + "<br>" +
+                ", totalSsch=" + totalSsch + "<br>" +
+                '}';
+    }
+
 }

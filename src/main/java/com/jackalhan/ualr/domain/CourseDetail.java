@@ -1,5 +1,7 @@
 package com.jackalhan.ualr.domain;
 
+import com.jackalhan.ualr.service.utils.StringUtilService;
+
 /**
  * Created by jackalhan on 4/26/16.
  */
@@ -13,14 +15,16 @@ public class CourseDetail implements Cloneable {
     private String titleName;
     private String section;
     private String taName;
+    private String subjectCode;
     private String courseTypeName;
     private String courseTypeCode;
+    private int lectureHours;
     private boolean hasDualCourse;
     private int dualCourseCode;
     private int numberOfTotalEnrollmentInDualCourse;
     private double iuMultiplierLectureHours;
     private double iuMultiplicationResultOfLectureHours;
-    private int totalSsch;
+    private int numberOfTotaltotalSsch;
 
     public int getCodeNumber() {
         return codeNumber;
@@ -110,12 +114,12 @@ public class CourseDetail implements Cloneable {
         this.iuMultiplicationResultOfLectureHours = iuMultiplicationResultOfLectureHours;
     }
 
-    public int getTotalSsch() {
-        return totalSsch;
+    public int getNumberOfTotaltotalSsch() {
+        return numberOfTotaltotalSsch;
     }
 
-    public void setTotalSsch(int totalSsch) {
-        this.totalSsch = totalSsch;
+    public void setNumberOfTotaltotalSsch(int numberOfTotaltotalSsch) {
+        this.numberOfTotaltotalSsch = numberOfTotaltotalSsch;
     }
 
     public String getInstructionType() {
@@ -126,22 +130,46 @@ public class CourseDetail implements Cloneable {
         this.instructionType = instructionType;
     }
 
+    public String getSubjectCode() {
+        return subjectCode;
+    }
+
+    public void setSubjectCode(String subjectCode) {
+        this.subjectCode = subjectCode;
+    }
+
+    public int getLectureHours() {
+        return lectureHours;
+    }
+
+    public void setLectureHours(int lectureHours) {
+        this.lectureHours = lectureHours;
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
+
+
     @Override
     public String toString() {
         return "CourseDetail{" +
                 "codeNumber=" + codeNumber +
                 ", instructionType='" + instructionType + '\'' +
                 ", titleName='" + titleName + '\'' +
-                ", section=" + section +
+                ", section='" + section + '\'' +
                 ", taName='" + taName + '\'' +
+                ", subjectCode='" + subjectCode + '\'' +
                 ", courseTypeName='" + courseTypeName + '\'' +
                 ", courseTypeCode='" + courseTypeCode + '\'' +
+                ", lectureHours=" + lectureHours +
                 ", hasDualCourse=" + hasDualCourse +
                 ", dualCourseCode=" + dualCourseCode +
                 ", numberOfTotalEnrollmentInDualCourse=" + numberOfTotalEnrollmentInDualCourse +
                 ", iuMultiplierLectureHours=" + iuMultiplierLectureHours +
                 ", iuMultiplicationResultOfLectureHours=" + iuMultiplicationResultOfLectureHours +
-                ", totalSsch=" + totalSsch +
+                ", numberOfTotaltotalSsch=" + numberOfTotaltotalSsch +
                 '}';
     }
 }

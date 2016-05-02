@@ -13,6 +13,7 @@ public class TypeSafeRawWorkload implements Serializable, Cloneable {
     private String instructorTNumber;
     private String instructorNameSurname;
     private String instructorDepartment;
+    private String instructorDepartmentCode;
     private int semesterTermCode;
     private int crn;
     private String subjectCode;
@@ -259,6 +260,14 @@ public class TypeSafeRawWorkload implements Serializable, Cloneable {
         this.totalIus = totalIus;
     }
 
+    public String getInstructorDepartmentCode() {
+        return instructorDepartmentCode;
+    }
+
+    public void setInstructorDepartmentCode(String instructorDepartmentCode) {
+        this.instructorDepartmentCode = instructorDepartmentCode;
+    }
+
     @Override
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
@@ -266,18 +275,19 @@ public class TypeSafeRawWorkload implements Serializable, Cloneable {
 
     @Override
     public String toString() {
-        return "RawWorkload{" +
-                ", instructionType='" + instructionType + '\'' +
+        return "TypeSafeRawWorkload{" +
+                "instructionType='" + instructionType + '\'' +
                 ", instructorTNumber='" + instructorTNumber + '\'' +
                 ", instructorNameSurname='" + instructorNameSurname + '\'' +
                 ", instructorDepartment='" + instructorDepartment + '\'' +
+                ", instructorDepartmentCode='" + instructorDepartmentCode + '\'' +
                 ", semesterTermCode=" + semesterTermCode +
                 ", crn=" + crn +
                 ", subjectCode='" + subjectCode + '\'' +
                 ", courseTypeName='" + courseTypeName + '\'' +
                 ", courseTypeCode='" + courseTypeCode + '\'' +
                 ", courseNumber=" + courseNumber +
-                ", section=" + section +
+                ", section='" + section + '\'' +
                 ", tst=" + tst +
                 ", courseTitle='" + courseTitle + '\'' +
                 ", collCode='" + collCode + '\'' +

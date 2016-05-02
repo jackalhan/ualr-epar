@@ -2,6 +2,7 @@ package com.jackalhan.ualr.service.batch;
 
 import com.jackalhan.ualr.config.*;
 import com.jackalhan.ualr.domain.*;
+import com.jackalhan.ualr.service.rest.MailService;
 import com.jackalhan.ualr.service.utils.FileUtilService;
 import com.jackalhan.ualr.service.utils.StringUtilService;
 import jxl.SheetSettings;
@@ -41,12 +42,11 @@ public class WorkloadReportService {
     @Autowired
     private MessageSource messageSource;
 
-    /*
-    To display custom message
     @Autowired
-    private Validator validator;
-    */
+    private MailService mailService;
 
+    @Autowired
+    private MailExecutiveProperties mailExecutiveProperties;
 
     private final Logger log = LoggerFactory.getLogger(WorkloadReportService.class);
 
@@ -60,6 +60,7 @@ public class WorkloadReportService {
     private ValidatorFactory validatorFactory;
     private Validator validator;
 
+
     @Scheduled(fixedDelay = SchedulingConstants.WORKLOAD_REPORT_SERVICE_EXECUTE_FIXED_DELAY)
     private void executeService() throws IOException, WriteException, CloneNotSupportedException {
         initializeValidator();
@@ -69,7 +70,10 @@ public class WorkloadReportService {
             List<TypeSafeRawWorkload> typeSafeRawWorkloadList = convertRawToTypeSafeData(rawWorkloadWithValidationResult.getRawWorkloadList());
             log.info("Type Safe Raw Workload List Size : " + typeSafeRawWorkloadList.size());
             List<SimplifiedWorkload> simplifiedWorkloadList = simplifyWorkloadData(typeSafeRawWorkloadList);
-            /*generateExcelContent(simplifiedWorkloadList);*/
+            generateExcelContent(simplifiedWorkloadList);
+            mailService.send(mailExecutiveProperties.from, mailExecutiveProperties.getTo(), null, mailExecutiveProperties.getDeveloper(), "<h1>halloldu.<h1/>", mailExecutiveProperties.subject, null, true);
+        } else {
+            mailService.send(mailExecutiveProperties.from, mailExecutiveProperties.getTo(), null, mailExecutiveProperties.getDeveloper(), rawWorkloadWithValidationResult.getCaughtErrors(), mailExecutiveProperties.subject, null, true);
         }
 
         log.info("TypeSafeRawWorkload Reports execution ended");
@@ -95,17 +99,30 @@ public class WorkloadReportService {
     }
 
 
-    private CourseDetail calculateCourseDualState(List<TypeSafeRawWorkload> TypeSafeRawWorkloadList, int courseCodeNumber, int dualStartWith) {
+    private CourseDetail calculateCourseDualState(List<TypeSafeRawWorkload> TypeSafeRawWorkloadList, int courseCodeNumber, String courseTitle, String section, int dualStartWith) {
         CourseDetail courseDualState = new CourseDetail();
         courseDualState.setHasDualCourse(false);
         courseDualState.setNumberOfTotalEnrollmentInDualCourse(0);
         int newCourseNumberForDualCheck = convertToDualCourse(courseCodeNumber, dualStartWith);
-        for (TypeSafeRawWorkload TypeSafeRawWorkload : TypeSafeRawWorkloadList) {
-            if (TypeSafeRawWorkload.getCourseNumber() == newCourseNumberForDualCheck) {
+        for (TypeSafeRawWorkload typeSafeRawWorkload : TypeSafeRawWorkloadList) {
+            if (    //COURSE NUMBER BASED SEARCH
+                    (
+                            (typeSafeRawWorkload.getCourseNumber() == newCourseNumberForDualCheck) &&
+                                    (typeSafeRawWorkload.getSection().equals(section))
+                    )
+                            ||
+                            ( //COURSE TITLE BASED SEARCH
+                                    (typeSafeRawWorkload.getCourseTitle().equals(courseTitle)) &&
+                                            (typeSafeRawWorkload.getSection().equals(section)) &&
+                                            (typeSafeRawWorkload.getCourseNumber() != courseCodeNumber) &&
+                                            (String.valueOf(typeSafeRawWorkload.getCourseNumber()).startsWith(String.valueOf(dualStartWith)))
+                            )
+                    ) {
                 //Do we need to add other data in order to calculate ?
                 courseDualState.setHasDualCourse(true);
                 courseDualState.setDualCourseCode(newCourseNumberForDualCheck);
-                courseDualState.setNumberOfTotalEnrollmentInDualCourse(TypeSafeRawWorkload.getTaEleventhDayCount());
+                courseDualState.setNumberOfTotalEnrollmentInDualCourse(typeSafeRawWorkload.getTaEleventhDayCount());
+                courseDualState.setNumberOfTotaltotalSsch(typeSafeRawWorkload.getTotalSsch());
                 return courseDualState;
             }
         }
@@ -114,34 +131,35 @@ public class WorkloadReportService {
     }
 
 
-    private CourseDetail calculateIUMultiplier(boolean isLectureHour, CourseDetail courseDetail) {
+    private CourseDetail calculateIUMultiplier(CourseDetail courseDetail) {
         double result = 0;
         double multiplier = 0;
         CourseDetail courseTypeIUValues = null;
-        if (isLectureHour) {
-            if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_U)) {
-                multiplier = 1;
-                result = courseDetail.getIuMultiplierLectureHours() * multiplier;
-            } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_DL)) {
-                multiplier = 1;
-                result = courseDetail.getIuMultiplierLectureHours() * multiplier;
-            } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_DU)) {
-                multiplier = 1.33;
-                result = courseDetail.getIuMultiplierLectureHours() * multiplier;
-            } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_G)) {
-                multiplier = 1.33;
-                result = courseDetail.getIuMultiplierLectureHours() * multiplier;
-            } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_MS)) {
-                multiplier = 0.75;
-                result = multiplier;
-            } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_PHD)) {
-                multiplier = 1;
-                result = multiplier;
-            } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_O)) {
-                multiplier = 0.375;
-                result = multiplier;
-            }
+        //Currently only Lecture Hours IU multiplier can be calculated automatically by the application.
+        //If needs to calculate total lectureHours including 5XXX course, do it here since you have the information in courseDetail object.
+        if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_U)) {
+            multiplier = 1;
+            result = courseDetail.getLectureHours() * multiplier;
+        } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_DL)) {
+            multiplier = 1;
+            result = courseDetail.getLectureHours() * multiplier;
+        } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_DU)) {
+            multiplier = 1.33;
+            result = courseDetail.getLectureHours() * multiplier;
+        } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_G)) {
+            multiplier = 1.33;
+            result = courseDetail.getLectureHours() * multiplier;
+        } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_MS)) {
+            multiplier = 0.75;
+            result = multiplier;
+        } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_PHD)) {
+            multiplier = 1;
+            result = multiplier;
+        } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_O)) {
+            multiplier = 0.375;
+            result = multiplier;
         }
+
         courseTypeIUValues = new CourseDetail();
         courseTypeIUValues.setIuMultiplierLectureHours(multiplier);
         courseTypeIUValues.setIuMultiplicationResultOfLectureHours(result);
@@ -154,27 +172,27 @@ public class WorkloadReportService {
 
         CourseDetail courseType = new CourseDetail();
         if (courseDetail.getInstructionType().toUpperCase().trim().contains(Constants.INSTRUCTION_TYPE_CONTAINS_KEY_WORD_PED)) {
-            if (!courseDetail.isHasDualCourse()) {
-                if (courseDetail.getCodeNumber() >= 1000 && courseDetail.getCodeNumber() < 5000) {
+            //if (!courseDetail.isHasDualCourse()) {
+            if (courseDetail.getCodeNumber() >= 1000 && courseDetail.getCodeNumber() < 4000) {
+                courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_U);
+                courseType.setCourseTypeName(Constants.UNDERGRADUATE_COURSE);
+            } else if (courseDetail.getCodeNumber() >= 7000 && courseDetail.getCodeNumber() < 8000) {
+                courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_G);
+                courseType.setCourseTypeName(Constants.GRADUATE_COURSE);
+            }
+            //} else {
+            if (courseDetail.getCodeNumber() >= 4000 && courseDetail.getCodeNumber() < 6000) {
+                if (courseDetail.getNumberOfTotalEnrollmentInDualCourse() >= 1 && courseDetail.getNumberOfTotalEnrollmentInDualCourse() < 5) {
+                    courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_DL);
+                    courseType.setCourseTypeName(Constants.DUAL_LISTED_COURSE);
+                } else if (courseDetail.getNumberOfTotalEnrollmentInDualCourse() >= 5) {
+                    courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_DU);
+                    courseType.setCourseTypeName(Constants.DUAL_LISTED_COURSE);
+                } else {
                     courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_U);
                     courseType.setCourseTypeName(Constants.UNDERGRADUATE_COURSE);
-                } else if (courseDetail.getCodeNumber() >= 7000 && courseDetail.getCodeNumber() < 8000) {
-                    courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_G);
-                    courseType.setCourseTypeName(Constants.GRADUATE_COURSE);
                 }
-            } else {
-                if (courseDetail.getCodeNumber() >= 4000 && courseDetail.getCodeNumber() < 6000) {
-                    if (courseDetail.getNumberOfTotalEnrollmentInDualCourse() >= 1 && courseDetail.getNumberOfTotalEnrollmentInDualCourse() < 5) {
-                        courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_DL);
-                        courseType.setCourseTypeName(Constants.DUAL_LISTED_COURSE);
-                    } else if (courseDetail.getNumberOfTotalEnrollmentInDualCourse() >= 5) {
-                        courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_DU);
-                        courseType.setCourseTypeName(Constants.DUAL_LISTED_COURSE);
-                    } else {
-                        courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_U);
-                        courseType.setCourseTypeName(Constants.UNDERGRADUATE_COURSE);
-                    }
-                }
+                //  }
             }
         } else {
             if (courseDetail.getCodeNumber() >= 9000 && courseDetail.getCodeNumber() < 10000) {
@@ -216,7 +234,7 @@ public class WorkloadReportService {
             boolean isInstructorNameParsed = false;
             boolean isDeanNameParsed = false;
             boolean isChairNameParsed = false;
-            boolean isDateParsed = false;
+            boolean isSemestreCodeParsed = false;
             boolean isDepartmentNameGathered = false;
 
             for (TypeSafeRawWorkload rawData : entry.getValue()) {
@@ -224,45 +242,44 @@ public class WorkloadReportService {
                 newRawData = (TypeSafeRawWorkload) rawData.clone();
                 courseDetail = new CourseDetail();
                 if (String.valueOf(rawData.getCourseNumber()).startsWith("4")) {
-                    courseDetail = calculateCourseDualState(entry.getValue(), newRawData.getCourseNumber(), 5);
+                    courseDetail = calculateCourseDualState(entry.getValue(), newRawData.getCourseNumber(), newRawData.getCourseTitle(), newRawData.getSection(), 5);
 
                 } else if (String.valueOf(rawData.getCourseNumber()).startsWith("5")) {
-                    courseDetail = calculateCourseDualState(entry.getValue(), newRawData.getCourseNumber(), 4);
+                    courseDetail = calculateCourseDualState(entry.getValue(), newRawData.getCourseNumber(), newRawData.getCourseTitle(), newRawData.getSection(), 4);
                     if (courseDetail.isHasDualCourse()) {
                         continue;
-                    }
-                    else
-                    {
+                    } else {
+                        courseDetail = (CourseDetail) courseDetail.clone();
                         courseDetail.setNumberOfTotalEnrollmentInDualCourse(newRawData.getTaEleventhDayCount());
                     }
                 }
 
-                if (newRawData.getInstructorTNumber().equals("T00193113"))
-                {
+                if (newRawData.getInstructorTNumber().equals("T00193113")) {
                     System.out.println("----------");
                 }
+                courseDetail = (CourseDetail) courseDetail.clone();
                 courseDetail.setInstructionType(newRawData.getInstructionType());
                 courseDetail.setSection(newRawData.getSection());
                 courseDetail.setCodeNumber(newRawData.getCourseNumber());
                 courseDetail.setTaName(newRawData.getTaStudent());
                 courseDetail.setTitleName(newRawData.getCourseTitle());
+                courseDetail.setSubjectCode(newRawData.getSubjectCode());
                 courseDetail = getCourseType(courseDetail);
+                courseDetail.setLectureHours(newRawData.getTaLectureHours());
                 try {
                     newRawData.setCourseTypeCode(courseDetail.getCourseTypeCode());
                     newRawData.setCourseTypeName(courseDetail.getCourseTypeName());
 
-                }
-                catch (Exception ex)
-                {
+                } catch (Exception ex) {
                     log.error(newRawData.toString());
                     log.error(ex.toString());
                 }
 
 
-                courseDetail = calculateIUMultiplier(true, courseDetail);
+                courseDetail = calculateIUMultiplier(courseDetail);
 
                 newRawData.setIuMultipliertaLectureHours(courseDetail.getIuMultiplierLectureHours());
-                newRawData.setTotalIus(courseDetail.getTotalSsch());
+                newRawData.setTotalIus(courseDetail.getIuMultiplicationResultOfLectureHours());
 
 
                 if (!isInstructorNameParsed) {
@@ -277,9 +294,9 @@ public class WorkloadReportService {
                     isChairNameParsed = true;
                     simplifiedWorkload.setChairNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getChair(), Constants.COMA_CHARACTER));
                 }
-                if (!isDateParsed) {
+                if (!isSemestreCodeParsed) {
                     if (!StringUtilService.getInstance().isEmpty(String.valueOf(newRawData.getSemesterTermCode()))) {
-                        isDateParsed = true;
+                        isSemestreCodeParsed = true;
                         simplifiedWorkload.setSemesterTerm(decidePeriod(Integer.parseInt(String.valueOf(newRawData.getSemesterTermCode()).substring(4, 5))));
                         simplifiedWorkload.setSemesterYear(Integer.valueOf(String.valueOf(newRawData.getSemesterTermCode()).substring(0, 4)));
                     }
@@ -287,7 +304,7 @@ public class WorkloadReportService {
                 if (!isDepartmentNameGathered) {
                     isDepartmentNameGathered = true;
                     simplifiedWorkload.setDepartmentName(newRawData.getInstructorDepartment());
-                    simplifiedWorkload.setChairNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getChair(), Constants.COMA_CHARACTER));
+                    simplifiedWorkload.setDepartmentCode(newRawData.getInstructorDepartmentCode());
                 }
 
 
@@ -329,7 +346,7 @@ public class WorkloadReportService {
 
         for (SimplifiedWorkload simplifiedWorkload : simplifiedWorkloadList) {
 
-            File file = new File(Constants.WORKLOAD_REPORTS_TEMP_PATH + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + ".xls");
+            File file = new File(Constants.WORKLOAD_REPORTS_TEMP_PATH + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + "_" +  simplifiedWorkload.getDepartmentCode()+".xls");
 
             int startingColumnFrame = 1;
             int endingColumnFrame = 25;
@@ -341,7 +358,7 @@ public class WorkloadReportService {
             // Create cell font and format
             // REPORT HEADER
             WritableFont cellFont = createCellFont("workloadReport.faculty.name.fontsize", Colour.BLACK, true);
-            WritableCellFormat cellFormat = createCellFormat(cellFont, Colour.GRAY_25, BorderLineStyle.THICK, false, true, true, true, true);
+            WritableCellFormat cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
             sheet.mergeCells(startingColumnFrame, 1, endingColumnFrame, 3);
             createText(sheet, "workloadReport.faculty.name", null, cellFormat, startingColumnFrame, 1);
 
@@ -349,7 +366,7 @@ public class WorkloadReportService {
             //REPORT NAME
 
             cellFont = createCellFont("workloadReport.report.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, false, true, true, false);
+            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, false, true, true, false);
             sheet.mergeCells(startingColumnFrame, 4, endingColumnFrame, 5);
             createText(sheet, "workloadReport.report.name", null, cellFormat, startingColumnFrame, 4);
 
@@ -357,14 +374,14 @@ public class WorkloadReportService {
             //DEPARTMENT HEADER
 
             cellFont = createCellFont("workloadReport.department.name.fontsize", Colour.BLACK, false);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, false, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, false, true, true, true);
             sheet.mergeCells(startingColumnFrame, 6, endingColumnFrame, 7);
             createText(sheet, "workloadReport.department.name", new Object[]{simplifiedWorkload.getDepartmentName(), simplifiedWorkload.getSemesterTerm(), String.valueOf(simplifiedWorkload.getSemesterYear())}, cellFormat, startingColumnFrame, 6);
 
             // *****************************************************************************************************
             //INSTRUCTOR NAME
             cellFont = createCellFont("workloadReport.instructor.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.GRAY_25, BorderLineStyle.THICK, false, false, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, false, true, true, true);
             createText(sheet, "workloadReport.instructor.name", new Object[]{simplifiedWorkload.getInstructorNameAndSurname()}, cellFormat, startingColumnFrame, 8);
             sheet.mergeCells(startingColumnFrame, 8, endingColumnFrame, 9);
 
@@ -386,7 +403,7 @@ public class WorkloadReportService {
                 columnTitle = "workloadReport.column." + i + ".name";
 
                 cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.GRAY_25, BorderLineStyle.THICK, true, true, true, true, true);
+                cellFormat = createCellFormat(cellFont, Colour.ICE_BLUE, BorderLineStyle.THICK, true, true, true, true, true);
                 createText(sheet, columnTitle, null, cellFormat, startingColHeadercolumnNumber, startingColHeaderRowNumber);
                 sheet.mergeCells(startingColHeadercolumnNumber, startingColHeaderRowNumber, endingColHeadercolumnNumber, endingColHeaderRowNumber);
             }
@@ -397,7 +414,7 @@ public class WorkloadReportService {
             int endingPedaRowNumber = startingPedaRowNumber + 2;
 
             cellFont = createCellFont("workloadReport.pedagogical.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, false, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.LIGHT_GREEN, BorderLineStyle.THICK, false, false, true, true, true);
             createText(sheet, "workloadReport.pedagogical.name", null, cellFormat, startingColumnFrame, startingPedaRowNumber);
             sheet.mergeCells(startingColumnFrame, startingPedaRowNumber, endingColumnFrame, endingPedaRowNumber);
 
@@ -493,7 +510,7 @@ public class WorkloadReportService {
             int endingIndivRowNumber = startingIndivRowNumber + 2;
 
             cellFont = createCellFont("workloadReport.individualized.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.LIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "workloadReport.individualized.name", null, cellFormat, startingColumnFrame, startingIndivRowNumber);
             sheet.mergeCells(startingColumnFrame, startingIndivRowNumber, endingColumnFrame, endingIndivRowNumber);
 
@@ -584,19 +601,22 @@ public class WorkloadReportService {
                 }
 
             }
-            // NOT APPLICABLE 1 PRINTING
-            cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, true, false, false, false, false);
-            createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, firstNotApplicableFromColumnNumber, endingIndivRowNumber + 1);
-            // mergeCells(colStart, rowStart, colEnd, rowEnd)
-            sheet.mergeCells(firstNotApplicableFromColumnNumber, endingIndivRowNumber + 1, firstNotApplicableToColumnNumber, endingDataIndivRowNumber - 1);
 
-            // NOT APPLICABLE 2 PRINTING
-            cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, true, false, false, false, false);
-            createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, secondNotApplicableFromColumnNumber, endingIndivRowNumber + 1);
-            // mergeCells(colStart, rowStart, colEnd, rowEnd)
-            sheet.mergeCells(secondNotApplicableFromColumnNumber, endingIndivRowNumber + 1, secondNotApplicableToColumnNumber, endingDataIndivRowNumber - 1);
+            if (rawIndivCounter > 0) {
+                // NOT APPLICABLE 1 PRINTING
+                cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THIN, true, false, false, false, false);
+                createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, firstNotApplicableFromColumnNumber, endingIndivRowNumber + 1);
+                // mergeCells(colStart, rowStart, colEnd, rowEnd)
+                sheet.mergeCells(firstNotApplicableFromColumnNumber, endingIndivRowNumber + 1, firstNotApplicableToColumnNumber, endingDataIndivRowNumber - 1);
+
+                // NOT APPLICABLE 2 PRINTING
+                cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THIN, true, false, false, false, false);
+                createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, secondNotApplicableFromColumnNumber, endingIndivRowNumber + 1);
+                // mergeCells(colStart, rowStart, colEnd, rowEnd)
+                sheet.mergeCells(secondNotApplicableFromColumnNumber, endingIndivRowNumber + 1, secondNotApplicableToColumnNumber, endingDataIndivRowNumber - 1);
+            }
 
 
             // *****************************************************************************************************
@@ -605,7 +625,7 @@ public class WorkloadReportService {
             int endingAdminRowNumber = startingAdminRowNumber + 2;
 
             cellFont = createCellFont("workloadReport.administrative.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.LIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "workloadReport.administrative.name", null, cellFormat, startingColumnFrame, startingAdminRowNumber);
             sheet.mergeCells(startingColumnFrame, startingAdminRowNumber, endingColumnFrame, endingAdminRowNumber);
 
@@ -622,7 +642,7 @@ public class WorkloadReportService {
 
             endingDataAdminColumnNumber = startingDataAdminColumnNumber + 15;
             cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, true, true, true, true, true);
             createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
             // mergeCells(colStart, rowStart, colEnd, rowEnd)
             sheet.mergeCells(startingColumnFrame, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
@@ -655,7 +675,7 @@ public class WorkloadReportService {
             endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
 
             cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, true, true, true, true, true);
             createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
             // mergeCells(colStart, rowStart, colEnd, rowEnd)1
             sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
@@ -704,7 +724,7 @@ public class WorkloadReportService {
             endingDataAdminColumnNumber = startingDataAdminColumnNumber + 1;
 
             cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, true, true, true, true, true);
             createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
             // mergeCells(colStart, rowStart, colEnd, rowEnd)
             sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
@@ -716,7 +736,7 @@ public class WorkloadReportService {
             int endingNonAdminRowNumber = startingNonAdminRowNumber + 2;
 
             cellFont = createCellFont("workloadReport.nonadministrative.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.LIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "workloadReport.nonadministrative.name", null, cellFormat, startingColumnFrame, startingNonAdminRowNumber);
             sheet.mergeCells(startingColumnFrame, startingNonAdminRowNumber, endingColumnFrame, endingNonAdminRowNumber);
 
@@ -732,7 +752,7 @@ public class WorkloadReportService {
             // COLUMN HEADER
 
             cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "workloadReport.item.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
             sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
@@ -753,7 +773,7 @@ public class WorkloadReportService {
             endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber + 18;
 
             cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "workloadReport.detailsofitem.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
             sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
@@ -775,7 +795,7 @@ public class WorkloadReportService {
             endingDataNonAdminRowNumber = startingDataNonAdminRowNumber + 13;
 
             cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, true, true, true, true, true);
             createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
             sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
@@ -802,7 +822,7 @@ public class WorkloadReportService {
             endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber + 1;
 
             cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, true, true, true, true, true);
             createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
             sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
@@ -817,7 +837,7 @@ public class WorkloadReportService {
             int endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber + 9;
 
             cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
             sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
@@ -825,7 +845,7 @@ public class WorkloadReportService {
             endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber + 4;
 
             cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, VerticalAlignment.CENTRE, Alignment.RIGHT, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, VerticalAlignment.CENTRE, Alignment.RIGHT, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "workloadReport.total.name", null, cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
             sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
@@ -864,8 +884,8 @@ public class WorkloadReportService {
             startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
             endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
-            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.WHITE, true);
-            cellFormat = createCellFormat(cellFont, Colour.PALETTE_BLACK, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+            cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
             sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
@@ -880,8 +900,8 @@ public class WorkloadReportService {
             startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
             endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
-            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.WHITE, true);
-            cellFormat = createCellFormat(cellFont, Colour.PALETTE_BLACK, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+            cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
             sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
@@ -896,8 +916,8 @@ public class WorkloadReportService {
             startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
             endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
-            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.WHITE, true);
-            cellFormat = createCellFormat(cellFont, Colour.PALETTE_BLACK, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+            cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
             sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
@@ -920,7 +940,7 @@ public class WorkloadReportService {
             int endingAddCommentsColumnNumber = endingColumnFrame;
 
             cellFont = createCellFont("workloadReport.comments.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.GRAY_25, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "workloadReport.comments.name", null, cellFormat, startingAddCommentsColumnNumber, startingAddCommentsRowNumber);
             sheet.mergeCells(startingAddCommentsColumnNumber, startingAddCommentsRowNumber, endingAddCommentsColumnNumber, endingAddCommentsRowNumber);
 
@@ -950,7 +970,7 @@ public class WorkloadReportService {
             int endingSignatureColumnNumber = startingSignatureColumnNumber + 5;
 
             cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
             sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
@@ -962,7 +982,7 @@ public class WorkloadReportService {
             endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
             cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
             sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
@@ -970,7 +990,7 @@ public class WorkloadReportService {
             endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
             cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "workloadReport.chair.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
             sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
@@ -979,7 +999,7 @@ public class WorkloadReportService {
             endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
             cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "workloadReport.dean.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
             sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
@@ -999,7 +1019,7 @@ public class WorkloadReportService {
             endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
             cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "workloadReport.signatures.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
             sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
@@ -1034,7 +1054,7 @@ public class WorkloadReportService {
             endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
             cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "workloadReport.date.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
             sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
             startingSignatureRowNumber = endingSignatureRowNumber + 1;
@@ -1068,13 +1088,13 @@ public class WorkloadReportService {
             endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
             cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "workloadReport.names.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
             sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
             startingSignatureRowNumber = endingSignatureRowNumber + 1;
             endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+            cellFont = createCellFont("workloadReport.signatures.name.fontsize", Colour.BLACK, true);
             cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, simplifiedWorkload.getChairNameAndSurname(), cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
             sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
@@ -1082,7 +1102,7 @@ public class WorkloadReportService {
             startingSignatureRowNumber = endingSignatureRowNumber + 1;
             endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+            cellFont = createCellFont("workloadReport.signatures.name.fontsize", Colour.BLACK, true);
             cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, simplifiedWorkload.getDeanNameAndSurname(), cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
             sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
@@ -1102,7 +1122,7 @@ public class WorkloadReportService {
 
 
             cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
             sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
@@ -1174,6 +1194,7 @@ public class WorkloadReportService {
             typeSafeRawWorkload.setInstructorTNumber(rawWorkload.getInstructorTNumber());
             typeSafeRawWorkload.setInstructorNameSurname(rawWorkload.getInstructorNameSurname());
             typeSafeRawWorkload.setInstructorDepartment(rawWorkload.getInstructorDepartmentDescription());
+            typeSafeRawWorkload.setInstructorDepartmentCode(rawWorkload.getInstructorDepartmentCode());
             typeSafeRawWorkload.setSemesterTermCode(Integer.parseInt(rawWorkload.getSemesterTermCode()));
             typeSafeRawWorkload.setCrn(Integer.parseInt(rawWorkload.getCrn()));
             typeSafeRawWorkload.setSubjectCode(rawWorkload.getSubjectCode());
@@ -1204,6 +1225,7 @@ public class WorkloadReportService {
         List<RawWorkload> rawWorkloadList = new ArrayList<RawWorkload>();
         RawWorkload rawWorkload;
         boolean hasInvalidatedData = false;
+        String caughtErrors = "";
         try {
             while ((line = br.readLine()) != null) {
 
@@ -1236,10 +1258,14 @@ public class WorkloadReportService {
                 Set<ConstraintViolation<RawWorkload>> constraintViolations = validator.validate(rawWorkload);
                 if (constraintViolations.size() > 0) {
                     hasInvalidatedData = true;
-                    System.out.println(rawWorkload.toString());
+                    caughtErrors = "<b> Here is the data that has an issue </b> <br>";
+                    caughtErrors = caughtErrors + rawWorkload.toHTML();
+                    caughtErrors = caughtErrors + "<br> <u><b> Following reason(s) ; </b></u> ";
                     for (ConstraintViolation<RawWorkload> s : constraintViolations) {
-                        System.out.println(s.getPropertyPath() + " - " + s.getMessage()); // NOTIFICATION EMAIL WILL BE SENT ALONGSIDE WITH THE ERROR CODES.
+                        caughtErrors = caughtErrors + "<br> <b>" + s.getPropertyPath() + " - " + s.getMessage() + "</b>"; // NOTIFICATION EMAIL WILL BE SENT ALONGSIDE WITH THE ERROR CODES.
+
                     }
+                    log.error(caughtErrors);
                     break;
                 } else {
                     rawWorkloadList.add(rawWorkload); // EVEN GETTING AN ERROR CAUSE IT TO CANCEL THE LOOP AND NOTIFY THE ADMINS
@@ -1260,7 +1286,7 @@ public class WorkloadReportService {
                 }
             }
         }
-
+        rawWorkloadWithValidationResult.setCaughtErrors(caughtErrors);
         rawWorkloadWithValidationResult.setHasInvalidatedData(hasInvalidatedData);
         rawWorkloadWithValidationResult.setRawWorkloadList(rawWorkloadList);
         return rawWorkloadWithValidationResult;
