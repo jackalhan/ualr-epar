@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  * Created by jackalhan on 4/18/16.
  */
 
-@Component
+//@Component
 public class WorkloadReportService {
 
     @Autowired
@@ -105,6 +105,7 @@ public class WorkloadReportService {
         courseDualState.setNumberOfTotalEnrollmentInDualCourse(0);
         int newCourseNumberForDualCheck = convertToDualCourse(courseCodeNumber, dualStartWith);
         for (TypeSafeRawWorkload typeSafeRawWorkload : TypeSafeRawWorkloadList) {
+
             if (    //COURSE NUMBER BASED SEARCH
                     (
                             (typeSafeRawWorkload.getCourseNumber() == newCourseNumberForDualCheck) &&
@@ -125,7 +126,9 @@ public class WorkloadReportService {
                 courseDualState.setNumberOfTotaltotalSsch(typeSafeRawWorkload.getTotalSsch());
                 return courseDualState;
             }
+
         }
+
         return courseDualState;
 
     }
@@ -249,8 +252,15 @@ public class WorkloadReportService {
                     if (courseDetail.isHasDualCourse()) {
                         continue;
                     } else {
-                        courseDetail = (CourseDetail) courseDetail.clone();
-                        courseDetail.setNumberOfTotalEnrollmentInDualCourse(newRawData.getTaEleventhDayCount());
+
+                        // Special Case such as 4399 and 5399, the 4399 has 0 students enrolled and the 5399 has 3 students enrolled.
+                        // logic should  be: if the course is 5XXX and there is less than 5 students in the 5XXX class, code as DL else DU.
+                        courseDetail = calculateCourseDualState(entry.getValue(), newRawData.getCourseNumber(), newRawData.getCourseTitle(), newRawData.getSection(), 5);
+
+                        if (!courseDetail.isHasDualCourse()) {
+                            courseDetail = (CourseDetail) courseDetail.clone();
+                            courseDetail.setNumberOfTotalEnrollmentInDualCourse(newRawData.getTaEleventhDayCount());
+                        }
                     }
                 }
 
@@ -297,7 +307,7 @@ public class WorkloadReportService {
                 if (!isSemestreCodeParsed) {
                     if (!StringUtilService.getInstance().isEmpty(String.valueOf(newRawData.getSemesterTermCode()))) {
                         isSemestreCodeParsed = true;
-                        simplifiedWorkload.setSemesterTerm(decidePeriod(Integer.parseInt(String.valueOf(newRawData.getSemesterTermCode()).substring(4, 5))));
+                        simplifiedWorkload.setSemesterTerm(decidePeriod(Integer.parseInt(String.valueOf(newRawData.getSemesterTermCode()).substring(4, 6))));
                         simplifiedWorkload.setSemesterYear(Integer.valueOf(String.valueOf(newRawData.getSemesterTermCode()).substring(0, 4)));
                     }
                 }
@@ -346,14 +356,14 @@ public class WorkloadReportService {
 
         for (SimplifiedWorkload simplifiedWorkload : simplifiedWorkloadList) {
 
-            File file = new File(Constants.WORKLOAD_REPORTS_TEMP_PATH + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + "_" +  simplifiedWorkload.getDepartmentCode()+".xls");
+            File file = new File(Constants.WORKLOAD_REPORTS_TEMP_PATH + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + "_" + simplifiedWorkload.getDepartmentCode() + ".xls");
 
             int startingColumnFrame = 1;
             int endingColumnFrame = 25;
             //Creates a writable workbook with the given file name
             //WritableWorkbook workbook = Workbook.createWorkbook(new File(simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + ".xls"));
             WritableWorkbook workbook = Workbook.createWorkbook(file);
-            WritableSheet sheet = workbook.createSheet(simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + "_" + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm(), 0);
+            WritableSheet sheet = workbook.createSheet(simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_"), 0);
 
             // Create cell font and format
             // REPORT HEADER
@@ -1216,9 +1226,9 @@ public class WorkloadReportService {
         return typeSafeRawWorkloadList;
     }
 
-    private RawWorkloadWithValidationResult prepareTestData(String filePattern) {
+    private RawWorkloadWithValidationResult prepareTestData(String classPathFilePattern) {
         log.info("Started to importing testdata data");
-        BufferedReader br = FileUtilService.getInstance().getFile(filePattern).getCSVFileContent();
+        BufferedReader br = FileUtilService.getInstance().getFile(classPathFilePattern).getCSVFileContent();
         String line = ""; //lineDelimiter
         String cvsSplitBy = ";"; //fieldDelimiter
         RawWorkloadWithValidationResult rawWorkloadWithValidationResult = new RawWorkloadWithValidationResult();
