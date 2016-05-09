@@ -15,7 +15,22 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.authorizeRequests().anyRequest().fullyAuthenticated().and().formLogin();
+       //http.authorizeRequests().anyRequest().fullyAuthenticated().and().formLogin().loginPage("/login");
+        http.authorizeRequests().antMatchers("/css/**").permitAll().antMatchers("/img/**").permitAll().antMatchers("/js/**").permitAll().anyRequest()
+                .fullyAuthenticated().and()
+                .formLogin().loginPage("/login")
+                .failureUrl("/login?error").permitAll().and().logout().permitAll();
+      /* http
+                .authorizeRequests()
+                .antMatchers("/resources*//**").permitAll()
+                .anyRequest().authenticated()
+                .and()
+                .formLogin()
+                .loginPage("/login")
+                .permitAll()
+                .and()
+                .logout()
+                .permitAll();*/
     }
 
     @Configuration
@@ -27,4 +42,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             auth.ldapAuthentication().userDnPatterns("uid={0},ou=people").groupSearchBase("ou=groups").contextSource().ldif("classpath:test-server.ldif");
         }
     }
+
+
 }

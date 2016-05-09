@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+
+    <meta charset="UTF-8"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Cache-Control" content="no-cache"/>
+    <meta http-equiv="Expires" content="Wed, 12 Dec 2012 00:00:00 GMT"/>
+
+    <title>UALR E-Par</title>
+
+    <link type="text/css" rel="stylesheet" href="/css/ualr/ualr.css" th:href="@{/css/ualr/ualr.css}"/>
+
+    <link rel="icon" href="/img/favicon.ico" type="image/x-icon" th:href="@{/img/favicon.ico}"/>
+
+    <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.6.1/html5shiv.js" type="text/javascript"></script>
+    <![endif]-->
+</head>
+<body id="cas">
+<div id="container">
+    <header class="clearfix">
+        <a id="logo" th:href="@{http://ualr.edu/}" title="go to Jasig home page">University of Arkansas at Little Rock</a>
+    </header>
+    <div id="content">
+        <div class="main wrapper clearfix">
+            <h1 class="title">Electro<a href="http://ualr.edu/">University of Arkansas at Little Rock</a></h1>
+
+
+            <div class="box" id="login">
+                <form id="fm1" th:action="@{/login}" method="post">
+                    <section class="learn-sso">
+                        <p><a target="_blank" href="http://ualr.edu/itservices/sso/">Learn more</a> about single sign-on.</p>
+                    </section> <!-- #learn-sso -->
+                    <!--
+                        <div th:if="${param.error}" class="alert alert-error">
+                            Invalid username and password.
+                        </div>
+                        <div th:if="${param.logout}" class="alert alert-success">
+                            You have been logged out.
+                        </div>
+
+                    -->
+
+                    <section class="row username-row">
+                        <label for="username"><span class="accesskey">N</span>etID:</label>
+
+
+                        <input id="username" name="username" class="required" tabindex="1" placeholder="UALR Username"
+                               accesskey="n" type="text" value="" size="25" autocomplete="off"/>
+
+
+                    </section>
+
+                    <section class="row password-row">
+                        <label for="password"><span class="accesskey">P</span>assword:</label>
+
+
+                        <input id="password" name="password" class="required" tabindex="2" placeholder="Password"
+                               accesskey="p" type="password" value="" size="25" autocomplete="off"/>
+                    </section>
+
+                    <section class="row btn-row">
+
+                        <div class="button-container">
+                            <div id="button-wrap">
+                                <button class="log-in" name="submit" accesskey="l" tabindex="4" type="submit">LOG IN
+                                </button>
+                            </div>
+                            <div id="trouble-logging-in">
+                                <a href="http://ualr.edu/itservices/support/log-in" target="_blank"
+                                   title="Forgot your username or password?">Trouble logging in?</a>
+                            </div>
+                        </div>
+                    </section>
+                </form>
+            </div> <!-- #login -->
+
+            <section class="tou">
+                <p>By logging in you agree to abide by the <a target="_blank"
+                                                              href="http://ualr.edu/itservices/policies/aup/">terms of
+                    use</a>.</p>
+            </section> <!-- #tou -->
+
+
+        </div> <!-- END .main -->
+    </div> <!-- END #content -->
+
+    <footer>
+        <nav class="mobile">
+            <ul>
+                <li class="button"><a target="_blank" href="http://ualr.edu/itservices/policies/aup/">Terms of Use</a>
+                </li>
+                <li class="spacer">&nbsp;</li>
+                <li class="button"><a target="_blank" href="http://ualr.edu/itservices/netid/">Need help?</a></li>
+            </ul>
+        </nav>
+        <nav class="desktop">
+            <ul>
+                <li class="link"><a target="_blank" href="http://ualr.edu/itservices/netid/">Help</a></li>
+                <li class="vertical-line">|</li>
+                <li class="link"><a target="_blank" href="http://ualr.edu/itservices/help/">Contact us</a></li>
+            </ul>
+        </nav>
+    </footer>
+
+</div>
+
+
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+
+
+<script type="text/javascript" src="https://github.com/cowboy/javascript-debug/raw/master/ba-debug.min.js"></script>
+
+
+
+
+</body>
+</html>
+
+
