@@ -2,6 +2,7 @@ package com.jackalhan.ualr.service.batch;
 
 import com.jackalhan.ualr.config.*;
 import com.jackalhan.ualr.domain.*;
+import com.jackalhan.ualr.repository.WorkloadReportDetailsRepository;
 import com.jackalhan.ualr.service.rest.MailService;
 import com.jackalhan.ualr.service.utils.FileUtilService;
 import com.jackalhan.ualr.service.utils.StringUtilService;
@@ -29,6 +30,7 @@ import javax.validation.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,7 +38,7 @@ import java.util.stream.Collectors;
  * Created by jackalhan on 4/18/16.
  */
 
-//@Component
+@Component
 public class WorkloadReportService {
 
     @Autowired
@@ -317,7 +319,7 @@ public class WorkloadReportService {
                     simplifiedWorkload.setDepartmentCode(newRawData.getInstructorDepartmentCode());
                 }
 
-
+                simplifiedWorkload.setCollegeCode(newRawData.getCollCode());
                 simplifiedWorkload.setTotalSsch(simplifiedWorkload.getTotalSsch() + newRawData.getTotalSsch());
                 simplifiedWorkload.setTotal11thDayCount(simplifiedWorkload.getTotal11thDayCount() + newRawData.getTaEleventhDayCount());
                 simplifiedWorkload.setTotalCreditHours(simplifiedWorkload.getTotalCreditHours() + newRawData.getTaCeditHours());
@@ -354,9 +356,58 @@ public class WorkloadReportService {
 
         FileUtilService.getInstance().createDirectory(Constants.WORKLOAD_REPORTS_TEMP_PATH);
 
+
         for (SimplifiedWorkload simplifiedWorkload : simplifiedWorkloadList) {
 
-            File file = new File(Constants.WORKLOAD_REPORTS_TEMP_PATH + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + "_" + simplifiedWorkload.getDepartmentCode() + ".xls");
+
+            Faculty faculty = new Faculty();
+            faculty.setCode(simplifiedWorkload.getCollegeCode());
+            faculty.setDeanNameAndSurname(simplifiedWorkload.getDeanNameAndSurname());
+            faculty.setCreatedBy("epar");
+            faculty.setCreatedDate(ZonedDateTime.now());
+            faculty.setLastModifiedBy("epar");
+
+            Department department = new Department();
+            department.setCode(simplifiedWorkload.getDepartmentCode());
+            department.setChairNameAndSurname(simplifiedWorkload.getChairNameAndSurname());
+            department.setName(simplifiedWorkload.getDepartmentName());
+            department.setFaculty(faculty);
+            department.setCreatedBy("epar");
+            department.setCreatedDate(ZonedDateTime.now());
+            department.setLastModifiedBy("epar");
+
+            DepartmentStaff departmentStaff = new DepartmentStaff();
+            departmentStaff.setNameAndSurname(simplifiedWorkload.getInstructorNameAndSurname());
+            departmentStaff.setDepartment(department);
+            departmentStaff.setTitle("Dr.");
+            departmentStaff.setCreatedBy("epar");
+            departmentStaff.setCreatedDate(ZonedDateTime.now());
+            departmentStaff.setLastModifiedBy("epar");
+
+            WorkloadReport workloadReport = new WorkloadReport();
+            workloadReport.setFaculty(faculty);
+            workloadReport.setSemesterTerm(simplifiedWorkload.getSemesterTerm());
+            workloadReport.setSemesterYear(simplifiedWorkload.getSemesterYear());
+            workloadReport.setCreatedBy("epar");
+            workloadReport.setCreatedDate(ZonedDateTime.now());
+            workloadReport.setLastModifiedBy("epar");
+
+
+            WorkloadReportDetails workloadReportDetails = new WorkloadReportDetails();
+            workloadReportDetails.setDepartmentStaff(departmentStaff);
+            workloadReportDetails.setWorkloadReport(workloadReport);
+            workloadReportDetails.setCreatedBy("epar");
+            workloadReportDetails.setCreatedDate(ZonedDateTime.now());
+            workloadReportDetails.setLastModifiedBy("epar");
+
+
+            String filePath = Constants.WORKLOAD_REPORTS_TEMP_PATH + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + "_" + simplifiedWorkload.getDepartmentCode() + ".xls";
+            workloadReportDetails.setReportPath(filePath);
+
+            workloadReportDetailsRepository.save(workloadReportDetails);
+
+
+            File file = new File(filePath);
 
             int startingColumnFrame = 1;
             int endingColumnFrame = 25;
@@ -1301,5 +1352,9 @@ public class WorkloadReportService {
         rawWorkloadWithValidationResult.setRawWorkloadList(rawWorkloadList);
         return rawWorkloadWithValidationResult;
     }
+
+    @Autowired
+    private WorkloadReportDetailsRepository workloadReportDetailsRepository;
+
 
 }

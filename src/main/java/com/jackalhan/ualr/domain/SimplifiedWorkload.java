@@ -10,6 +10,7 @@ public class SimplifiedWorkload implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    private String collegeCode;
     private String instructorNameAndSurname;
     private String semesterTerm;
     private int semesterYear;
@@ -158,10 +159,19 @@ public class SimplifiedWorkload implements Serializable {
         this.departmentCode = departmentCode;
     }
 
+    public String getCollegeCode() {
+        return collegeCode;
+    }
+
+    public void setCollegeCode(String collegeCode) {
+        this.collegeCode = collegeCode;
+    }
+
     @Override
     public String toString() {
         return "SimplifiedWorkload{" +
-                "instructorNameAndSurname='" + instructorNameAndSurname + '\'' +
+                "collegeCode='" + collegeCode + '\'' +
+                ", instructorNameAndSurname='" + instructorNameAndSurname + '\'' +
                 ", semesterTerm='" + semesterTerm + '\'' +
                 ", semesterYear=" + semesterYear +
                 ", departmentName='" + departmentName + '\'' +
