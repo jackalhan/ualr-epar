@@ -1,0 +1,12 @@
+.blur{
+    display: block;
+    text-decoration: none;
+    font:  100px Georgia, sans-serif;
+    letter-spacing: -5px;
+    text-align: center;
+    text-shadow: 0px 0px 1px #FF33FF;
+}
+
+.blur:hover{
+    text-shadow: 0px 0px 10px #FF33FF;
+}

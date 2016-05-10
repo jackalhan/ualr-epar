@@ -20,17 +20,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .fullyAuthenticated().and()
                 .formLogin().loginPage("/login")
                 .failureUrl("/login?error").permitAll().and().logout().permitAll();
-      /* http
-                .authorizeRequests()
-                .antMatchers("/resources*//**").permitAll()
-                .anyRequest().authenticated()
-                .and()
-                .formLogin()
-                .loginPage("/login")
-                .permitAll()
-                .and()
-                .logout()
-                .permitAll();*/
     }
 
     @Configuration
