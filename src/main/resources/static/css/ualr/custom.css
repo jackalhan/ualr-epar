@@ -1,0 +1,840 @@
+/* ==========================================================================
+   HTML5 Boilerplate styles - h5bp.com (generated via initializr.com)
+   ========================================================================== */
+
+html,
+button,
+input,
+select,
+textarea {
+    color: #222;
+}
+
+body {
+    font-size: 1em;
+    line-height: 1.4;
+}
+
+::-moz-selection {
+    background: #b3d4fc;
+    text-shadow: none;
+}
+
+::selection {
+    background: #b3d4fc;
+    text-shadow: none;
+}
+
+hr {
+    display: block;
+    height: 1px;
+    border: 0;
+    border-top: 1px solid #ccc;
+    margin: 1em 0;
+    padding: 0;
+}
+
+img {
+    vertical-align: middle;
+}
+
+fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
+textarea {
+    resize: vertical;
+}
+
+.chromeframe {
+    margin: 0.2em 0;
+    background: #ccc;
+    color: #000;
+    padding: 0.2em 0;
+}
+
+
+/* ===== Initializr Styles ==================================================
+   Author: Jonathan Verrecchia - verekia.com/initializr/responsive-template
+   ========================================================================== */
+
+body {
+    font: 16px/26px "Lucida Grande","Lucida Sans Unicode",Verdana,Arial,Helvetica,sans-serif;
+    background-color: #f6f2f3;
+}
+
+.wrapper {
+    margin: 0 5%;
+    padding-bottom: 10px;
+}
+
+/* =====================
+	ALL: UALR CAS Fixes
+   ===================== */
+
+#cas {
+    background: #F6F2F3 !important;
+}
+
+#cas #content {
+    overflow: inherit;
+}
+
+#cas #content #login #fm1 {
+    background-color: inherit;
+    padding: inherit;
+}
+
+#cas #content #login, #cas #content #login-messages {
+    width: inherit;
+    float: inherit;
+    margin: inherit;
+}
+
+#cas .flc-screenNavigator-view-container #header, #cas .flc-screenNavigator-view-container #content {
+    background: #F6F2F3 !important;
+    box-shadow: none !important;
+}
+
+/* ==========================
+	ALL: UALR Messages
+   ========================== */
+
+#cas #content #msg {
+    color: #000 !important;
+    font-size: 0.875em;
+    line-height: 1.4545em;
+    word-wrap: break-word;
+    padding-left: 80px !important;
+    background-color: #fff !important;
+    border: none;
+    border-bottom: .5em solid #ba9ea6 !important;
+    margin-bottom: 0 !important;
+}
+
+#cas #content #msg.success {
+    background-image: url('../../img/ualr/complete-check-hi.png') !important;
+    background-repeat: no-repeat !important;
+    background-position: -18px -18px !important;
+    background-size: 84px !important;
+}
+
+#cas #content #msg.errors {
+    background-image: url('../../img/ualr/incomplete-symbol-hi.png') !important;
+    background-repeat: no-repeat !important;
+    background-position: -18px -18px !important;
+    background-size: 84px !important;
+}
+
+#cas #content #msg.info, #cas #content #msg.warn {
+    background-image: url('../../img/ualr/exclamation-symbol-hi.png') !important;
+    background-repeat: no-repeat !important;
+    background-position: -14px -14px !important;
+    background-size: 80px !important;
+}
+
+#cas #content #msg h2 {
+    border: none !important;
+    padding-bottom: 0 !important;
+}
+
+/* ===================
+    ALL: UALR Theme
+   =================== */
+
+a, a:hover, a:visited  {
+    color: #6e2639;
+}
+
+#container {
+    width: 100% !important;
+    margin-bottom: 50px;
+}
+
+header {
+    border-bottom: 2px solid #7a3748;
+}
+
+#content {
+    width: 72%;
+    margin: 0px auto;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+footer,
+.main aside {
+    border-top: 2px solid #c2c2c2;
+}
+
+header,
+footer,
+.main aside {
+    background: #6e2639;
+}
+
+.title {
+    color: white;
+}
+
+.icon-help {
+    display: inline-block;
+    float: right;
+    position: relative;
+    background: url("../../img/ualr/help-icon.png") no-repeat left top;
+    text-indent: -9999px;
+    width: 20px;
+    height: 19px;
+    left: 30px;
+    top: 18px;
+    text-decoration: none;
+    line-height: 0;
+    font-size: 0.875em;
+    overflow: hidden;
+}
+
+::-webkit-input-placeholder {
+    color: #999999;
+}
+
+.main input:-moz-placeholder {
+    color: #999999;
+}
+
+.main .box #welcome {
+    padding: 8px 26px;
+}
+
+/* ================
+    MOBILE: Header
+   ================ */
+
+header {
+    height: 46px;
+    padding: 0 5%;
+}
+
+header #logo {
+    display: block;
+    margin: 5px 0 0;
+    padding: 0 5%;
+    text-indent: -9999px;
+    background-image: url("../../img/ualr/ualr-logo-wordmark-white.png");
+    background-repeat: no-repeat;
+    background-size: 283px 36px;
+    height: 36px;
+    width: inherit !important;
+}
+
+/* ==============
+    MOBILE: Menu
+   ============== */
+
+nav ul {
+    margin: 0;
+    padding: 0;
+}
+
+nav a {
+    display: block;
+
+    text-align: center;
+    text-decoration: underline;
+    font-weight: bold;
+
+    color: #6e2639;
+}
+
+nav a:hover,
+nav a:visited {
+    color: #6e2639;
+}
+
+nav a:hover {
+    text-decoration: none;
+}
+
+footer nav ul {
+    text-align: center;
+}
+
+footer nav li.button {
+    background-color: #7a3748; /* 9% opacity, #6e2639 */
+    display: inline-block;
+    max-height: 30px;
+    padding: 0 5px;
+    line-height: 2.8;
+    max-width: 100px;
+}
+
+footer nav li.button a {
+    font-size: 0.75em;
+    color: white;
+}
+
+footer nav li.spacer {
+    display: inline-block;
+    width: 5%;
+}
+
+footer nav.desktop {
+    display: none;
+}
+
+/* ==============
+    MOBILE: Main
+   ============== */
+
+.main {
+    margin: 0 auto;
+}
+
+.main article h1 {
+    font-size: 2em;
+}
+
+.main aside {
+    color: white;
+    padding: 0px 5% 10px;
+}
+
+.main h2 {
+    font-family: Georgia,"Times New Roman",Times,serif;
+    font-weight: normal;
+}
+
+.main label {
+    clear: both;
+    display: block;
+
+    max-height: 18px;
+
+    text-indent: -9999px;
+}
+
+.main #fm1 .row input {
+    display: block;
+
+    width: 92%;
+    padding: 8px;
+
+    color: #000000;
+    background-color: #ffffff;
+    font-size: 1.0625em;
+    font-weight: normal;
+}
+
+.main button, .main a.button {
+    display: block;
+    clear: both;
+    border: 1px solid #000000;
+    border-radius: 0 !important;
+    background-color: #6e2639;
+    padding: 6px;
+
+    color: #ffffff;
+    text-decoration: none;
+    text-align: center;
+    font-size: 0.8em;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.main a.button {
+    height: auto !important;
+    margin-bottom: 16px;
+}
+
+.main .button-container {
+    margin-top: 25px;
+    width: 210px;
+}
+.main #login-message .button-container {
+    width: inherit;
+}
+
+.main .button-container #button-wrap {
+    float: left;
+}
+.main #login-message .button-container #button-wrap {
+    float: none;
+}
+
+.main button.log-in {
+    width: 88px;
+    height: 32px;
+}
+.main .button-container #trouble-logging-in {
+    font-size: 0.6875em;
+    height: 32px;
+    padding: 4px 0;
+    text-align: right;
+}
+
+.main form section {
+    display: block;
+    clear: both;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.main .title {
+    display: none;
+}
+
+.main .box section.learn-sso {
+    display: none;
+}
+
+.main section.tou {
+    display: none;
+}
+
+footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    max-height: 100px;
+    color: white;
+    padding: 20px 0;
+    margin: 0 !important;
+}
+
+/* ===============
+    ALL: IE Fixes
+   =============== */
+
+.ie7 .title {
+    padding-top: 20px;
+}
+
+/* ==========================================================================
+   Author's custom styles
+   ========================================================================== */
+
+body.show_landscape {
+    zoom: 0.9;
+}
+
+body.show_landscape header {
+    height: 36px;
+}
+
+body.show_landscape header h1 {
+    background-size: 212px 27px;
+    height: 27px;
+}
+
+body.show_landscape footer {
+    position: relative;
+}
+
+body.show_landscape .main input {
+    height: 12px;
+    padding: 6px;
+    font-size: 0.75em;
+}
+
+
+/* ==========================================================================
+   Media Queries
+   ========================================================================== */
+
+@media only screen and (min-width: 480px) {
+
+    body.show_landscape {
+        zoom: 1;
+    }
+
+    body.show_landscape header {
+        height: 46px;
+    }
+
+    body.show_landscape header h1 {
+        background-size: 283px 36px;
+        height: 36px;
+    }
+
+    body.show_landscape footer {
+        position: fixed;
+    }
+
+    body.show_landscape .main input {
+        height: 16px;
+        padding: 8px;
+        font-size: 1.125em;
+    }
+
+    /* ====================
+        INTERMEDIATE: Menu
+       ==================== */
+    #container {
+        min-height: 175px;
+    }
+
+    #content {
+        max-width: 420px;
+    }
+
+    nav li {
+        width: 27%;
+        margin: 0 1.7%;
+        padding: 0 2%;
+        margin-bottom: 0;
+    }
+
+    nav li:first-child a {
+        margin-left: 0;
+    }
+
+    nav li:last-child a {
+        margin-right: 0;
+    }
+
+    footer {
+        padding-bottom: 30px;
+    }
+
+    /* ========================
+        INTERMEDIATE: IE Fixes
+       ======================== */
+
+    nav ul li {
+        display: inline;
+    }
+
+    .oldie nav a {
+        margin: 0 0.7%;
+    }
+
+    /* ==================================
+        INTERMEDIATE: UALR Messages
+       ================================== */
+
+    /* ========================
+        INTERMEDIATE: CAS Fixes
+       ======================== */
+
+    #cas .flc-screenNavigator-view-container #header, #cas .flc-screenNavigator-view-container #content {
+        background: #F6F2F3;
+    }
+
+
+}
+
+@media only screen and (min-width: 768px) {
+
+    body, body#cas {
+        background-color: #ffffff;
+        padding-top: 5%;
+    }
+
+    /* ====================
+        WIDE: CSS3 Effects
+       ==================== */
+
+    /* .box {
+        -webkit-box-shadow: 0 5px 10px #aaa;
+           -moz-box-shadow: 0 5px 10px #aaa;
+                box-shadow: 0 5px 10px #aaa;
+    }*/
+
+    /* ==============
+        WIDE: Header
+       ============== */
+
+    header {
+        display: none;
+    }
+
+    /* ============
+        WIDE: Menu
+       ============ */
+
+    nav {
+        width: 38%;
+    }
+
+    nav a {
+        font-weight: normal;
+    }
+
+    nav li {
+        float: left;
+    }
+
+    /* ============
+        WIDE: Main
+       ============ */
+
+    header, footer {
+        border: none !important;
+    }
+
+    footer {
+        padding: 31px 20px 16px;
+    }
+
+    #content {
+        max-width: 72%;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .main {
+        max-width: 420px;
+        background-color: #f6f2f3;
+        border: 2px solid #c2c2c2;
+        border-radius: 8px 8px 16px 16px;
+    }
+
+    .main .box {
+        margin: 0 auto;
+    }
+
+    .main .title {
+        display: block;
+        margin: 0;
+        text-indent: -9999px;
+        background-color: #6e2639;
+        background-image: url("../../img/ualr/ualr-logo-wordmark-white.png");
+        background-repeat: no-repeat;
+        background-position: center center;
+        height: 46px;
+        border-radius: 6px 6px 0 0;
+    }
+    .main .title a {
+        display: block;
+        height: 46px;
+    }
+
+    .main .box section.learn-sso {
+        display: block;
+        font-size: 0.6875em;
+        text-align: center;
+        margin-top: 44px;
+    }
+
+    .main .box section.row {
+        max-width: 208px;
+    }
+
+    .main .box section.username-row {
+        margin-top: -22px;
+    }
+    .main .box section.password-row {
+        margin-bottom: 44px;
+    }
+    .main .box .button-container {
+    }
+
+    .main section.tou {
+        clear: both;
+        position: relative;
+        bottom: -55px;
+        display: block;
+        background-color: transparent;
+        font-size: 0.6875em;
+        text-align: center;
+    }
+
+    footer nav.mobile {
+        display: none;
+    }
+
+    footer {
+        background-color: #eeeeee;
+        max-height: 10% !important;
+    }
+
+    footer nav.desktop {
+        display: block;
+    }
+
+    footer nav.desktop li.link {
+        width: auto;
+        margin: 0;
+    }
+
+    footer nav.desktop li.vertical-line {
+        width: auto;
+        margin: 0;
+        color: #c2c2c2;
+        font-weight: normal;
+    }
+
+    /* ===========================
+        WIDE: UALR Messages
+       =========================== */
+
+    #cas #content form .errors {
+        margin-bottom: -28px !important;
+        border: none !important;
+        border-bottom: .5em solid #ba9ea6 !important;
+    }
+
+    #cas #content form #msg {
+        padding: 22px 5%;
+    }
+
+
+    /* =================
+        WIDE: CAS Fixes
+       ================= */
+
+    #cas {
+        background: #fff !important;
+    }
+
+
+    #cas .flc-screenNavigator-view-container #header, #cas .flc-screenNavigator-view-container #content {
+        background: #fff !important;
+    }
+}
+
+@media only screen and (min-width: 1140px) {
+
+    /* ===============
+        Maximal Width
+       =============== */
+
+    .wrapper {
+        margin: 0 auto;
+    }
+}
+
+/* ==========================================================================
+   Helper classes
+   ========================================================================== */
+
+.ir {
+    background-color: transparent;
+    border: 0;
+    overflow: hidden;
+    *text-indent: -9999px;
+}
+
+.ir:before {
+    content: "";
+    display: block;
+    width: 0;
+    height: 100%;
+}
+
+.hidden {
+    display: none !important;
+    visibility: hidden;
+}
+
+.visuallyhidden {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+}
+
+.visuallyhidden.focusable:active,
+.visuallyhidden.focusable:focus {
+    clip: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    position: static;
+    width: auto;
+}
+
+.invisible {
+    visibility: hidden;
+}
+
+.clearfix:before,
+.clearfix:after {
+    content: " ";
+    display: table;
+}
+
+.clearfix:after {
+    clear: both;
+}
+
+.clearfix {
+    *zoom: 1;
+}
+
+/* ==========================================================================
+   Print styles
+   ========================================================================== */
+
+@media print {
+    * {
+        background: transparent !important;
+        color: #000 !important; /* Black prints faster: h5bp.com/s */
+        box-shadow:none !important;
+        text-shadow: none !important;
+    }
+
+    a,
+    a:visited {
+        text-decoration: underline;
+    }
+
+    a[href]:after {
+        content: " (" attr(href) ")";
+    }
+
+    abbr[title]:after {
+        content: " (" attr(title) ")";
+    }
+
+    /*
+     * Don't show links for images, or javascript/internal links
+     */
+
+    .ir a:after,
+    a[href^="javascript:"]:after,
+    a[href^="#"]:after {
+        content: "";
+    }
+
+    pre,
+    blockquote {
+        border: 1px solid #999;
+        page-break-inside: avoid;
+    }
+
+    thead {
+        display: table-header-group; /* h5bp.com/t */
+    }
+
+    tr,
+    img {
+        page-break-inside: avoid;
+    }
+
+    img {
+        max-width: 100% !important;
+    }
+
+    @page {
+        margin: 0.5cm;
+    }
+
+    p,
+    h2,
+    h3 {
+        orphans: 3;
+        widows: 3;
+    }
+
+    h2,
+    h3 {
+        page-break-after: avoid;
+    }
+}
