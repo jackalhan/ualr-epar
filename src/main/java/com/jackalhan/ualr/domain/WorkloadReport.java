@@ -22,7 +22,8 @@ public class WorkloadReport extends AbstractAuditingEntity implements Serializab
     @NotNull
     private int semesterYear;
 
-    @ManyToOne (cascade=CascadeType.ALL)
+    @ManyToOne (fetch = FetchType.LAZY, cascade=CascadeType.ALL)
+    @JoinColumn(name = "workload_to_faculty_fk", referencedColumnName = "")
     private Faculty faculty;
 
 

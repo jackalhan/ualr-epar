@@ -3,6 +3,7 @@ package com.jackalhan.ualr.domain;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -13,38 +14,37 @@ import java.util.Set;
 public class Department extends AbstractAuditingEntity implements Serializable {
 
 
-   /* @Id
+    @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
-*/
+
     @NotNull
     private String name;
 
-    @Id
+    @NotNull
     private String code;
 
     @NotNull
     private String chairNameAndSurname;
 
     @ManyToOne(cascade=CascadeType.ALL)
+    @JoinColumn(name="dept_to_faculty_fk", referencedColumnName = "code")
     private Faculty faculty;
 
-    /*@ManyToMany(targetEntity=DepartmentStaff.class)
-    private Set departmentStaffSet;*/
+    @ManyToMany(mappedBy = "departmentList")
+    private List<DepartmentStaff> departmentStaffList;
 
     public Department() {
         super();
     }
 
-    public Department(String name, String code, String chairNameAndSurname /*, Set departmentStaffSet*/) {
+    public Department(String name, String code, String chairNameAndSurname) {
         super();
         this.name = name;
         this.code = code;
         this.chairNameAndSurname = chairNameAndSurname;
-        //this.departmentStaffSet = departmentStaffSet;
     }
 
-/*
     public long getId() {
         return id;
     }
@@ -52,7 +52,16 @@ public class Department extends AbstractAuditingEntity implements Serializable {
     public void setId(long id) {
         this.id = id;
     }
-*/
+
+
+    public List<DepartmentStaff> getDepartmentStaffList() {
+        return departmentStaffList;
+    }
+
+    public void setDepartmentStaffList(List<DepartmentStaff> departmentStaffList) {
+        this.departmentStaffList = departmentStaffList;
+    }
+
 
     public String getName() {
         return name;
@@ -86,22 +95,16 @@ public class Department extends AbstractAuditingEntity implements Serializable {
         this.faculty = faculty;
     }
 
-/*    public Set getDepartmentStaffSet() {
-        return departmentStaffSet;
-    }
-
-    public void setDepartmentStaffSet(Set departmentStaffSet) {
-        this.departmentStaffSet = departmentStaffSet;
-    }*/
 
     @Override
     public String toString() {
         return "Department{" +
-               // "id=" + id +
+                "id=" + id +
                 ", name='" + name + '\'' +
                 ", code='" + code + '\'' +
-                ", chairNameAndSurname ='" + chairNameAndSurname+ '\'' +
-                //", departmentStaffSet=" + departmentStaffSet +
+                ", chairNameAndSurname='" + chairNameAndSurname + '\'' +
+                ", faculty=" + faculty +
+                ", departmentStaffList=" + departmentStaffList +
                 '}';
     }
 }

@@ -3,6 +3,7 @@ package com.jackalhan.ualr.domain;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * Created by txcakaloglu on 5/10/16.
@@ -11,9 +12,6 @@ import java.io.Serializable;
 @Table(name = "Faculty")
 public class Faculty extends AbstractAuditingEntity implements Serializable{
 
-
-    /*@GeneratedValue(strategy = GenerationType.AUTO)
-    private long id;*/
 
     //@NotNull
     private String name;
@@ -24,14 +22,9 @@ public class Faculty extends AbstractAuditingEntity implements Serializable{
     @NotNull
     private String deanNameAndSurname;
 
+    @OneToMany(mappedBy = "faculty")
+    List<Department> departments;
 
-    /*public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }*/
 
     public String getName() {
         return name;
@@ -57,6 +50,14 @@ public class Faculty extends AbstractAuditingEntity implements Serializable{
         this.deanNameAndSurname = deanNameAndSurname;
     }
 
+    public List<Department> getDepartments() {
+        return departments;
+    }
+
+    public void setDepartments(List<Department> departments) {
+        this.departments = departments;
+    }
+
     @Override
     public String toString() {
         return "Faculty{" +
@@ -75,4 +76,6 @@ public class Faculty extends AbstractAuditingEntity implements Serializable{
 
     public Faculty() {
     }
+
+
 }

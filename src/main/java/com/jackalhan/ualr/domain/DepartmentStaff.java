@@ -3,6 +3,7 @@ package com.jackalhan.ualr.domain;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -25,13 +26,16 @@ public class DepartmentStaff extends AbstractAuditingEntity implements Serializa
     private String title;
 
 
-    @ManyToOne(cascade=CascadeType.ALL)
-    private Department department;
+ /*   @ManyToOne(fetch = FetchType.LAZY,cascade=CascadeType.ALL)
+    @JoinColumn(name="staff_to_department_fk", referencedColumnName = "id")
+    private Department department;*/
 
-/*
-    @ManyToMany(targetEntity = Department.class)
-    private Set departmentSet;
-*/
+
+
+    @ManyToMany
+    @JoinTable
+    private List<Department> departmentList;
+
 
     public DepartmentStaff() {
         super();
@@ -42,6 +46,15 @@ public class DepartmentStaff extends AbstractAuditingEntity implements Serializa
         this.title = title;
         //this.departmentSet = departmentSet;
     }
+
+    public List<Department> getDepartmentList() {
+        return departmentList;
+    }
+
+    public void setDepartmentList(List<Department> departmentList) {
+        this.departmentList = departmentList;
+    }
+
 
     public long getId() {
         return id;
@@ -67,29 +80,13 @@ public class DepartmentStaff extends AbstractAuditingEntity implements Serializa
         this.title = title;
     }
 
-    public Department getDepartment() {
-        return department;
-    }
-
-    public void setDepartment(Department department) {
-        this.department = department;
-    }
-
- /*public Set getDepartmentSet() {
-        return departmentSet;
-    }
-
-    public void setDepartmentSet(Set departmentSet) {
-        this.departmentSet = departmentSet;
-    }*/
-
     @Override
     public String toString() {
         return "DepartmentStaff{" +
                 "id=" + id +
                 ", nameAndSurname='" + nameAndSurname + '\'' +
                 ", title='" + title + '\'' +
-                ", department=" + department +
+                ", departmentList=" + departmentList +
                 '}';
     }
 }
