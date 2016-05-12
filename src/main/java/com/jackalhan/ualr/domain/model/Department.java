@@ -1,20 +1,19 @@
-package com.jackalhan.ualr.domain;
+package com.jackalhan.ualr.domain.model;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Created by txcakaloglu on 5/10/16.
  */
-@Entity
-@Table(name = "Department")
+//@Entity
+//@Table(name = "Department")
 public class Department extends AbstractAuditingEntity implements Serializable {
 
 
-    @Id
+   /* @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
@@ -106,5 +105,5 @@ public class Department extends AbstractAuditingEntity implements Serializable {
                 ", faculty=" + faculty +
                 ", departmentStaffList=" + departmentStaffList +
                 '}';
-    }
+    }*/
 }

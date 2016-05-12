@@ -1,4 +1,4 @@
-package com.jackalhan.ualr.domain;
+package com.jackalhan.ualr.domain.model;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -8,12 +8,12 @@ import java.util.List;
 /**
  * Created by txcakaloglu on 5/10/16.
  */
-@Entity
-@Table(name = "Faculty")
+//@Entity
+//@Table(name = "Faculty")
 public class Faculty extends AbstractAuditingEntity implements Serializable{
 
 
-    //@NotNull
+   /* //@NotNull
     private String name;
 
     @Id
@@ -75,7 +75,7 @@ public class Faculty extends AbstractAuditingEntity implements Serializable{
     }
 
     public Faculty() {
-    }
+    }*/
 
 
 }

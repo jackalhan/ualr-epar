@@ -1,19 +1,18 @@
-package com.jackalhan.ualr.domain;
+package com.jackalhan.ualr.domain.model;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Created by txcakaloglu on 5/10/16.
  */
-@Entity
-@Table(name = "Department_Staff")
+//@Entity
+//@Table(name = "DepartmentStaff")
 public class DepartmentStaff extends AbstractAuditingEntity implements Serializable {
 
-
+/*
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
@@ -26,9 +25,9 @@ public class DepartmentStaff extends AbstractAuditingEntity implements Serializa
     private String title;
 
 
- /*   @ManyToOne(fetch = FetchType.LAZY,cascade=CascadeType.ALL)
+ *//*   @ManyToOne(fetch = FetchType.LAZY,cascade=CascadeType.ALL)
     @JoinColumn(name="staff_to_department_fk", referencedColumnName = "id")
-    private Department department;*/
+    private Department department;*//*
 
 
 
@@ -41,7 +40,7 @@ public class DepartmentStaff extends AbstractAuditingEntity implements Serializa
         super();
     }
 
-    public DepartmentStaff(String nameAndSurname, String title /*, Set departmentSet */) {
+    public DepartmentStaff(String nameAndSurname, String title *//*, Set departmentSet *//*) {
         this.nameAndSurname = nameAndSurname;
         this.title = title;
         //this.departmentSet = departmentSet;
@@ -88,5 +87,5 @@ public class DepartmentStaff extends AbstractAuditingEntity implements Serializa
                 ", title='" + title + '\'' +
                 ", departmentList=" + departmentList +
                 '}';
-    }
+    }*/
 }

@@ -2,10 +2,6 @@ package com.jackalhan.ualr.service.batch;
 
 import com.jackalhan.ualr.config.*;
 import com.jackalhan.ualr.domain.*;
-import com.jackalhan.ualr.repository.DepartmentRepository;
-import com.jackalhan.ualr.repository.DepartmentStaffRepository;
-import com.jackalhan.ualr.repository.FacultyRepository;
-import com.jackalhan.ualr.repository.WorkloadReportDetailsRepository;
 import com.jackalhan.ualr.service.rest.MailService;
 import com.jackalhan.ualr.service.utils.FileUtilService;
 import com.jackalhan.ualr.service.utils.StringUtilService;
@@ -354,17 +350,6 @@ public class WorkloadReportService {
             return Constants.TERM_FALL;
 
     }
-
-    @Autowired
-    private DepartmentRepository departmentRepository;
-
-    @Autowired
-    private DepartmentStaffRepository departmentStaffRepository;
-
-    @Autowired
-    private FacultyRepository facultyRepository;
-
-
     private void generateExcelContent(List<SimplifiedWorkload> simplifiedWorkloadList) throws IOException, WriteException {
 
         FileUtilService.getInstance().createDirectory(Constants.WORKLOAD_REPORTS_TEMP_PATH);
@@ -1319,9 +1304,5 @@ public class WorkloadReportService {
         rawWorkloadWithValidationResult.setRawWorkloadList(rawWorkloadList);
         return rawWorkloadWithValidationResult;
     }
-
-    @Autowired
-    private WorkloadReportDetailsRepository workloadReportDetailsRepository;
-
 
 }

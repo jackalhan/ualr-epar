@@ -1,18 +1,17 @@
-package com.jackalhan.ualr.domain;
+package com.jackalhan.ualr.domain.model;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
-import java.util.Set;
 
 /**
  * Created by txcakaloglu on 5/10/16.
  */
-@Entity
-@Table(name = "Workload_Report")
+//@Entity
+//@Table(name = "WorkloadReport")
 public class WorkloadReport extends AbstractAuditingEntity implements Serializable {
 
-    @Id
+   /* @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
@@ -77,5 +76,5 @@ public class WorkloadReport extends AbstractAuditingEntity implements Serializab
                 ", semesterYear=" + semesterYear +
                 ", faculty=" + faculty +
                 '}';
-    }
+    }*/
 }

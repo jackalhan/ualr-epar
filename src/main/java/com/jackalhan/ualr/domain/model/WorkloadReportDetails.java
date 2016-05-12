@@ -1,6 +1,4 @@
-package com.jackalhan.ualr.domain;
-
-import org.springframework.stereotype.Repository;
+package com.jackalhan.ualr.domain.model;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -9,12 +7,12 @@ import java.io.Serializable;
 /**
  * Created by jackalhan on 5/10/16.
  */
-@Entity
-@Table(name = "Workload_Report_Details")
+//@Entity
+//@Table(name = "WorkloadReportDetails")
 public class WorkloadReportDetails extends AbstractAuditingEntity implements Serializable {
 
 
-    @Id
+   /* @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
@@ -78,5 +76,5 @@ public class WorkloadReportDetails extends AbstractAuditingEntity implements Ser
                 ", departmentStaff=" + departmentStaff +
                 ", workloadReport=" + workloadReport +
                 '}';
-    }
+    }*/
 }
