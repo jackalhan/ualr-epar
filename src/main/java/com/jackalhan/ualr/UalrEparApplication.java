@@ -7,9 +7,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.SimpleCommandLinePropertySource;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.validation.Validator;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
@@ -106,6 +109,21 @@ public class UalrEparApplication {
 		return source;
 	}
 
+
+	//SFTP
+/*
+	@Bean
+	public DefaultSftpSessionFactory sftpSessionFactory() {
+		DefaultSftpSessionFactory defaultSftpSessionFactory= new DefaultSftpSessionFactory();
+		defaultSftpSessionFactory.setHost(env.getProperty("sftp.host"));
+		defaultSftpSessionFactory.setUser(env.getProperty("sftp.username"));
+		defaultSftpSessionFactory.setPassword(env.getProperty("sftp.passphrase"));
+		defaultSftpSessionFactory.setPrivateKey(new ClassPathResource(env.getProperty("sftp.private.keyfile")));
+		defaultSftpSessionFactory.setPrivateKeyPassphrase(env.getProperty("sftp.passphrase"));
+		defaultSftpSessionFactory.setPort(Integer.parseInt(env.getProperty("sftp.port")));
+		return defaultSftpSessionFactory;
+	}
+*/
 
 	//In order to display custom error message please uncomment it.
 

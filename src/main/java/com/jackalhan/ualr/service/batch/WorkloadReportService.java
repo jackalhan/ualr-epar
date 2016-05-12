@@ -5,6 +5,7 @@ import com.jackalhan.ualr.domain.*;
 import com.jackalhan.ualr.service.rest.MailService;
 import com.jackalhan.ualr.service.utils.FileUtilService;
 import com.jackalhan.ualr.service.utils.StringUtilService;
+import com.jcraft.jsch.*;
 import jxl.SheetSettings;
 import jxl.Workbook;
 import jxl.format.*;
@@ -29,6 +30,7 @@ import javax.validation.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -63,8 +65,13 @@ public class WorkloadReportService {
 
 
     @Scheduled(fixedDelay = SchedulingConstants.WORKLOAD_REPORT_SERVICE_EXECUTE_FIXED_DELAY)
-    private void executeService() throws IOException, WriteException, CloneNotSupportedException {
-        initializeValidator();
+    private void executeService() throws IOException, WriteException, CloneNotSupportedException, JSchException, SftpException {
+
+
+
+
+
+       /* initializeValidator();
         RawWorkloadWithValidationResult rawWorkloadWithValidationResult = prepareTestData(fileNamePattern);
 
         if (!rawWorkloadWithValidationResult.isHasInvalidatedData()) {
@@ -77,7 +84,7 @@ public class WorkloadReportService {
             mailService.send(mailExecutiveProperties.from, mailExecutiveProperties.getTo(), null, mailExecutiveProperties.getDeveloper(), rawWorkloadWithValidationResult.getCaughtErrors(), mailExecutiveProperties.subject, null, true);
         }
 
-        log.info("TypeSafeRawWorkload Reports execution ended");
+        log.info("TypeSafeRawWorkload Reports execution ended");*/
     }
 
     private void initializeValidator() {
