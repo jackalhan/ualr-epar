@@ -1,19 +1,21 @@
 package com.jackalhan.ualr.service.rest;
 
+import com.jackalhan.ualr.config.Constants;
 import com.jackalhan.ualr.config.FTPConfiguration;
 import com.jackalhan.ualr.domain.FTPConnection;
+import com.jackalhan.ualr.service.utils.FileUtilService;
 import com.jackalhan.ualr.service.utils.StringUtilService;
-import com.jcraft.jsch.Channel;
-import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.Session;
+import com.jcraft.jsch.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 /**
@@ -52,38 +54,116 @@ public class FTPService {
         return new FTPConnection(session, channel);
     }
 
-    private void disconnect(FTPConnection connection)
-    {
-        try
-        {
-            if (connection.getChannel().isConnected())
-            {
+    private void disconnect(FTPConnection connection) {
+        try {
+            if (connection.getChannel().isConnected()) {
                 connection.getChannel().disconnect();
             }
-            if (connection.getSession().isConnected())
-            {
+            if (connection.getSession().isConnected()) {
                 connection.getSession().disconnect();
             }
             log.info("Application is disconnected from " + ftpConfiguration.toString());
 
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             log.error(ex.toString());
         }
     }
 
-    public
+    public List<String> listFiles(String filePattern) {
+        List<String> files = null;
+        FTPConnection connection = null;
+        try {
 
+            connection = connect();
+            ChannelSftp channel = (ChannelSftp) connection.getChannel();
+
+            // channel.cd(ftpConfiguration.getRemoteDirectory()); // default value enter the welcome folder
+            Vector<ChannelSftp.LsEntry> lsEntryVector = channel.ls(filePattern); //Vector is a technically list. Vector implementation of list.
+            files = new ArrayList<String>();
+            for (ChannelSftp.LsEntry entry : lsEntryVector) {
+                files.add(entry.getFilename());
+                log.info(entry.getFilename() + " is found");
+            }
+
+        } catch (SftpException e) {
+            log.error(e.toString());
+        } finally {
+            disconnect(connection);
+        }
+        return files;
+
+    }
+
+    private void createFolder(ChannelSftp channelSftp, String path) throws SftpException {
+
+        String[] folders = path.split("/");
+        for (String folder : folders) {
+            if (folder.length() > 0) {
+                try {
+                    channelSftp.cd(folder);
+                } catch (SftpException e) {
+                    channelSftp.mkdir(folder);
+                    channelSftp.cd(folder);
+                }
+            }
+        }
+    }
+
+    public List<String> downloadAndGetExactFileNames(String localDownloadPath, String filePattern)
+    {
+        List<String> fileNames = null;
+        FTPConnection connection = null;
+        try {
+
+            connection = connect();
+            ChannelSftp channel = (ChannelSftp) connection.getChannel();
+            Vector<ChannelSftp.LsEntry> lsEntryVector = channel.ls(filePattern); //Vector is a technically list. Vector implementation of list.
+            FileUtilService.getInstance().createDirectory(localDownloadPath);
+            fileNames = new ArrayList<String>();
+            for (ChannelSftp.LsEntry entry : lsEntryVector) {
+                channel.get(entry.getFilename(), localDownloadPath + entry.getFilename());
+                log.info(entry.getFilename() + " is downloaded to " + localDownloadPath);
+                moveTo(ftpConfiguration.getRemoteDirectory(), ftpConfiguration.getFileTempPath(), entry.getFilename());
+                fileNames.add(entry.getFilename());
+            }
+
+        } catch (SftpException e) {
+            log.error(e.toString());
+        } finally {
+            disconnect(connection);
+        }
+        return fileNames;
+    }
+
+    public boolean moveTo(String sourcePath, String destinationPath, String fileName) {
+        boolean result = true;
+        FTPConnection connection = null;
+        try {
+            connection = connect();
+            ChannelSftp channel = (ChannelSftp) connection.getChannel();
+            createFolder(channel, destinationPath);
+            channel.rename(channel.getHome() + "/" + sourcePath + fileName, channel.getHome() + destinationPath + fileName);
+            log.info(fileName + " is successfuly moved from " + channel.getHome() + " to " + channel.getHome() + destinationPath);
+        } catch (Exception ex) {
+            result = false;
+            log.error(ex.toString());
+        }
+        finally {
+            disconnect(connection);
+        }
+
+        return result;
+    }
+/*
 
     ChannelSftp sftp = (ChannelSftp) channel;
     sftp.cd(directory);
     //Vector files = sftp.ls("*");
     Vector<ChannelSftp.LsEntry> list = sftp.ls("*");
-       /* for(ChannelSftp.LsEntry entry : list) {
+       *//* for(ChannelSftp.LsEntry entry : list) {
             channelSftp.get(entry.getFileName(), destinationPath + entry.getFileName());
         }
-        */
+        *//*
 
     System.out.printf("Found %d files in dir %s%n", list.size(), directory);
 
@@ -103,6 +183,6 @@ public class FTPService {
     channel.disconnect();
     session.disconnect();
 
-    public void getFiles()
+    public void getFiles()*/
 }
 

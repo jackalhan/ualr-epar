@@ -2,6 +2,8 @@ package com.jackalhan.ualr.service.batch;
 
 import com.jackalhan.ualr.config.*;
 import com.jackalhan.ualr.domain.*;
+import com.jackalhan.ualr.enums.ImageTypeEnum;
+import com.jackalhan.ualr.service.rest.FTPService;
 import com.jackalhan.ualr.service.rest.MailService;
 import com.jackalhan.ualr.service.utils.FileUtilService;
 import com.jackalhan.ualr.service.utils.StringUtilService;
@@ -15,24 +17,33 @@ import jxl.format.BorderLineStyle;
 import jxl.format.Colour;
 import jxl.format.VerticalAlignment;
 import jxl.write.*;
+import jxl.write.Label;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.velocity.Template;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.VelocityEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.asm.Type;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.InputStreamSource;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring4.SpringTemplateEngine;
 
 
 import javax.validation.*;
+import java.awt.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.time.ZonedDateTime;
+import java.io.StringWriter;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -49,7 +60,11 @@ public class WorkloadReportService {
     private MailService mailService;
 
     @Autowired
-    private MailExecutiveProperties mailExecutiveProperties;
+    private FTPService ftpService;
+
+    @Autowired
+    private FTPConfiguration ftpConfiguration;
+
 
     private final Logger log = LoggerFactory.getLogger(WorkloadReportService.class);
 
@@ -59,32 +74,88 @@ public class WorkloadReportService {
     private final double excelRightMargin = 0.75;
     private final double excelTopMargin = 0.30;
     private final double excelBottomMargin = 0.33;
-    private final String fileNamePattern = "2016_S";
     private ValidatorFactory validatorFactory;
     private Validator validator;
+    private String MAIL_SUBJECT = "Workload Report Execution Status for ";
 
 
     @Scheduled(fixedDelay = SchedulingConstants.WORKLOAD_REPORT_SERVICE_EXECUTE_FIXED_DELAY)
     private void executeService() throws IOException, WriteException, CloneNotSupportedException, JSchException, SftpException {
 
+        log.info("TypeSafeRawWorkload Reports execution started");
+        initializeValidator();
+        String filePattern = getFilePatternAccordingToSemesterTerm();
+        List<String> files = ftpService.downloadAndGetExactFileNames(Constants.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH, filePattern);
+        if (files.size() == 0) {
+            mailService.sendNewsletterMail(MAIL_SUBJECT, "No file found to be executed", "There is no file found based on expected pattern " + filePattern + " in FTP server");
 
-
-
-
-       /* initializeValidator();
-        RawWorkloadWithValidationResult rawWorkloadWithValidationResult = prepareTestData(fileNamePattern);
-
-        if (!rawWorkloadWithValidationResult.isHasInvalidatedData()) {
-            List<TypeSafeRawWorkload> typeSafeRawWorkloadList = convertRawToTypeSafeData(rawWorkloadWithValidationResult.getRawWorkloadList());
-            log.info("Type Safe Raw Workload List Size : " + typeSafeRawWorkloadList.size());
-            List<SimplifiedWorkload> simplifiedWorkloadList = simplifyWorkloadData(typeSafeRawWorkloadList);
-            generateExcelContent(simplifiedWorkloadList);
-            mailService.send(mailExecutiveProperties.from, mailExecutiveProperties.getTo(), null, mailExecutiveProperties.getDeveloper(), "<h1>halloldu.<h1/>", mailExecutiveProperties.subject, null, true);
         } else {
-            mailService.send(mailExecutiveProperties.from, mailExecutiveProperties.getTo(), null, mailExecutiveProperties.getDeveloper(), rawWorkloadWithValidationResult.getCaughtErrors(), mailExecutiveProperties.subject, null, true);
+            for (String file : files) {
+                String NEW_MAIL_SUBJECT = MAIL_SUBJECT + file;
+                File fileFromTemp = FileUtilService.getInstance().getFile(Constants.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH + file);
+                BufferedReader bufferedReader = FileUtilService.getInstance().getFileContent(fileFromTemp);
+                RawWorkloadWithValidationResult rawWorkloadWithValidationResult = parseContent(bufferedReader);
+                if (!rawWorkloadWithValidationResult.isHasInvalidatedData()) {
+                    boolean result = FileUtilService.getInstance().moveTo(Constants.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH, Constants.WORKLOAD_REPORTS_RAWTXT_PROCESSED_PATH, file);
+                    if (result) {
+                        result = ftpService.moveTo(ftpConfiguration.getFileTempPath(), ftpConfiguration.getFileProcessedPath(), file);
+                        if (!result) {
+                            mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during file ftp moving", "Problem occured during file moving in ftp. " + file + " was moving from " + ftpConfiguration.getFileTempPath() + " to " + ftpConfiguration.getFileProcessedPath());
+
+                        } else {
+                            List<TypeSafeRawWorkload> typeSafeRawWorkloadList = convertRawToTypeSafeData(rawWorkloadWithValidationResult.getRawWorkloadList());
+                            log.info("Type Safe Raw Workload List Size : " + typeSafeRawWorkloadList.size());
+                            List<SimplifiedWorkload> simplifiedWorkloadList = simplifyWorkloadData(typeSafeRawWorkloadList);
+                            result = generateExcelContent(simplifiedWorkloadList);
+                            if (result) {
+                                mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Excel files are generated", "Excel files are generated based on following file " + file + "You can view all generated files by clicking following link......" );
+
+                            } else {
+                                mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during excel generating", "Excel generating based on following file " + file + " is failed. ");
+                            }
+                        }
+                    } else {
+                        mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during file moving", "Problem occured during file moving. " + file + " was moving from " + Constants.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH + " to " + Constants.WORKLOAD_REPORTS_RAWTXT_PROCESSED_PATH);
+
+                    }
+                } else {
+                    mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during data parsing", rawWorkloadWithValidationResult.getCaughtErrors());
+
+                    boolean result = FileUtilService.getInstance().moveTo(Constants.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH, Constants.WORKLOAD_REPORTS_RAWTXT_ERROR_PATH, file);
+                    if (result) {
+                        result = ftpService.moveTo(ftpConfiguration.getFileTempPath(), ftpConfiguration.getFileErrorPath(), file);
+                        if (!result) {
+                            mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during file ftp moving", "Problem occured during file moving in ftp. " + file + " was moving from " + ftpConfiguration.getFileTempPath() + " to " + ftpConfiguration.getFileProcessedPath());
+
+                        }
+                    } else {
+                        mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during file moving", "Problem occured during file moving. " + file + " was moving from " + Constants.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH + " to " + Constants.WORKLOAD_REPORTS_RAWTXT_PROCESSED_PATH);
+
+                    }
+                }
+
+            }
         }
 
-        log.info("TypeSafeRawWorkload Reports execution ended");*/
+        log.info("TypeSafeRawWorkload Reports execution ended");
+    }
+
+    private String getFilePatternAccordingToSemesterTerm() {
+        LocalDateTime now = LocalDateTime.now();
+        int year = now.getYear();
+        int month = now.getMonthValue();
+        String semesterTermCode = null;
+
+        if ((month >= 1) && (month <= 5)) {
+            semesterTermCode = "10";
+        } else if ((month >= 6) && (month <= 7))
+            semesterTermCode = "30";
+        else
+            semesterTermCode = "60";
+
+
+        return "Load_Report_" + year + semesterTermCode + "*.txt";
+
     }
 
     private void initializeValidator() {
@@ -272,9 +343,6 @@ public class WorkloadReportService {
                     }
                 }
 
-                if (newRawData.getInstructorTNumber().equals("T00193113")) {
-                    System.out.println("----------");
-                }
                 courseDetail = (CourseDetail) courseDetail.clone();
                 courseDetail.setInstructionType(newRawData.getInstructionType());
                 courseDetail.setSection(newRawData.getSection());
@@ -357,674 +425,678 @@ public class WorkloadReportService {
             return Constants.TERM_FALL;
 
     }
-    private void generateExcelContent(List<SimplifiedWorkload> simplifiedWorkloadList) throws IOException, WriteException {
 
-        FileUtilService.getInstance().createDirectory(Constants.WORKLOAD_REPORTS_TEMP_PATH);
+    private boolean generateExcelContent(List<SimplifiedWorkload> simplifiedWorkloadList) {
 
-        for (SimplifiedWorkload simplifiedWorkload : simplifiedWorkloadList) {
+        boolean result = true;
+        FileUtilService.getInstance().createDirectory(Constants.WORKLOAD_REPORTS_EXCEL_PROCESSED_PATH);
 
-            String filePath = Constants.WORKLOAD_REPORTS_TEMP_PATH + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + "_" + simplifiedWorkload.getDepartmentCode() + ".xls";
+        try {
 
+            for (SimplifiedWorkload simplifiedWorkload : simplifiedWorkloadList) {
 
-            File file = new File(filePath);
-
-            int startingColumnFrame = 1;
-            int endingColumnFrame = 25;
-            //Creates a writable workbook with the given file name
-            //WritableWorkbook workbook = Workbook.createWorkbook(new File(simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + ".xls"));
-            WritableWorkbook workbook = Workbook.createWorkbook(file);
-            WritableSheet sheet = workbook.createSheet(simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_"), 0);
-
-            // Create cell font and format
-            // REPORT HEADER
-            WritableFont cellFont = createCellFont("workloadReport.faculty.name.fontsize", Colour.BLACK, true);
-            WritableCellFormat cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-            sheet.mergeCells(startingColumnFrame, 1, endingColumnFrame, 3);
-            createText(sheet, "workloadReport.faculty.name", null, cellFormat, startingColumnFrame, 1);
-
-            // *****************************************************************************************************
-            //REPORT NAME
-
-            cellFont = createCellFont("workloadReport.report.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, false, true, true, false);
-            sheet.mergeCells(startingColumnFrame, 4, endingColumnFrame, 5);
-            createText(sheet, "workloadReport.report.name", null, cellFormat, startingColumnFrame, 4);
-
-            // *****************************************************************************************************
-            //DEPARTMENT HEADER
-
-            cellFont = createCellFont("workloadReport.department.name.fontsize", Colour.BLACK, false);
-            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, false, true, true, true);
-            sheet.mergeCells(startingColumnFrame, 6, endingColumnFrame, 7);
-            createText(sheet, "workloadReport.department.name", new Object[]{simplifiedWorkload.getDepartmentName(), simplifiedWorkload.getSemesterTerm(), String.valueOf(simplifiedWorkload.getSemesterYear())}, cellFormat, startingColumnFrame, 6);
-
-            // *****************************************************************************************************
-            //INSTRUCTOR NAME
-            cellFont = createCellFont("workloadReport.instructor.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, false, true, true, true);
-            createText(sheet, "workloadReport.instructor.name", new Object[]{simplifiedWorkload.getInstructorNameAndSurname()}, cellFormat, startingColumnFrame, 8);
-            sheet.mergeCells(startingColumnFrame, 8, endingColumnFrame, 9);
-
-            // *****************************************************************************************************
-            //COLUMNS
-            int startingColHeadercolumnNumber = 0;
-            int endingColHeadercolumnNumber = startingColHeadercolumnNumber;
-            int startingColHeaderRowNumber = 10;
-            int endingColHeaderRowNumber = 18;
-            String columnTitle = "";
-            for (int i = 1; i < 18; i++) {
-                startingColHeadercolumnNumber = endingColHeadercolumnNumber + 1;
-                if (i >= 6 && i <= 7) {
-                    endingColHeadercolumnNumber = startingColHeadercolumnNumber + 4;
-                } else {
-                    endingColHeadercolumnNumber = startingColHeadercolumnNumber;
-                }
-
-                columnTitle = "workloadReport.column." + i + ".name";
-
-                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.ICE_BLUE, BorderLineStyle.THICK, true, true, true, true, true);
-                createText(sheet, columnTitle, null, cellFormat, startingColHeadercolumnNumber, startingColHeaderRowNumber);
-                sheet.mergeCells(startingColHeadercolumnNumber, startingColHeaderRowNumber, endingColHeadercolumnNumber, endingColHeaderRowNumber);
-            }
-
-            // *****************************************************************************************************
-            //PEDAGOGICAL INSTR
-            int startingPedaRowNumber = endingColHeaderRowNumber + 1;
-            int endingPedaRowNumber = startingPedaRowNumber + 2;
-
-            cellFont = createCellFont("workloadReport.pedagogical.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.LIGHT_GREEN, BorderLineStyle.THICK, false, false, true, true, true);
-            createText(sheet, "workloadReport.pedagogical.name", null, cellFormat, startingColumnFrame, startingPedaRowNumber);
-            sheet.mergeCells(startingColumnFrame, startingPedaRowNumber, endingColumnFrame, endingPedaRowNumber);
-
-            // *****************************************************************************************************
-            //DATA UNDER PEDAGOGICAL
-            int startingDataPedaRowNumber = endingPedaRowNumber + 1;
-            int endingDataPedaRowNumber = startingDataPedaRowNumber;
-
-            int startingDataPedaColumnNumber = 1;
-            int endingDataPedaColumnNumber = startingDataPedaColumnNumber;
+                String filePath = Constants.WORKLOAD_REPORTS_EXCEL_PROCESSED_PATH + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + "_" + simplifiedWorkload.getDepartmentCode() + ".xls";
 
 
-            int rawPedaCounter = 0;
-            // FOR LOOP WILL BE BUILDING FOR FILTERED PEDA DATA
-            for (TypeSafeRawWorkload pedWorkloadItems : simplifiedWorkload.getTypeSafeRawWorkloads()) {
-                if (pedWorkloadItems.getInstructionType().toUpperCase().trim().contains(Constants.INSTRUCTION_TYPE_CONTAINS_KEY_WORD_PED)) {
-                    rawPedaCounter++;
-                    startingDataPedaColumnNumber = 1;
-                    boolean topBorder = true;
-                    if (rawPedaCounter == 1) {
-                        topBorder = false;
+                File file = new File(filePath);
+
+                int startingColumnFrame = 1;
+                int endingColumnFrame = 25;
+                //Creates a writable workbook with the given file name
+                //WritableWorkbook workbook = Workbook.createWorkbook(new File(simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + ".xls"));
+                WritableWorkbook workbook = Workbook.createWorkbook(file);
+                WritableSheet sheet = workbook.createSheet(simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_"), 0);
+
+                // Create cell font and format
+                // REPORT HEADER
+                WritableFont cellFont = createCellFont("workloadReport.faculty.name.fontsize", Colour.BLACK, true);
+                WritableCellFormat cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                sheet.mergeCells(startingColumnFrame, 1, endingColumnFrame, 3);
+                createText(sheet, "workloadReport.faculty.name", null, cellFormat, startingColumnFrame, 1);
+
+                // *****************************************************************************************************
+                //REPORT NAME
+
+                cellFont = createCellFont("workloadReport.report.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, false, true, true, false);
+                sheet.mergeCells(startingColumnFrame, 4, endingColumnFrame, 5);
+                createText(sheet, "workloadReport.report.name", null, cellFormat, startingColumnFrame, 4);
+
+                // *****************************************************************************************************
+                //DEPARTMENT HEADER
+
+                cellFont = createCellFont("workloadReport.department.name.fontsize", Colour.BLACK, false);
+                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, false, true, true, true);
+                sheet.mergeCells(startingColumnFrame, 6, endingColumnFrame, 7);
+                createText(sheet, "workloadReport.department.name", new Object[]{simplifiedWorkload.getDepartmentName(), simplifiedWorkload.getSemesterTerm(), String.valueOf(simplifiedWorkload.getSemesterYear())}, cellFormat, startingColumnFrame, 6);
+
+                // *****************************************************************************************************
+                //INSTRUCTOR NAME
+                cellFont = createCellFont("workloadReport.instructor.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, false, true, true, true);
+                createText(sheet, "workloadReport.instructor.name", new Object[]{simplifiedWorkload.getInstructorNameAndSurname()}, cellFormat, startingColumnFrame, 8);
+                sheet.mergeCells(startingColumnFrame, 8, endingColumnFrame, 9);
+
+                // *****************************************************************************************************
+                //COLUMNS
+                int startingColHeadercolumnNumber = 0;
+                int endingColHeadercolumnNumber = startingColHeadercolumnNumber;
+                int startingColHeaderRowNumber = 10;
+                int endingColHeaderRowNumber = 18;
+                String columnTitle = "";
+                for (int i = 1; i < 18; i++) {
+                    startingColHeadercolumnNumber = endingColHeadercolumnNumber + 1;
+                    if (i >= 6 && i <= 7) {
+                        endingColHeadercolumnNumber = startingColHeadercolumnNumber + 4;
+                    } else {
+                        endingColHeadercolumnNumber = startingColHeadercolumnNumber;
                     }
 
-                    cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, false);
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, topBorder, true, false, false);
-                    createText(sheet, String.valueOf(pedWorkloadItems.getCrn()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
-                    startingDataPedaColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, String.valueOf(pedWorkloadItems.getSubjectCode()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
-                    startingDataPedaColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, String.valueOf(pedWorkloadItems.getCourseNumber()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
-                    startingDataPedaColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, String.valueOf(pedWorkloadItems.getSection()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
-                    startingDataPedaColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, pedWorkloadItems.getCourseTypeCode(), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
-                    startingDataPedaColumnNumber++;
-                    endingDataPedaColumnNumber = startingDataPedaColumnNumber + 4;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, true, topBorder, true, true, false);
-                    createText(sheet, pedWorkloadItems.getCourseTitle(), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
-                    sheet.mergeCells(startingDataPedaColumnNumber, startingDataPedaRowNumber, endingDataPedaColumnNumber, endingDataPedaRowNumber);
-                    startingDataPedaColumnNumber = endingDataPedaColumnNumber + 1;
-                    endingDataPedaColumnNumber = startingDataPedaColumnNumber + 4;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, pedWorkloadItems.getTaStudent(), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
-                    sheet.mergeCells(startingDataPedaColumnNumber, startingDataPedaRowNumber, endingDataPedaColumnNumber, endingDataPedaRowNumber);
-                    startingDataPedaColumnNumber = endingDataPedaColumnNumber + 1;
-                    cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, "", cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
-                    startingDataPedaColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, String.valueOf(pedWorkloadItems.getTaEleventhDayCount()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
-                    startingDataPedaColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, String.valueOf(pedWorkloadItems.getTaCeditHours()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
-                    startingDataPedaColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, String.valueOf(pedWorkloadItems.getTaLectureHours()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
-                    startingDataPedaColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, String.valueOf(pedWorkloadItems.getIuMultipliertaLectureHours()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
-                    startingDataPedaColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, String.valueOf(pedWorkloadItems.getTaLabHours()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
-                    startingDataPedaColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, "", cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
-                    startingDataPedaColumnNumber++;
-                    cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.RED, true);
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, String.valueOf(pedWorkloadItems.getTotalIus()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
-                    startingDataPedaColumnNumber++;
-                    cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, false);
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, VerticalAlignment.TOP, Alignment.LEFT, BorderLineStyle.THIN, true, topBorder, true, true, false);
-                    createText(sheet, pedWorkloadItems.getOtherInstructorsInTeam(), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
-                    startingDataPedaColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, topBorder, false, true, false);
-                    createText(sheet, String.valueOf(pedWorkloadItems.getTotalSsch()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                    columnTitle = "workloadReport.column." + i + ".name";
 
-                    startingDataPedaRowNumber++;
-                    endingDataPedaRowNumber = startingDataPedaRowNumber;
-
+                    cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                    cellFormat = createCellFormat(cellFont, Colour.ICE_BLUE, BorderLineStyle.THICK, true, true, true, true, true);
+                    createText(sheet, columnTitle, null, cellFormat, startingColHeadercolumnNumber, startingColHeaderRowNumber);
+                    sheet.mergeCells(startingColHeadercolumnNumber, startingColHeaderRowNumber, endingColHeadercolumnNumber, endingColHeaderRowNumber);
                 }
 
-            }
+                // *****************************************************************************************************
+                //PEDAGOGICAL INSTR
+                int startingPedaRowNumber = endingColHeaderRowNumber + 1;
+                int endingPedaRowNumber = startingPedaRowNumber + 2;
+
+                cellFont = createCellFont("workloadReport.pedagogical.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.LIGHT_GREEN, BorderLineStyle.THICK, false, false, true, true, true);
+                createText(sheet, "workloadReport.pedagogical.name", null, cellFormat, startingColumnFrame, startingPedaRowNumber);
+                sheet.mergeCells(startingColumnFrame, startingPedaRowNumber, endingColumnFrame, endingPedaRowNumber);
+
+                // *****************************************************************************************************
+                //DATA UNDER PEDAGOGICAL
+                int startingDataPedaRowNumber = endingPedaRowNumber + 1;
+                int endingDataPedaRowNumber = startingDataPedaRowNumber;
+
+                int startingDataPedaColumnNumber = 1;
+                int endingDataPedaColumnNumber = startingDataPedaColumnNumber;
 
 
-            // *****************************************************************************************************
-            //INDIVIDUAL INSTR
-            int startingIndivRowNumber = endingDataPedaRowNumber;
-            int endingIndivRowNumber = startingIndivRowNumber + 2;
+                int rawPedaCounter = 0;
+                // FOR LOOP WILL BE BUILDING FOR FILTERED PEDA DATA
+                for (TypeSafeRawWorkload pedWorkloadItems : simplifiedWorkload.getTypeSafeRawWorkloads()) {
+                    if (pedWorkloadItems.getInstructionType().toUpperCase().trim().contains(Constants.INSTRUCTION_TYPE_CONTAINS_KEY_WORD_PED)) {
+                        rawPedaCounter++;
+                        startingDataPedaColumnNumber = 1;
+                        boolean topBorder = true;
+                        if (rawPedaCounter == 1) {
+                            topBorder = false;
+                        }
 
-            cellFont = createCellFont("workloadReport.individualized.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.LIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "workloadReport.individualized.name", null, cellFormat, startingColumnFrame, startingIndivRowNumber);
-            sheet.mergeCells(startingColumnFrame, startingIndivRowNumber, endingColumnFrame, endingIndivRowNumber);
+                        cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, false);
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, topBorder, true, false, false);
+                        createText(sheet, String.valueOf(pedWorkloadItems.getCrn()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        startingDataPedaColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, String.valueOf(pedWorkloadItems.getSubjectCode()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        startingDataPedaColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, String.valueOf(pedWorkloadItems.getCourseNumber()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        startingDataPedaColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, String.valueOf(pedWorkloadItems.getSection()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        startingDataPedaColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, pedWorkloadItems.getCourseTypeCode(), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        startingDataPedaColumnNumber++;
+                        endingDataPedaColumnNumber = startingDataPedaColumnNumber + 4;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, true, topBorder, true, true, false);
+                        createText(sheet, pedWorkloadItems.getCourseTitle(), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        sheet.mergeCells(startingDataPedaColumnNumber, startingDataPedaRowNumber, endingDataPedaColumnNumber, endingDataPedaRowNumber);
+                        startingDataPedaColumnNumber = endingDataPedaColumnNumber + 1;
+                        endingDataPedaColumnNumber = startingDataPedaColumnNumber + 4;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, pedWorkloadItems.getTaStudent(), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        sheet.mergeCells(startingDataPedaColumnNumber, startingDataPedaRowNumber, endingDataPedaColumnNumber, endingDataPedaRowNumber);
+                        startingDataPedaColumnNumber = endingDataPedaColumnNumber + 1;
+                        cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, "", cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        startingDataPedaColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, String.valueOf(pedWorkloadItems.getTaEleventhDayCount()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        startingDataPedaColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, String.valueOf(pedWorkloadItems.getTaCeditHours()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        startingDataPedaColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, String.valueOf(pedWorkloadItems.getTaLectureHours()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        startingDataPedaColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, String.valueOf(pedWorkloadItems.getIuMultipliertaLectureHours()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        startingDataPedaColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, String.valueOf(pedWorkloadItems.getTaLabHours()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        startingDataPedaColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, "", cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        startingDataPedaColumnNumber++;
+                        cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.RED, true);
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, String.valueOf(pedWorkloadItems.getTotalIus()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        startingDataPedaColumnNumber++;
+                        cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, false);
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, VerticalAlignment.TOP, Alignment.LEFT, BorderLineStyle.THIN, true, topBorder, true, true, false);
+                        createText(sheet, pedWorkloadItems.getOtherInstructorsInTeam(), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        startingDataPedaColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, topBorder, false, true, false);
+                        createText(sheet, String.valueOf(pedWorkloadItems.getTotalSsch()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
 
-            // *****************************************************************************************************
-            //DATA UNDER INDIVIDUAL
-            int startingDataIndivRowNumber = endingIndivRowNumber + 1;
-            int endingDataIndivRowNumber = startingDataIndivRowNumber;
+                        startingDataPedaRowNumber++;
+                        endingDataPedaRowNumber = startingDataPedaRowNumber;
 
-            int startingDataIndivColumnNumber = 1;
-            int endingDataIndivColumnNumber = startingDataIndivColumnNumber;
-
-            // FOR LOOP WILL BE BUILDING FOR FILTERED INDIV DATA
-            int firstNotApplicableFromColumnNumber = 0,
-                    firstNotApplicableToColumnNumber = 0,
-                    secondNotApplicableFromColumnNumber = 0,
-                    secondNotApplicableToColumnNumber = 0;
-            int rawIndivCounter = 0;
-            for (TypeSafeRawWorkload indWorkloadItems : simplifiedWorkload.getTypeSafeRawWorkloads()) {
-                if (indWorkloadItems.getInstructionType().toUpperCase().trim().contains(Constants.INSTRUCTION_TYPE_CONTAINS_KEY_WORD_IND)) {
-                    rawIndivCounter++;
-                    startingDataIndivColumnNumber = 1;
-                    boolean topBorder = true;
-                    if (rawIndivCounter == 1) {
-                        topBorder = false;
                     }
 
-                    cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, false);
-                    //Exception For Initial Columns in order to draw differntTypeOf
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, topBorder, true, false, false);
-                    createText(sheet, String.valueOf(indWorkloadItems.getCrn()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
-                    startingDataIndivColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, String.valueOf(indWorkloadItems.getSubjectCode()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
-                    startingDataIndivColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, String.valueOf(indWorkloadItems.getCourseNumber()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
-                    startingDataIndivColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, String.valueOf(indWorkloadItems.getSection()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
-                    startingDataIndivColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, indWorkloadItems.getCourseTypeCode(), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
-                    startingDataIndivColumnNumber++;
-                    endingDataIndivColumnNumber = startingDataIndivColumnNumber + 4;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, true, topBorder, true, true, false);
-                    createText(sheet, indWorkloadItems.getCourseTitle(), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
-                    sheet.mergeCells(startingDataIndivColumnNumber, startingDataIndivRowNumber, endingDataIndivColumnNumber, endingDataIndivRowNumber);
-                    startingDataIndivColumnNumber = endingDataIndivColumnNumber + 1;
-                    endingDataIndivColumnNumber = startingDataIndivColumnNumber + 4;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, indWorkloadItems.getTaStudent(), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
-                    sheet.mergeCells(startingDataIndivColumnNumber, startingDataIndivRowNumber, endingDataIndivColumnNumber, endingDataIndivRowNumber);
-                    startingDataIndivColumnNumber = endingDataIndivColumnNumber + 1;
-
-                    // NOT APPLICABLE 1
-                    firstNotApplicableFromColumnNumber = startingDataIndivColumnNumber;
-                    firstNotApplicableToColumnNumber = firstNotApplicableFromColumnNumber;
-
-                    startingDataIndivColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, String.valueOf(indWorkloadItems.getTaEleventhDayCount()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
-                    startingDataIndivColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, String.valueOf(indWorkloadItems.getTaCeditHours()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
-                    startingDataIndivColumnNumber++;
-
-                    // NOT APPLICABLE 2
-                    secondNotApplicableFromColumnNumber = startingDataIndivColumnNumber;
-                    startingDataIndivColumnNumber = startingDataIndivColumnNumber + 3;
-                    secondNotApplicableToColumnNumber = startingDataIndivColumnNumber;
+                }
 
 
-                    startingDataIndivColumnNumber++;
-                    cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.RED, true);
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                    createText(sheet, String.valueOf(indWorkloadItems.getTotalIus()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
-                    startingDataIndivColumnNumber++;
-                    cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, false);
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, VerticalAlignment.TOP, Alignment.LEFT, BorderLineStyle.THIN, true, topBorder, true, true, false);
-                    createText(sheet, indWorkloadItems.getOtherInstructorsInTeam(), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
-                    startingDataIndivColumnNumber++;
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, topBorder, false, true, false);
-                    createText(sheet, String.valueOf(indWorkloadItems.getTotalSsch()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                // *****************************************************************************************************
+                //INDIVIDUAL INSTR
+                int startingIndivRowNumber = endingDataPedaRowNumber;
+                int endingIndivRowNumber = startingIndivRowNumber + 2;
 
-                    startingDataIndivRowNumber++;
-                    endingDataIndivRowNumber = startingDataIndivRowNumber;
+                cellFont = createCellFont("workloadReport.individualized.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.LIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "workloadReport.individualized.name", null, cellFormat, startingColumnFrame, startingIndivRowNumber);
+                sheet.mergeCells(startingColumnFrame, startingIndivRowNumber, endingColumnFrame, endingIndivRowNumber);
+
+                // *****************************************************************************************************
+                //DATA UNDER INDIVIDUAL
+                int startingDataIndivRowNumber = endingIndivRowNumber + 1;
+                int endingDataIndivRowNumber = startingDataIndivRowNumber;
+
+                int startingDataIndivColumnNumber = 1;
+                int endingDataIndivColumnNumber = startingDataIndivColumnNumber;
+
+                // FOR LOOP WILL BE BUILDING FOR FILTERED INDIV DATA
+                int firstNotApplicableFromColumnNumber = 0,
+                        firstNotApplicableToColumnNumber = 0,
+                        secondNotApplicableFromColumnNumber = 0,
+                        secondNotApplicableToColumnNumber = 0;
+                int rawIndivCounter = 0;
+                for (TypeSafeRawWorkload indWorkloadItems : simplifiedWorkload.getTypeSafeRawWorkloads()) {
+                    if (indWorkloadItems.getInstructionType().toUpperCase().trim().contains(Constants.INSTRUCTION_TYPE_CONTAINS_KEY_WORD_IND)) {
+                        rawIndivCounter++;
+                        startingDataIndivColumnNumber = 1;
+                        boolean topBorder = true;
+                        if (rawIndivCounter == 1) {
+                            topBorder = false;
+                        }
+
+                        cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, false);
+                        //Exception For Initial Columns in order to draw differntTypeOf
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, topBorder, true, false, false);
+                        createText(sheet, String.valueOf(indWorkloadItems.getCrn()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        startingDataIndivColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, String.valueOf(indWorkloadItems.getSubjectCode()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        startingDataIndivColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, String.valueOf(indWorkloadItems.getCourseNumber()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        startingDataIndivColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, String.valueOf(indWorkloadItems.getSection()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        startingDataIndivColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, indWorkloadItems.getCourseTypeCode(), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        startingDataIndivColumnNumber++;
+                        endingDataIndivColumnNumber = startingDataIndivColumnNumber + 4;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, true, topBorder, true, true, false);
+                        createText(sheet, indWorkloadItems.getCourseTitle(), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        sheet.mergeCells(startingDataIndivColumnNumber, startingDataIndivRowNumber, endingDataIndivColumnNumber, endingDataIndivRowNumber);
+                        startingDataIndivColumnNumber = endingDataIndivColumnNumber + 1;
+                        endingDataIndivColumnNumber = startingDataIndivColumnNumber + 4;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, indWorkloadItems.getTaStudent(), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        sheet.mergeCells(startingDataIndivColumnNumber, startingDataIndivRowNumber, endingDataIndivColumnNumber, endingDataIndivRowNumber);
+                        startingDataIndivColumnNumber = endingDataIndivColumnNumber + 1;
+
+                        // NOT APPLICABLE 1
+                        firstNotApplicableFromColumnNumber = startingDataIndivColumnNumber;
+                        firstNotApplicableToColumnNumber = firstNotApplicableFromColumnNumber;
+
+                        startingDataIndivColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, String.valueOf(indWorkloadItems.getTaEleventhDayCount()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        startingDataIndivColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, String.valueOf(indWorkloadItems.getTaCeditHours()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        startingDataIndivColumnNumber++;
+
+                        // NOT APPLICABLE 2
+                        secondNotApplicableFromColumnNumber = startingDataIndivColumnNumber;
+                        startingDataIndivColumnNumber = startingDataIndivColumnNumber + 3;
+                        secondNotApplicableToColumnNumber = startingDataIndivColumnNumber;
+
+
+                        startingDataIndivColumnNumber++;
+                        cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.RED, true);
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        createText(sheet, String.valueOf(indWorkloadItems.getTotalIus()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        startingDataIndivColumnNumber++;
+                        cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, false);
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, VerticalAlignment.TOP, Alignment.LEFT, BorderLineStyle.THIN, true, topBorder, true, true, false);
+                        createText(sheet, indWorkloadItems.getOtherInstructorsInTeam(), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        startingDataIndivColumnNumber++;
+                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, topBorder, false, true, false);
+                        createText(sheet, String.valueOf(indWorkloadItems.getTotalSsch()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+
+                        startingDataIndivRowNumber++;
+                        endingDataIndivRowNumber = startingDataIndivRowNumber;
+
+                    }
 
                 }
 
-            }
+                if (rawIndivCounter > 0) {
+                    // NOT APPLICABLE 1 PRINTING
+                    cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
+                    cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THIN, true, false, false, false, false);
+                    createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, firstNotApplicableFromColumnNumber, endingIndivRowNumber + 1);
+                    // mergeCells(colStart, rowStart, colEnd, rowEnd)
+                    sheet.mergeCells(firstNotApplicableFromColumnNumber, endingIndivRowNumber + 1, firstNotApplicableToColumnNumber, endingDataIndivRowNumber - 1);
 
-            if (rawIndivCounter > 0) {
-                // NOT APPLICABLE 1 PRINTING
+                    // NOT APPLICABLE 2 PRINTING
+                    cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
+                    cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THIN, true, false, false, false, false);
+                    createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, secondNotApplicableFromColumnNumber, endingIndivRowNumber + 1);
+                    // mergeCells(colStart, rowStart, colEnd, rowEnd)
+                    sheet.mergeCells(secondNotApplicableFromColumnNumber, endingIndivRowNumber + 1, secondNotApplicableToColumnNumber, endingDataIndivRowNumber - 1);
+                }
+
+
+                // *****************************************************************************************************
+                //ADMINISTRATIVE REASSIGN
+                int startingAdminRowNumber = endingDataIndivRowNumber;
+                int endingAdminRowNumber = startingAdminRowNumber + 2;
+
+                cellFont = createCellFont("workloadReport.administrative.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.LIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "workloadReport.administrative.name", null, cellFormat, startingColumnFrame, startingAdminRowNumber);
+                sheet.mergeCells(startingColumnFrame, startingAdminRowNumber, endingColumnFrame, endingAdminRowNumber);
+
+
+                // *****************************************************************************************************
+                //DATA UNDER ADMINISTRATIVE
+                int startingDataAdminRowNumber = endingAdminRowNumber + 1;
+                int endingDataAdminRowNumber = startingDataAdminRowNumber + 9;
+
+                int startingDataAdminColumnNumber = startingColumnFrame;
+                int endingDataAdminColumnNumber = startingDataAdminColumnNumber;
+
+                // FOR LOOP WILL BE BUILDING FOR FILTERED ADMIN DATA
+
+                endingDataAdminColumnNumber = startingDataAdminColumnNumber + 15;
                 cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THIN, true, false, false, false, false);
-                createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, firstNotApplicableFromColumnNumber, endingIndivRowNumber + 1);
+                cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, true, true, true, true, true);
+                createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
                 // mergeCells(colStart, rowStart, colEnd, rowEnd)
-                sheet.mergeCells(firstNotApplicableFromColumnNumber, endingIndivRowNumber + 1, firstNotApplicableToColumnNumber, endingDataIndivRowNumber - 1);
+                sheet.mergeCells(startingColumnFrame, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
 
-                // NOT APPLICABLE 2 PRINTING
-                cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THIN, true, false, false, false, false);
-                createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, secondNotApplicableFromColumnNumber, endingIndivRowNumber + 1);
-                // mergeCells(colStart, rowStart, colEnd, rowEnd)
-                sheet.mergeCells(secondNotApplicableFromColumnNumber, endingIndivRowNumber + 1, secondNotApplicableToColumnNumber, endingDataIndivRowNumber - 1);
-            }
-
-
-            // *****************************************************************************************************
-            //ADMINISTRATIVE REASSIGN
-            int startingAdminRowNumber = endingDataIndivRowNumber;
-            int endingAdminRowNumber = startingAdminRowNumber + 2;
-
-            cellFont = createCellFont("workloadReport.administrative.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.LIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "workloadReport.administrative.name", null, cellFormat, startingColumnFrame, startingAdminRowNumber);
-            sheet.mergeCells(startingColumnFrame, startingAdminRowNumber, endingColumnFrame, endingAdminRowNumber);
-
-
-            // *****************************************************************************************************
-            //DATA UNDER ADMINISTRATIVE
-            int startingDataAdminRowNumber = endingAdminRowNumber + 1;
-            int endingDataAdminRowNumber = startingDataAdminRowNumber + 9;
-
-            int startingDataAdminColumnNumber = startingColumnFrame;
-            int endingDataAdminColumnNumber = startingDataAdminColumnNumber;
-
-            // FOR LOOP WILL BE BUILDING FOR FILTERED ADMIN DATA
-
-            endingDataAdminColumnNumber = startingDataAdminColumnNumber + 15;
-            cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, true, true, true, true, true);
-            createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
-            // mergeCells(colStart, rowStart, colEnd, rowEnd)
-            sheet.mergeCells(startingColumnFrame, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
-
-            startingDataAdminColumnNumber = endingDataAdminColumnNumber + 1;
-            endingDataAdminColumnNumber = startingDataAdminColumnNumber + 2;
-            endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
-            for (int i = 1; i < 6; i++) {
-                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
-                createText(sheet, "workloadReport.administrative" + i + "Col1.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
-                // mergeCells(colStart, rowStart, colEnd, rowEnd)1
-                sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
-                startingDataAdminRowNumber = endingDataAdminRowNumber + 1;
+                startingDataAdminColumnNumber = endingDataAdminColumnNumber + 1;
+                endingDataAdminColumnNumber = startingDataAdminColumnNumber + 2;
                 endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
-            }
-            startingDataAdminRowNumber = endingAdminRowNumber + 1;
-            endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
+                for (int i = 1; i < 6; i++) {
+                    cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+                    createText(sheet, "workloadReport.administrative" + i + "Col1.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
+                    // mergeCells(colStart, rowStart, colEnd, rowEnd)1
+                    sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
+                    startingDataAdminRowNumber = endingDataAdminRowNumber + 1;
+                    endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
+                }
+                startingDataAdminRowNumber = endingAdminRowNumber + 1;
+                endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
 
-            startingDataAdminColumnNumber = endingDataAdminColumnNumber + 1;
-            endingDataAdminColumnNumber = startingDataAdminColumnNumber + 2;
+                startingDataAdminColumnNumber = endingDataAdminColumnNumber + 1;
+                endingDataAdminColumnNumber = startingDataAdminColumnNumber + 2;
 
-            cellFont = createCellFont("workloadReport.administrativeCol2.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
-            createText(sheet, "workloadReport.administrative1Col2.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
-            // mergeCells(colStart, rowStart, colEnd, rowEnd)1
-            sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
-
-            startingDataAdminRowNumber = endingDataAdminRowNumber + 1;
-            endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
-
-            cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, true, true, true, true, true);
-            createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
-            // mergeCells(colStart, rowStart, colEnd, rowEnd)1
-            sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
-
-            startingDataAdminRowNumber = endingDataAdminRowNumber + 1;
-            endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
-
-            for (int i = 1; i < 4; i++) {
                 cellFont = createCellFont("workloadReport.administrativeCol2.name.fontsize", Colour.BLACK, true);
                 cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
-                createText(sheet, "", cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
+                createText(sheet, "workloadReport.administrative1Col2.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
                 // mergeCells(colStart, rowStart, colEnd, rowEnd)1
                 sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
+
                 startingDataAdminRowNumber = endingDataAdminRowNumber + 1;
                 endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
-            }
-            startingDataAdminRowNumber = endingAdminRowNumber + 1;
-            endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
 
-            startingDataAdminColumnNumber = endingDataAdminColumnNumber + 1;
-            endingDataAdminColumnNumber = startingDataAdminColumnNumber;
+                cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, true, true, true, true, true);
+                createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
+                // mergeCells(colStart, rowStart, colEnd, rowEnd)1
+                sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
 
-            cellFont = createCellFont("workloadReport.administrativeCol3.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
-            createText(sheet, "workloadReport.administrative1Col3.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
-            // mergeCells(colStart, rowStart, colEnd, rowEnd)1
-            sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
+                startingDataAdminRowNumber = endingDataAdminRowNumber + 1;
+                endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
 
-            startingDataAdminRowNumber = endingDataAdminRowNumber + 1;
-            endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
+                for (int i = 1; i < 4; i++) {
+                    cellFont = createCellFont("workloadReport.administrativeCol2.name.fontsize", Colour.BLACK, true);
+                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+                    createText(sheet, "", cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
+                    // mergeCells(colStart, rowStart, colEnd, rowEnd)1
+                    sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
+                    startingDataAdminRowNumber = endingDataAdminRowNumber + 1;
+                    endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
+                }
+                startingDataAdminRowNumber = endingAdminRowNumber + 1;
+                endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
 
-            for (int i = 1; i < 5; i++) {
+                startingDataAdminColumnNumber = endingDataAdminColumnNumber + 1;
+                endingDataAdminColumnNumber = startingDataAdminColumnNumber;
+
                 cellFont = createCellFont("workloadReport.administrativeCol3.name.fontsize", Colour.BLACK, true);
                 cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
-                createText(sheet, "", cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
+                createText(sheet, "workloadReport.administrative1Col3.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
                 // mergeCells(colStart, rowStart, colEnd, rowEnd)1
                 sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
+
                 startingDataAdminRowNumber = endingDataAdminRowNumber + 1;
                 endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
-            }
 
-            startingDataAdminRowNumber = endingAdminRowNumber + 1;
-            endingDataAdminRowNumber = startingDataAdminRowNumber + 9;
+                for (int i = 1; i < 5; i++) {
+                    cellFont = createCellFont("workloadReport.administrativeCol3.name.fontsize", Colour.BLACK, true);
+                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+                    createText(sheet, "", cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
+                    // mergeCells(colStart, rowStart, colEnd, rowEnd)1
+                    sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
+                    startingDataAdminRowNumber = endingDataAdminRowNumber + 1;
+                    endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
+                }
 
-            startingDataAdminColumnNumber = endingDataAdminColumnNumber + 1;
-            endingDataAdminColumnNumber = startingDataAdminColumnNumber + 1;
+                startingDataAdminRowNumber = endingAdminRowNumber + 1;
+                endingDataAdminRowNumber = startingDataAdminRowNumber + 9;
 
-            cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, true, true, true, true, true);
-            createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
-            // mergeCells(colStart, rowStart, colEnd, rowEnd)
-            sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
+                startingDataAdminColumnNumber = endingDataAdminColumnNumber + 1;
+                endingDataAdminColumnNumber = startingDataAdminColumnNumber + 1;
 
-
-            // *****************************************************************************************************
-            //NON ADMINISTRATIVE REASSIGN
-            int startingNonAdminRowNumber = endingDataAdminRowNumber + 1;
-            int endingNonAdminRowNumber = startingNonAdminRowNumber + 2;
-
-            cellFont = createCellFont("workloadReport.nonadministrative.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.LIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "workloadReport.nonadministrative.name", null, cellFormat, startingColumnFrame, startingNonAdminRowNumber);
-            sheet.mergeCells(startingColumnFrame, startingNonAdminRowNumber, endingColumnFrame, endingNonAdminRowNumber);
+                cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, true, true, true, true, true);
+                createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
+                // mergeCells(colStart, rowStart, colEnd, rowEnd)
+                sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
 
 
-            // *****************************************************************************************************
-            //DATA UNDER NON ADMINISTRATIVE
-            int startingDataNonAdminRowNumber = endingNonAdminRowNumber + 1;
-            int endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
+                // *****************************************************************************************************
+                //NON ADMINISTRATIVE REASSIGN
+                int startingNonAdminRowNumber = endingDataAdminRowNumber + 1;
+                int endingNonAdminRowNumber = startingNonAdminRowNumber + 2;
 
-            int startingDataNonAdminColumnNumber = startingColumnFrame;
-            int endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber + 3;
+                cellFont = createCellFont("workloadReport.nonadministrative.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.LIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "workloadReport.nonadministrative.name", null, cellFormat, startingColumnFrame, startingNonAdminRowNumber);
+                sheet.mergeCells(startingColumnFrame, startingNonAdminRowNumber, endingColumnFrame, endingNonAdminRowNumber);
 
-            // COLUMN HEADER
 
-            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "workloadReport.item.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
-            sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
+                // *****************************************************************************************************
+                //DATA UNDER NON ADMINISTRATIVE
+                int startingDataNonAdminRowNumber = endingNonAdminRowNumber + 1;
+                int endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
 
-            for (int i = 1; i < 15; i++) {
-                startingDataNonAdminRowNumber = endingDataNonAdminRowNumber + 1;
-                endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
-                cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
-                createText(sheet, "", cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
+                int startingDataNonAdminColumnNumber = startingColumnFrame;
+                int endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber + 3;
+
+                // COLUMN HEADER
+
+                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "workloadReport.item.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
                 sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
-            }
+                for (int i = 1; i < 15; i++) {
+                    startingDataNonAdminRowNumber = endingDataNonAdminRowNumber + 1;
+                    endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
+                    cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
+                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+                    createText(sheet, "", cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
+                    sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
-            startingDataNonAdminRowNumber = endingNonAdminRowNumber + 1;
-            endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
+                }
 
-            startingDataNonAdminColumnNumber = endingDataNonAdminColumnNumber + 1;
-            endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber + 18;
-
-            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "workloadReport.detailsofitem.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
-            sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
-
-            endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber + 16;
-
-            for (int i = 1; i < 15; i++) {
-                startingDataNonAdminRowNumber = endingDataNonAdminRowNumber + 1;
+                startingDataNonAdminRowNumber = endingNonAdminRowNumber + 1;
                 endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
-                cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
-                createText(sheet, "", cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
+
+                startingDataNonAdminColumnNumber = endingDataNonAdminColumnNumber + 1;
+                endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber + 18;
+
+                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "workloadReport.detailsofitem.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
                 sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
-            }
-            startingDataNonAdminColumnNumber = endingDataNonAdminColumnNumber + 1;
-            endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber;
+                endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber + 16;
 
-            startingDataNonAdminRowNumber = endingNonAdminRowNumber + 2;
-            endingDataNonAdminRowNumber = startingDataNonAdminRowNumber + 13;
+                for (int i = 1; i < 15; i++) {
+                    startingDataNonAdminRowNumber = endingDataNonAdminRowNumber + 1;
+                    endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
+                    cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
+                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+                    createText(sheet, "", cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
+                    sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
-            cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, true, true, true, true, true);
-            createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
-            sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
+                }
+                startingDataNonAdminColumnNumber = endingDataNonAdminColumnNumber + 1;
+                endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber;
 
-            startingDataNonAdminRowNumber = endingNonAdminRowNumber + 1;
-            endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
+                startingDataNonAdminRowNumber = endingNonAdminRowNumber + 2;
+                endingDataNonAdminRowNumber = startingDataNonAdminRowNumber + 13;
 
-            startingDataNonAdminColumnNumber = endingDataNonAdminColumnNumber + 1;
-            endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber;
-
-            for (int i = 1; i < 15; i++) {
-                startingDataNonAdminRowNumber = endingDataNonAdminRowNumber + 1;
-                endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
-                cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
-                createText(sheet, "", cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
+                cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, true, true, true, true, true);
+                createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
                 sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
-            }
+                startingDataNonAdminRowNumber = endingNonAdminRowNumber + 1;
+                endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
 
-            startingDataNonAdminRowNumber = endingNonAdminRowNumber + 1;
-            endingDataNonAdminRowNumber = startingDataNonAdminRowNumber + 14;
+                startingDataNonAdminColumnNumber = endingDataNonAdminColumnNumber + 1;
+                endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber;
 
-            startingDataNonAdminColumnNumber = endingDataNonAdminColumnNumber + 1;
-            endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber + 1;
+                for (int i = 1; i < 15; i++) {
+                    startingDataNonAdminRowNumber = endingDataNonAdminRowNumber + 1;
+                    endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
+                    cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
+                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+                    createText(sheet, "", cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
+                    sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
-            cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, true, true, true, true, true);
-            createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
-            sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
+                }
 
+                startingDataNonAdminRowNumber = endingNonAdminRowNumber + 1;
+                endingDataNonAdminRowNumber = startingDataNonAdminRowNumber + 14;
 
-            // *****************************************************************************************************
-            //TOTAL DATA  UNDER NON ADMINISTRATIVE'S ITEMS
+                startingDataNonAdminColumnNumber = endingDataNonAdminColumnNumber + 1;
+                endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber + 1;
 
-            int startingTotalEverythingRowNumber = endingDataNonAdminRowNumber + 1;
-            int endingTotalEverythingRowNumber = startingTotalEverythingRowNumber;
-
-            int startingTotalEverythingColumnNumber = startingColumnFrame;
-            int endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber + 9;
-
-            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
-            sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
-
-            startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
-            endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber + 4;
-
-            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, VerticalAlignment.CENTRE, Alignment.RIGHT, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "workloadReport.total.name", null, cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
-            sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
-
-            startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
-            endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
-
-            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
-            sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
-
-            startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
-            endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
-
-            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, String.valueOf(simplifiedWorkload.getTotal11thDayCount()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
-            sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
-
-            startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
-            endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
-
-            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, String.valueOf(simplifiedWorkload.getTotalCreditHours()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
-            sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
-
-            startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
-            endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
-
-            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, String.valueOf(simplifiedWorkload.getTotalLectureHours()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
-            sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
-
-            startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
-            endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
-
-            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
-            sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
-
-            startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
-            endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
-
-            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, String.valueOf(simplifiedWorkload.getTotalLabHours()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
-            sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
-
-            startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
-            endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
-
-            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
-            sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
-
-            startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
-            endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
-
-            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.RED, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, String.valueOf(simplifiedWorkload.getTotalTotalIUs()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
-            sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
-
-            startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
-            endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
-
-            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
-            sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
-
-            startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
-            endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
-
-            cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, String.valueOf(simplifiedWorkload.getTotalSsch()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
-            sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
+                cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, true, true, true, true, true);
+                createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
+                sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
 
-            // *****************************************************************************************************
-            // ADDITIONAL COMMENTS
+                // *****************************************************************************************************
+                //TOTAL DATA  UNDER NON ADMINISTRATIVE'S ITEMS
 
-            int startingAddCommentsRowNumber = endingTotalEverythingRowNumber + 1;
-            int endingAddCommentsRowNumber = startingAddCommentsRowNumber + 2;
+                int startingTotalEverythingRowNumber = endingDataNonAdminRowNumber + 1;
+                int endingTotalEverythingRowNumber = startingTotalEverythingRowNumber;
 
-            int startingAddCommentsColumnNumber = startingColumnFrame;
-            int endingAddCommentsColumnNumber = endingColumnFrame;
+                int startingTotalEverythingColumnNumber = startingColumnFrame;
+                int endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber + 9;
 
-            cellFont = createCellFont("workloadReport.comments.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.GRAY_25, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "workloadReport.comments.name", null, cellFormat, startingAddCommentsColumnNumber, startingAddCommentsRowNumber);
-            sheet.mergeCells(startingAddCommentsColumnNumber, startingAddCommentsRowNumber, endingAddCommentsColumnNumber, endingAddCommentsRowNumber);
+                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
-            startingAddCommentsRowNumber = endingAddCommentsRowNumber + 1;
-            endingAddCommentsRowNumber = startingAddCommentsRowNumber + 7;
+                startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
+                endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber + 4;
 
-            cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, VerticalAlignment.CENTRE, Alignment.LEFT, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "", cellFormat, startingAddCommentsColumnNumber, startingAddCommentsRowNumber);
-            sheet.mergeCells(startingAddCommentsColumnNumber, startingAddCommentsRowNumber, endingAddCommentsColumnNumber, endingAddCommentsRowNumber);
+                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, VerticalAlignment.CENTRE, Alignment.RIGHT, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "workloadReport.total.name", null, cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
-            startingAddCommentsRowNumber = endingAddCommentsRowNumber + 1;
-            endingAddCommentsRowNumber = startingAddCommentsRowNumber;
+                startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
+                endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
-            cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, VerticalAlignment.CENTRE, Alignment.LEFT, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "", cellFormat, startingAddCommentsColumnNumber, startingAddCommentsRowNumber);
-            sheet.mergeCells(startingAddCommentsColumnNumber, startingAddCommentsRowNumber, endingAddCommentsColumnNumber, endingAddCommentsRowNumber);
+                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
-            // *****************************************************************************************************
-            // SIGNATURE
+                startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
+                endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
-            int startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
-            int endingSignatureRowNumber = startingSignatureRowNumber + 6;
+                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, String.valueOf(simplifiedWorkload.getTotal11thDayCount()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
-            int startingSignatureColumnNumber = startingColumnFrame;
-            int endingSignatureColumnNumber = startingSignatureColumnNumber + 5;
+                startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
+                endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
-            cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, String.valueOf(simplifiedWorkload.getTotalCreditHours()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
+
+                startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
+                endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
+
+                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, String.valueOf(simplifiedWorkload.getTotalLectureHours()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
+
+                startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
+                endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
+
+                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
+
+                startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
+                endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
+
+                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, String.valueOf(simplifiedWorkload.getTotalLabHours()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
+
+                startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
+                endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
+
+                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
+
+                startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
+                endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
+
+                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.RED, true);
+                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, String.valueOf(simplifiedWorkload.getTotalTotalIUs()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
+
+                startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
+                endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
+
+                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.BRIGHT_GREEN, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
+
+                startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
+                endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
+
+                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, String.valueOf(simplifiedWorkload.getTotalSsch()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
 
-            startingSignatureColumnNumber = endingSignatureColumnNumber + 1;
-            endingSignatureColumnNumber = startingSignatureColumnNumber + 3;
+                // *****************************************************************************************************
+                // ADDITIONAL COMMENTS
 
-            startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber + 1;
+                int startingAddCommentsRowNumber = endingTotalEverythingRowNumber + 1;
+                int endingAddCommentsRowNumber = startingAddCommentsRowNumber + 2;
 
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+                int startingAddCommentsColumnNumber = startingColumnFrame;
+                int endingAddCommentsColumnNumber = endingColumnFrame;
 
-            startingSignatureRowNumber = endingSignatureRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber + 1;
+                cellFont = createCellFont("workloadReport.comments.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.GRAY_25, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "workloadReport.comments.name", null, cellFormat, startingAddCommentsColumnNumber, startingAddCommentsRowNumber);
+                sheet.mergeCells(startingAddCommentsColumnNumber, startingAddCommentsRowNumber, endingAddCommentsColumnNumber, endingAddCommentsRowNumber);
 
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "workloadReport.chair.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+                startingAddCommentsRowNumber = endingAddCommentsRowNumber + 1;
+                endingAddCommentsRowNumber = startingAddCommentsRowNumber + 7;
+
+                cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.WHITE, VerticalAlignment.CENTRE, Alignment.LEFT, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "", cellFormat, startingAddCommentsColumnNumber, startingAddCommentsRowNumber);
+                sheet.mergeCells(startingAddCommentsColumnNumber, startingAddCommentsRowNumber, endingAddCommentsColumnNumber, endingAddCommentsRowNumber);
+
+                startingAddCommentsRowNumber = endingAddCommentsRowNumber + 1;
+                endingAddCommentsRowNumber = startingAddCommentsRowNumber;
+
+                cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.WHITE, VerticalAlignment.CENTRE, Alignment.LEFT, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "", cellFormat, startingAddCommentsColumnNumber, startingAddCommentsRowNumber);
+                sheet.mergeCells(startingAddCommentsColumnNumber, startingAddCommentsRowNumber, endingAddCommentsColumnNumber, endingAddCommentsRowNumber);
+
+                // *****************************************************************************************************
+                // SIGNATURE
+
+                int startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
+                int endingSignatureRowNumber = startingSignatureRowNumber + 6;
+
+                int startingSignatureColumnNumber = startingColumnFrame;
+                int endingSignatureColumnNumber = startingSignatureColumnNumber + 5;
+
+                cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
 
-            startingSignatureRowNumber = endingSignatureRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber + 1;
+                startingSignatureColumnNumber = endingSignatureColumnNumber + 1;
+                endingSignatureColumnNumber = startingSignatureColumnNumber + 3;
 
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "workloadReport.dean.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+                startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-            startingSignatureRowNumber = endingSignatureRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber;
+                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+
+                startingSignatureRowNumber = endingSignatureRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber + 1;
+
+                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "workloadReport.chair.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+
+
+                startingSignatureRowNumber = endingSignatureRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber + 1;
+
+                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "workloadReport.dean.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+
+                startingSignatureRowNumber = endingSignatureRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber;
 
             /*cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
             cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
@@ -1032,139 +1104,144 @@ public class WorkloadReportService {
             sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);*/
 
 
-            startingSignatureColumnNumber = endingSignatureColumnNumber + 1;
-            endingSignatureColumnNumber = startingSignatureColumnNumber + 4;
+                startingSignatureColumnNumber = endingSignatureColumnNumber + 1;
+                endingSignatureColumnNumber = startingSignatureColumnNumber + 4;
 
-            startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber + 1;
+                startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "workloadReport.signatures.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "workloadReport.signatures.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
-            startingSignatureRowNumber = endingSignatureRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber + 1;
+                startingSignatureRowNumber = endingSignatureRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
-            startingSignatureRowNumber = endingSignatureRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber + 1;
+                startingSignatureRowNumber = endingSignatureRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
-            startingSignatureRowNumber = endingSignatureRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber;
-
-           /* cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);*/
-
-            startingSignatureColumnNumber = endingSignatureColumnNumber + 1;
-            endingSignatureColumnNumber = startingSignatureColumnNumber + 1;
-
-            startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber + 1;
-
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "workloadReport.date.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
-            startingSignatureRowNumber = endingSignatureRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber + 1;
-
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
-
-            startingSignatureRowNumber = endingSignatureRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber + 1;
-
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
-
-            startingSignatureRowNumber = endingSignatureRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber;
+                startingSignatureRowNumber = endingSignatureRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber;
 
            /* cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
             cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
             sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);*/
 
-            startingSignatureColumnNumber = endingSignatureColumnNumber + 1;
-            endingSignatureColumnNumber = startingSignatureColumnNumber + 1;
+                startingSignatureColumnNumber = endingSignatureColumnNumber + 1;
+                endingSignatureColumnNumber = startingSignatureColumnNumber + 1;
 
-            startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber + 1;
+                startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-            cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "workloadReport.names.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
-            startingSignatureRowNumber = endingSignatureRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber + 1;
+                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "workloadReport.date.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+                startingSignatureRowNumber = endingSignatureRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-            cellFont = createCellFont("workloadReport.signatures.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, simplifiedWorkload.getChairNameAndSurname(), cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
-            startingSignatureRowNumber = endingSignatureRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber + 1;
+                startingSignatureRowNumber = endingSignatureRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-            cellFont = createCellFont("workloadReport.signatures.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, simplifiedWorkload.getDeanNameAndSurname(), cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
-            startingSignatureRowNumber = endingSignatureRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber;
+                startingSignatureRowNumber = endingSignatureRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber;
 
            /* cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
             cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
             sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);*/
 
-            startingSignatureColumnNumber = endingSignatureColumnNumber + 1;
-            endingSignatureColumnNumber = endingColumnFrame;
-            startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
-            endingSignatureRowNumber = startingSignatureRowNumber + 6;
+                startingSignatureColumnNumber = endingSignatureColumnNumber + 1;
+                endingSignatureColumnNumber = startingSignatureColumnNumber + 1;
 
+                startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-            cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "workloadReport.names.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+                startingSignatureRowNumber = endingSignatureRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber + 1;
+
+                cellFont = createCellFont("workloadReport.signatures.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, simplifiedWorkload.getChairNameAndSurname(), cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+
+                startingSignatureRowNumber = endingSignatureRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber + 1;
+
+                cellFont = createCellFont("workloadReport.signatures.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, simplifiedWorkload.getDeanNameAndSurname(), cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+
+                startingSignatureRowNumber = endingSignatureRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber;
+
+           /* cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
             createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);*/
 
-            //Writes out the data held in this workbook in Excel format
-            SheetSettings sheetSettings = sheet.getSettings();
-            sheetSettings.setShowGridLines(false);
-            sheetSettings.setZoomFactor(excelZoomFactor);
-            sheetSettings.setFitToPages(true);
-            sheetSettings.setScaleFactor(excelScaleFactor);
-            sheetSettings.setLeftMargin(excelLeftMargin);
-            sheetSettings.setRightMargin(excelRightMargin);
-            sheetSettings.setBottomMargin(excelBottomMargin);
-            sheetSettings.setTopMargin(excelTopMargin);
-            sheetSettings.setPaperSize(PaperSize.A4);
-            sheetSettings.setOrientation(PageOrientation.LANDSCAPE);
-            sheetSettings.setPrintArea(startingColumnFrame, 1, endingColumnFrame, endingSignatureRowNumber);
+                startingSignatureColumnNumber = endingSignatureColumnNumber + 1;
+                endingSignatureColumnNumber = endingColumnFrame;
+                startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber + 6;
 
-            workbook.write();
 
-            //Close and free allocated memory
-            workbook.close();
+                cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
+                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+
+                //Writes out the data held in this workbook in Excel format
+                SheetSettings sheetSettings = sheet.getSettings();
+                sheetSettings.setShowGridLines(false);
+                sheetSettings.setZoomFactor(excelZoomFactor);
+                sheetSettings.setFitToPages(true);
+                sheetSettings.setScaleFactor(excelScaleFactor);
+                sheetSettings.setLeftMargin(excelLeftMargin);
+                sheetSettings.setRightMargin(excelRightMargin);
+                sheetSettings.setBottomMargin(excelBottomMargin);
+                sheetSettings.setTopMargin(excelTopMargin);
+                sheetSettings.setPaperSize(PaperSize.A4);
+                sheetSettings.setOrientation(PageOrientation.LANDSCAPE);
+                sheetSettings.setPrintArea(startingColumnFrame, 1, endingColumnFrame, endingSignatureRowNumber);
+
+                workbook.write();
+
+                //Close and free allocated memory
+                workbook.close();
+            }
+        } catch (Exception ex) {
+            result = false;
+            log.error(ex.toString());
         }
+        return result;
     }
 
     private WritableFont createCellFont(String propertyNameForFontSize, Colour color, boolean isBold) throws WriteException {
@@ -1236,9 +1313,9 @@ public class WorkloadReportService {
         return typeSafeRawWorkloadList;
     }
 
-    private RawWorkloadWithValidationResult prepareTestData(String classPathFilePattern) {
+    private RawWorkloadWithValidationResult parseContent(BufferedReader bufferedReader) {
         log.info("Started to importing testdata data");
-        BufferedReader br = FileUtilService.getInstance().getFile(classPathFilePattern).getCSVFileContent();
+        BufferedReader br = bufferedReader;//FileUtilService.getInstance().getFile(classPathFilePattern).getFileContent();
         String line = ""; //lineDelimiter
         String cvsSplitBy = ";"; //fieldDelimiter
         RawWorkloadWithValidationResult rawWorkloadWithValidationResult = new RawWorkloadWithValidationResult();
@@ -1294,7 +1371,7 @@ public class WorkloadReportService {
             log.info("Finished importing");
 
         } catch (IOException e) {
-            log.info("Error occured during importing");
+            log.error("Error occured during importing");
             log.error(e.toString());
             hasInvalidatedData = true;
         } finally {

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 /**
  * Created by jackalhan on 5/1/16.
  */
+@Service
 @PropertySource("classpath:mail.properties")
 public class MailExecutiveProperties {
 

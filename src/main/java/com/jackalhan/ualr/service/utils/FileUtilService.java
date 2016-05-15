@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -47,29 +49,82 @@ public class FileUtilService {
         }
     }
 
-    public FileUtilService getFile (String fileNamePattern)
+    public boolean moveTo(String sourcePath, String destinationPath, String fileName)
     {
-        Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(
-                ClasspathHelper.forPackage("testdata")).setScanners(new ResourcesScanner()));
+        boolean result = true;
+        try
+        {
+            File afile =new File(sourcePath + fileName);
+            createDirectory(destinationPath);
+            if(afile.renameTo(new File(destinationPath + afile.getName()))){
+                log.info( fileName + " is  moved from " + sourcePath + " to " + destinationPath);
+            }else{
+                result = false;
+                log.error(sourcePath + fileName + " is failed to move to " + destinationPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            result = false;
+            log.error(ex.toString());
+        }
+        return result;
 
-        Set<String> properties = reflections.getResources(Pattern.compile(fileNamePattern + ".*\\.csv"));
-        ClassLoader classLoader = getClass().getClassLoader();
-        File file = new File(classLoader.getResource(properties.toArray()[0].toString()).getFile());
-        this.setFile(file);
-        return this;
     }
 
-    public BufferedReader getCSVFileContent()
+    public File convertToFile(String content, String destinationPath, String fileName)
     {
-        return getCSVFileContent(this.file);
+        try {
+            createDirectory(destinationPath);
+            return Files.write(Paths.get(destinationPath + fileName), content.getBytes()).toFile();
+
+        } catch (IOException e) {
+
+            log.error(e.toString());
+        }
+        return null;
     }
-    public BufferedReader getCSVFileContent(File file)
-    {
+
+    public File getFileFromResources(String path) {
+        File file = null;
+        try {
+            Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(
+                    ClasspathHelper.forPackage(path)).setScanners(new ResourcesScanner()));
+
+            Set<String> properties = reflections.getResources(Pattern.compile(path));
+            ClassLoader classLoader = getClass().getClassLoader();
+            file = new File(classLoader.getResource(properties.toArray()[0].toString()).getFile());
+            log.info("File from this " + path + " is delivered to requested method!");
+
+        } catch (Exception ex) {
+            log.error(ex.toString());
+        }
+        return file;
+    }
+
+
+    public File getFile(String path) {
+        File file = null;
+        try {
+            file = new File(path);
+            log.info("File from this " + path + " is delivered to requested method!");
+        } catch (Exception ex) {
+            log.error(ex.toString());
+        }
+        return file;
+    }
+
+    private BufferedReader getFileContent() {
+        return getFileContent(this.file);
+    }
+
+    public BufferedReader getFileContent(File file) {
         BufferedReader br = null;
 
         try {
 
             br = new BufferedReader(new FileReader(file));
+            log.info(file + "'s content is delivered to requested method!");
         } catch (FileNotFoundException e) {
             log.error(e.toString());
         } catch (IOException e) {
@@ -79,12 +134,11 @@ public class FileUtilService {
     }
 
 
-
-    public File getFile() {
+    private File getFile() {
         return file;
     }
 
-    public void setFile(File file) {
+    private void setFile(File file) {
         this.file = file;
     }
 }
