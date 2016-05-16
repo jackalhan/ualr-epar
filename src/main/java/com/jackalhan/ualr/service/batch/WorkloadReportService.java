@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  * Created by jackalhan on 4/18/16.
  */
 
-//@Component
+@Component
 public class WorkloadReportService {
 
     @Autowired
@@ -103,7 +103,7 @@ public class WorkloadReportService {
                             List<SimplifiedWorkload> simplifiedWorkloadList = simplifyWorkloadData(typeSafeRawWorkloadList);
                             result = generateExcelContent(simplifiedWorkloadList);
                             if (result) {
-                                mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Excel files are generated", "Excel files are generated based on following file " + file + "You can view all generated files by clicking following link......");
+                                mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Excel files are generated", "Excel files are generated based on following file " + file + ". You can view all generated files by clicking following link......");
 
                             } else {
                                 mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during excel generating", "Excel generating based on following file " + file + " is failed. ");
@@ -1359,11 +1359,11 @@ public class WorkloadReportService {
                 Set<ConstraintViolation<RawWorkload>> constraintViolations = validator.validate(rawWorkload);
                 if (constraintViolations.size() > 0) {
                     hasInvalidatedData = true;
-                    caughtErrors = "<b> Here is the data that has an issue </b> <br>";
+                    caughtErrors = "Here is the data that has an issue \n";
                     caughtErrors = caughtErrors + rawWorkload.toHTML();
-                    caughtErrors = caughtErrors + "<br> <u><b> Following reason(s) ; </b></u> ";
+                    caughtErrors = caughtErrors + "\n  Following reason(s) ; ";
                     for (ConstraintViolation<RawWorkload> s : constraintViolations) {
-                        caughtErrors = caughtErrors + "<br> <b>" + s.getPropertyPath() + " - " + s.getMessage() + "</b>"; // NOTIFICATION EMAIL WILL BE SENT ALONGSIDE WITH THE ERROR CODES.
+                        caughtErrors = caughtErrors + "\n " + s.getPropertyPath() + " - " + s.getMessage(); // NOTIFICATION EMAIL WILL BE SENT ALONGSIDE WITH THE ERROR CODES.
 
                     }
                     log.error(caughtErrors);

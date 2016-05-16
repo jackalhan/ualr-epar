@@ -56,10 +56,10 @@
                                                                 <tr>
                                                                     <td height="35" align="left" valign="middle"
                                                                         style="border-bottom:2px dotted #000000"><font
-                                                                            style="font-family: Georgia, 'Times New Roman', Times, serif; color:#000000; font-size:25px"><strong><em th:text="${topic}"></em></strong></font></td>
+                                                                            style="font-family: Georgia, 'Times New Roman', Times, serif; color:#000000; font-size:25px"><strong><em th:utext="${#strings.replace( #strings.escapeXml(topic),T(java.lang.System).getProperty('line.separator'),'&lt;br /&gt;')}"></em></strong></font></td>
                                                                 </tr>
                                                                 <tr>
-                                                                    <td align="left" valign="top"><font th:text="${content}"></font>
+                                                                    <td align="left" valign="top"><font th:utext="${#strings.replace( #strings.escapeXml(content),T(java.lang.System).getProperty('line.separator'),'&lt;br /&gt;')}"></font>
                                                                     </td>
                                                                 </tr>
 
