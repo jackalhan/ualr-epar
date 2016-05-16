@@ -11,6 +11,25 @@ import java.io.Serializable;
 //@Table(name = "WorkloadReport")
 public class WorkloadReport extends AbstractAuditingEntity implements Serializable {
 
+
+    @NotNull
+    private String filePath;
+
+    public String getFilePath() {
+        return filePath;
+    }
+
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
+
+    @Override
+    public String toString() {
+        return "WorkloadReport{" +
+                "filePath='" + filePath + '\'' +
+                '}';
+    }
+
    /* @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;

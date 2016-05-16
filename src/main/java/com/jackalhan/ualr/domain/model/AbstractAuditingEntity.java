@@ -1,7 +1,7 @@
 package com.jackalhan.ualr.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.jackalhan.ualr.config.Constants;
+import com.jackalhan.ualr.constant.GenericConstant;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -26,7 +26,7 @@ public abstract class AbstractAuditingEntity implements Serializable {
     @CreatedBy
     @Column(name = "created_by", nullable = false, length = 100, updatable = false)
     @JsonIgnore
-    private String createdBy = Constants.APPLICATION_NAME;
+    private String createdBy = GenericConstant.APPLICATION_NAME;
 
     @CreatedDate
     @Column(name = "created_date", nullable = false)
@@ -36,7 +36,7 @@ public abstract class AbstractAuditingEntity implements Serializable {
     @LastModifiedBy
     @Column(name = "last_modified_by", length = 100)
     @JsonIgnore
-    private String lastModifiedBy = Constants.APPLICATION_NAME;
+    private String lastModifiedBy = GenericConstant.APPLICATION_NAME;
 
     @LastModifiedDate
     @Column(name = "last_modified_date")

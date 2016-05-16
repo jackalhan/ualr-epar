@@ -1,7 +1,7 @@
 package com.jackalhan.ualr.service.rest;
 
-import com.jackalhan.ualr.config.Constants;
-import com.jackalhan.ualr.config.MailExecutiveProperties;
+import com.jackalhan.ualr.constant.GenericConstant;
+import com.jackalhan.ualr.config.MailExecutiveConfiguration;
 import com.jackalhan.ualr.domain.Mail;
 import com.jackalhan.ualr.domain.MailInLine;
 import com.jackalhan.ualr.enums.ImageTypeEnum;
@@ -10,14 +10,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring4.SpringTemplateEngine;
 
-import javax.mail.internet.ContentType;
 import javax.mail.internet.MimeMessage;
 import java.io.File;
 import java.util.ArrayList;
@@ -37,7 +35,7 @@ public class MailService {
     private JavaMailSender javaMailService;
 
     @Autowired
-    private MailExecutiveProperties mailExecutiveProperties;
+    private MailExecutiveConfiguration mailExecutiveConfiguration;
 
     @Autowired
     private SpringTemplateEngine templateEngine;
@@ -51,10 +49,10 @@ public class MailService {
         String defaultemailtemplatejpg2 = "PROMO-GREEN2_07.jpg";
 
         Mail mail = new Mail();
-        mail.setFrom(mailExecutiveProperties.from);
-        mail.setTo(mailExecutiveProperties.getTo());
+        mail.setFrom(mailExecutiveConfiguration.from);
+        mail.setTo(mailExecutiveConfiguration.getTo());
         mail.setBcc(null);
-        mail.setCc(mailExecutiveProperties.getDeveloper());
+        mail.setCc(mailExecutiveConfiguration.getDeveloper());
         mail.setSubject(subject + " @UALR-EPAR");
         mail.setHtml(true);
         final Context context = new Context(Locale.ENGLISH);
@@ -70,12 +68,12 @@ public class MailService {
         final String htmlContent = this.templateEngine.process("mails/newsletter/newsletter", context);
         mail.setContent(htmlContent);
         List<MailInLine> mailInLineList = new ArrayList<MailInLine>();
-        MailInLine mailInLine = new MailInLine(icoresourcename, Constants.RESOURCE_UALR_IMAGE_PATH, ImageTypeEnum.ICON.toString());
-        MailInLine mailInLine2 = new MailInLine(defaultemailtemplatejpg1, Constants.RESOURCE_MAIL_IMAGE_PATH, ImageTypeEnum.JPEG.toString());
-        MailInLine mailInLine3 = new MailInLine(eitlogopng, Constants.RESOURCE_UALR_IMAGE_PATH, ImageTypeEnum.PNG.toString());
-        MailInLine mailInLine4 = new MailInLine(eparlogopng, Constants.RESOURCE_UALR_IMAGE_PATH, ImageTypeEnum.PNG.toString());
-        MailInLine mailInLine5 = new MailInLine(ualrlogopng, Constants.RESOURCE_UALR_IMAGE_PATH, ImageTypeEnum.PNG.toString());
-        MailInLine mailInLine6 = new MailInLine(defaultemailtemplatejpg2, Constants.RESOURCE_MAIL_IMAGE_PATH, ImageTypeEnum.JPEG.toString());
+        MailInLine mailInLine = new MailInLine(icoresourcename, GenericConstant.RESOURCE_UALR_IMAGE_PATH, ImageTypeEnum.ICON.toString());
+        MailInLine mailInLine2 = new MailInLine(defaultemailtemplatejpg1, GenericConstant.RESOURCE_MAIL_IMAGE_PATH, ImageTypeEnum.JPEG.toString());
+        MailInLine mailInLine3 = new MailInLine(eitlogopng, GenericConstant.RESOURCE_UALR_IMAGE_PATH, ImageTypeEnum.PNG.toString());
+        MailInLine mailInLine4 = new MailInLine(eparlogopng, GenericConstant.RESOURCE_UALR_IMAGE_PATH, ImageTypeEnum.PNG.toString());
+        MailInLine mailInLine5 = new MailInLine(ualrlogopng, GenericConstant.RESOURCE_UALR_IMAGE_PATH, ImageTypeEnum.PNG.toString());
+        MailInLine mailInLine6 = new MailInLine(defaultemailtemplatejpg2, GenericConstant.RESOURCE_MAIL_IMAGE_PATH, ImageTypeEnum.JPEG.toString());
 
         mailInLineList.add(mailInLine);
         mailInLineList.add(mailInLine2);

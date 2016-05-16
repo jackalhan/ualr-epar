@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @PropertySource("classpath:mail.properties")
-public class MailExecutiveProperties {
+public class MailExecutiveConfiguration {
 
     @Value("${workloadreport.mailenvelope.executive.subject}")
     public String subject;

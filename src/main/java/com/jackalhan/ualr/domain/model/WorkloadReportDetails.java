@@ -7,42 +7,13 @@ import java.io.Serializable;
 /**
  * Created by jackalhan on 5/10/16.
  */
-//@Entity
-//@Table(name = "WorkloadReportDetails")
+/*@Entity
+@Table(name = "WorkloadReportDetails")*/
 public class WorkloadReportDetails extends AbstractAuditingEntity implements Serializable {
 
 
-   /* @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private long id;
-
     @NotNull
     private String filePath;
-
-    @ManyToOne(fetch = FetchType.LAZY, cascade= CascadeType.ALL)
-    @JoinColumn(name="repdet_to_departmentStaff_fk", referencedColumnName = "id")
-    private DepartmentStaff departmentStaff;
-
-    @ManyToOne(fetch = FetchType.LAZY, cascade= CascadeType.ALL)
-    @JoinColumn(name="repdet_to_workloadReport_fk", referencedColumnName = "id")
-    private WorkloadReport workloadReport;
-
-
-    public WorkloadReportDetails(String filePath) {
-        super();
-        this.filePath = filePath;
-    }
-
-    public WorkloadReportDetails() {
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
 
     public String getFilePath() {
         return filePath;
@@ -52,29 +23,10 @@ public class WorkloadReportDetails extends AbstractAuditingEntity implements Ser
         this.filePath = filePath;
     }
 
-    public DepartmentStaff getDepartmentStaff() {
-        return departmentStaff;
-    }
-
-    public void setDepartmentStaff(DepartmentStaff departmentStaff) {
-        this.departmentStaff = departmentStaff;
-    }
-
-    public WorkloadReport getWorkloadReport() {
-        return workloadReport;
-    }
-
-    public void setWorkloadReport(WorkloadReport workloadReport) {
-        this.workloadReport = workloadReport;
-    }
-
     @Override
     public String toString() {
         return "WorkloadReportDetails{" +
-                "id=" + id +
-                ", filePath='" + filePath + '\'' +
-                ", departmentStaff=" + departmentStaff +
-                ", workloadReport=" + workloadReport +
+                "filePath='" + filePath + '\'' +
                 '}';
-    }*/
+    }
 }

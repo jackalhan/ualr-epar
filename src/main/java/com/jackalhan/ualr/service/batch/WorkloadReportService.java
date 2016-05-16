@@ -1,8 +1,12 @@
 package com.jackalhan.ualr.service.batch;
 
 import com.jackalhan.ualr.config.*;
+import com.jackalhan.ualr.constant.GenericConstant;
+import com.jackalhan.ualr.constant.SchedulingConstant;
 import com.jackalhan.ualr.domain.*;
-import com.jackalhan.ualr.enums.ImageTypeEnum;
+import com.jackalhan.ualr.enums.CourseTypeEnum;
+import com.jackalhan.ualr.enums.InstructionTypeEnum;
+import com.jackalhan.ualr.enums.SemesterTermEnum;
 import com.jackalhan.ualr.service.rest.FTPService;
 import com.jackalhan.ualr.service.rest.MailService;
 import com.jackalhan.ualr.service.utils.FileUtilService;
@@ -19,28 +23,19 @@ import jxl.format.VerticalAlignment;
 import jxl.write.*;
 import jxl.write.Label;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.velocity.Template;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.app.VelocityEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.InputStreamSource;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.thymeleaf.context.Context;
-import org.thymeleaf.spring4.SpringTemplateEngine;
 
 
 import javax.validation.*;
-import java.awt.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.List;
@@ -50,7 +45,7 @@ import java.util.stream.Collectors;
  * Created by jackalhan on 4/18/16.
  */
 
-@Component
+//@Component
 public class WorkloadReportService {
 
     @Autowired
@@ -79,24 +74,24 @@ public class WorkloadReportService {
     private String MAIL_SUBJECT = "Workload Report Execution Status for ";
 
 
-    @Scheduled(fixedDelay = SchedulingConstants.WORKLOAD_REPORT_SERVICE_EXECUTE_FIXED_DELAY)
+    @Scheduled(fixedDelay = SchedulingConstant.WORKLOAD_REPORT_SERVICE_EXECUTE_FIXED_DELAY)
     private void executeService() throws IOException, WriteException, CloneNotSupportedException, JSchException, SftpException {
 
         log.info("TypeSafeRawWorkload Reports execution started");
         initializeValidator();
         String filePattern = getFilePatternAccordingToSemesterTerm();
-        List<String> files = ftpService.downloadAndGetExactFileNames(Constants.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH, filePattern);
+        List<String> files = ftpService.downloadAndGetExactFileNames(GenericConstant.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH, filePattern);
         if (files.size() == 0) {
             mailService.sendNewsletterMail(MAIL_SUBJECT, "No file found to be executed", "There is no file found based on expected pattern " + filePattern + " in FTP server");
 
         } else {
             for (String file : files) {
                 String NEW_MAIL_SUBJECT = MAIL_SUBJECT + file;
-                File fileFromTemp = FileUtilService.getInstance().getFile(Constants.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH + file);
+                File fileFromTemp = FileUtilService.getInstance().getFile(GenericConstant.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH + file);
                 BufferedReader bufferedReader = FileUtilService.getInstance().getFileContent(fileFromTemp);
                 RawWorkloadWithValidationResult rawWorkloadWithValidationResult = parseContent(bufferedReader);
                 if (!rawWorkloadWithValidationResult.isHasInvalidatedData()) {
-                    boolean result = FileUtilService.getInstance().moveTo(Constants.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH, Constants.WORKLOAD_REPORTS_RAWTXT_PROCESSED_PATH, file);
+                    boolean result = FileUtilService.getInstance().moveTo(GenericConstant.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH, GenericConstant.WORKLOAD_REPORTS_RAWTXT_PROCESSED_PATH, file);
                     if (result) {
                         result = ftpService.moveTo(ftpConfiguration.getFileTempPath(), ftpConfiguration.getFileProcessedPath(), file);
                         if (!result) {
@@ -108,20 +103,20 @@ public class WorkloadReportService {
                             List<SimplifiedWorkload> simplifiedWorkloadList = simplifyWorkloadData(typeSafeRawWorkloadList);
                             result = generateExcelContent(simplifiedWorkloadList);
                             if (result) {
-                                mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Excel files are generated", "Excel files are generated based on following file " + file + "You can view all generated files by clicking following link......" );
+                                mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Excel files are generated", "Excel files are generated based on following file " + file + "You can view all generated files by clicking following link......");
 
                             } else {
                                 mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during excel generating", "Excel generating based on following file " + file + " is failed. ");
                             }
                         }
                     } else {
-                        mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during file moving", "Problem occured during file moving. " + file + " was moving from " + Constants.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH + " to " + Constants.WORKLOAD_REPORTS_RAWTXT_PROCESSED_PATH);
+                        mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during file moving", "Problem occured during file moving. " + file + " was moving from " + GenericConstant.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH + " to " + GenericConstant.WORKLOAD_REPORTS_RAWTXT_PROCESSED_PATH);
 
                     }
                 } else {
                     mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during data parsing", rawWorkloadWithValidationResult.getCaughtErrors());
 
-                    boolean result = FileUtilService.getInstance().moveTo(Constants.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH, Constants.WORKLOAD_REPORTS_RAWTXT_ERROR_PATH, file);
+                    boolean result = FileUtilService.getInstance().moveTo(GenericConstant.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH, GenericConstant.WORKLOAD_REPORTS_RAWTXT_ERROR_PATH, file);
                     if (result) {
                         result = ftpService.moveTo(ftpConfiguration.getFileTempPath(), ftpConfiguration.getFileErrorPath(), file);
                         if (!result) {
@@ -129,7 +124,7 @@ public class WorkloadReportService {
 
                         }
                     } else {
-                        mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during file moving", "Problem occured during file moving. " + file + " was moving from " + Constants.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH + " to " + Constants.WORKLOAD_REPORTS_RAWTXT_PROCESSED_PATH);
+                        mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during file moving", "Problem occured during file moving. " + file + " was moving from " + GenericConstant.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH + " to " + GenericConstant.WORKLOAD_REPORTS_RAWTXT_PROCESSED_PATH);
 
                     }
                 }
@@ -141,20 +136,26 @@ public class WorkloadReportService {
     }
 
     private String getFilePatternAccordingToSemesterTerm() {
+
+        SemesterTerm semesterTerm = getSemesterTerm();
+        return "Load_Report_" + semesterTerm.getYear() + semesterTerm.getSemesterTermCode() + "*.txt";
+
+    }
+
+    private SemesterTerm getSemesterTerm() {
         LocalDateTime now = LocalDateTime.now();
         int year = now.getYear();
         int month = now.getMonthValue();
-        String semesterTermCode = null;
+        int semesterTermCode;
 
         if ((month >= 1) && (month <= 5)) {
-            semesterTermCode = "10";
+            semesterTermCode = SemesterTermEnum.SPRING.getValue();
         } else if ((month >= 6) && (month <= 7))
-            semesterTermCode = "30";
+            semesterTermCode = SemesterTermEnum.SUMMER.getValue();
         else
-            semesterTermCode = "60";
+            semesterTermCode = SemesterTermEnum.FALL.getValue();
 
-
-        return "Load_Report_" + year + semesterTermCode + "*.txt";
+        return new SemesterTerm(semesterTermCode, decideSemester(semesterTermCode), year);
 
     }
 
@@ -219,25 +220,25 @@ public class WorkloadReportService {
         CourseDetail courseTypeIUValues = null;
         //Currently only Lecture Hours IU multiplier can be calculated automatically by the application.
         //If needs to calculate total lectureHours including 5XXX course, do it here since you have the information in courseDetail object.
-        if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_U)) {
+        if (courseDetail.getCourseTypeCode().equals(CourseTypeEnum.UNDERGRADUATE_COURSE.toString())) {
             multiplier = 1;
             result = courseDetail.getLectureHours() * multiplier;
-        } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_DL)) {
+        } else if (courseDetail.getCourseTypeCode().equals(CourseTypeEnum.DUAL_LISTED_COURSE_L.toString())) {
             multiplier = 1;
             result = courseDetail.getLectureHours() * multiplier;
-        } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_DU)) {
+        } else if (courseDetail.getCourseTypeCode().equals(CourseTypeEnum.DUAL_LISTED_COURSE_U.toString())) {
             multiplier = 1.33;
             result = courseDetail.getLectureHours() * multiplier;
-        } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_G)) {
+        } else if (courseDetail.getCourseTypeCode().equals(CourseTypeEnum.GRADUATE_COURSE.toString())) {
             multiplier = 1.33;
             result = courseDetail.getLectureHours() * multiplier;
-        } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_MS)) {
+        } else if (courseDetail.getCourseTypeCode().equals(CourseTypeEnum.MASTER_STUDIES.toString())) {
             multiplier = 0.75;
             result = multiplier;
-        } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_PHD)) {
+        } else if (courseDetail.getCourseTypeCode().equals(CourseTypeEnum.DOCTORAL_STUDIES.toString())) {
             multiplier = 1;
             result = multiplier;
-        } else if (courseDetail.getCourseTypeCode().equals(Constants.COURSE_TYPE_CODE_O)) {
+        } else if (courseDetail.getCourseTypeCode().equals(CourseTypeEnum.OTHER_STUDIES.toString())) {
             multiplier = 0.375;
             result = multiplier;
         }
@@ -253,39 +254,39 @@ public class WorkloadReportService {
     private CourseDetail getCourseType(CourseDetail courseDetail) {
 
         CourseDetail courseType = new CourseDetail();
-        if (courseDetail.getInstructionType().toUpperCase().trim().contains(Constants.INSTRUCTION_TYPE_CONTAINS_KEY_WORD_PED)) {
+        if (courseDetail.getInstructionType().toUpperCase().trim().contains(InstructionTypeEnum.PEDAGOGICAL.toString())) {
             //if (!courseDetail.isHasDualCourse()) {
             if (courseDetail.getCodeNumber() >= 1000 && courseDetail.getCodeNumber() < 4000) {
-                courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_U);
-                courseType.setCourseTypeName(Constants.UNDERGRADUATE_COURSE);
+                courseType.setCourseTypeCode(CourseTypeEnum.UNDERGRADUATE_COURSE.toString());
+                courseType.setCourseTypeName(CourseTypeEnum.UNDERGRADUATE_COURSE.name());
             } else if (courseDetail.getCodeNumber() >= 7000 && courseDetail.getCodeNumber() < 8000) {
-                courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_G);
-                courseType.setCourseTypeName(Constants.GRADUATE_COURSE);
+                courseType.setCourseTypeCode(CourseTypeEnum.GRADUATE_COURSE.toString());
+                courseType.setCourseTypeName(CourseTypeEnum.GRADUATE_COURSE.name());
             }
             //} else {
             if (courseDetail.getCodeNumber() >= 4000 && courseDetail.getCodeNumber() < 6000) {
                 if (courseDetail.getNumberOfTotalEnrollmentInDualCourse() >= 1 && courseDetail.getNumberOfTotalEnrollmentInDualCourse() < 5) {
-                    courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_DL);
-                    courseType.setCourseTypeName(Constants.DUAL_LISTED_COURSE);
+                    courseType.setCourseTypeCode(CourseTypeEnum.DUAL_LISTED_COURSE_L.toString());
+                    courseType.setCourseTypeName(CourseTypeEnum.DUAL_LISTED_COURSE_L.name());
                 } else if (courseDetail.getNumberOfTotalEnrollmentInDualCourse() >= 5) {
-                    courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_DU);
-                    courseType.setCourseTypeName(Constants.DUAL_LISTED_COURSE);
+                    courseType.setCourseTypeCode(CourseTypeEnum.DUAL_LISTED_COURSE_U.toString());
+                    courseType.setCourseTypeName(CourseTypeEnum.DUAL_LISTED_COURSE_U.name());
                 } else {
-                    courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_U);
-                    courseType.setCourseTypeName(Constants.UNDERGRADUATE_COURSE);
+                    courseType.setCourseTypeCode(CourseTypeEnum.UNDERGRADUATE_COURSE.toString());
+                    courseType.setCourseTypeName(CourseTypeEnum.UNDERGRADUATE_COURSE.name());
                 }
                 //  }
             }
         } else {
             if (courseDetail.getCodeNumber() >= 9000 && courseDetail.getCodeNumber() < 10000) {
-                courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_PHD);
-                courseType.setCourseTypeName(Constants.DOCTORAL_STUDIES);
+                courseType.setCourseTypeCode(CourseTypeEnum.DOCTORAL_STUDIES.toString());
+                courseType.setCourseTypeName(CourseTypeEnum.DOCTORAL_STUDIES.name());
             } else if (courseDetail.getCodeNumber() >= 7000 && courseDetail.getCodeNumber() < 8000) {
-                courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_MS);
-                courseType.setCourseTypeName(Constants.MASTER_STUDIES);
+                courseType.setCourseTypeCode(CourseTypeEnum.MASTER_STUDIES.toString());
+                courseType.setCourseTypeName(CourseTypeEnum.MASTER_STUDIES.name());
             } else {
-                courseType.setCourseTypeCode(Constants.COURSE_TYPE_CODE_O);
-                courseType.setCourseTypeName(Constants.OTHER_STUDIES);
+                courseType.setCourseTypeCode(CourseTypeEnum.OTHER_STUDIES.toString());
+                courseType.setCourseTypeName(CourseTypeEnum.OTHER_STUDIES.name());
             }
         }
 
@@ -370,20 +371,20 @@ public class WorkloadReportService {
 
                 if (!isInstructorNameParsed) {
                     isInstructorNameParsed = true;
-                    simplifiedWorkload.setInstructorNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getInstructorNameSurname(), Constants.COMA_CHARACTER));
+                    simplifiedWorkload.setInstructorNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getInstructorNameSurname(), GenericConstant.COMA_CHARACTER));
                 }
                 if (!isDeanNameParsed) {
                     isDeanNameParsed = true;
-                    simplifiedWorkload.setDeanNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getDean(), Constants.COMA_CHARACTER));
+                    simplifiedWorkload.setDeanNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getDean(), GenericConstant.COMA_CHARACTER));
                 }
                 if (!isChairNameParsed) {
                     isChairNameParsed = true;
-                    simplifiedWorkload.setChairNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getChair(), Constants.COMA_CHARACTER));
+                    simplifiedWorkload.setChairNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getChair(), GenericConstant.COMA_CHARACTER));
                 }
                 if (!isSemestreCodeParsed) {
                     if (!StringUtilService.getInstance().isEmpty(String.valueOf(newRawData.getSemesterTermCode()))) {
                         isSemestreCodeParsed = true;
-                        simplifiedWorkload.setSemesterTerm(decidePeriod(Integer.parseInt(String.valueOf(newRawData.getSemesterTermCode()).substring(4, 6))));
+                        simplifiedWorkload.setSemesterTerm(decideSemester(Integer.parseInt(String.valueOf(newRawData.getSemesterTermCode()).substring(4, 6))));
                         simplifiedWorkload.setSemesterYear(Integer.valueOf(String.valueOf(newRawData.getSemesterTermCode()).substring(0, 4)));
                     }
                 }
@@ -399,7 +400,7 @@ public class WorkloadReportService {
                 simplifiedWorkload.setTotalCreditHours(simplifiedWorkload.getTotalCreditHours() + newRawData.getTaCeditHours());
                 simplifiedWorkload.setTotalIUMultiplierForLectureHours(simplifiedWorkload.getTotalIUMultiplierForLectureHours() + newRawData.getIuMultipliertaLectureHours());
                 simplifiedWorkload.setTotalLabHours(simplifiedWorkload.getTotalLabHours() + newRawData.getTaLabHours());
-                if (newRawData.getInstructionType().toUpperCase().trim().contains(Constants.INSTRUCTION_TYPE_CONTAINS_KEY_WORD_PED)) {
+                if (newRawData.getInstructionType().toUpperCase().trim().contains(InstructionTypeEnum.PEDAGOGICAL.toString())) {
                     simplifiedWorkload.setTotalLectureHours(simplifiedWorkload.getTotalLectureHours() + newRawData.getTaLectureHours());
                 }
                 simplifiedWorkload.setTotalTaSupport(simplifiedWorkload.getTotalTaSupport() + newRawData.getTaSupport());
@@ -415,27 +416,30 @@ public class WorkloadReportService {
 
     }
 
-    private String decidePeriod(int codeNumber) {
+    private String decideSemester(int codeNumber) {
 
         if (codeNumber == 10)
-            return Constants.TERM_SPRING;
+            return SemesterTermEnum.SPRING.toString();
         else if (codeNumber == 30)
-            return Constants.TERM_SUMMER;
+            return SemesterTermEnum.SUMMER.toString();
         else
-            return Constants.TERM_FALL;
+            return SemesterTermEnum.FALL.toString();
 
     }
 
     private boolean generateExcelContent(List<SimplifiedWorkload> simplifiedWorkloadList) {
 
         boolean result = true;
-        FileUtilService.getInstance().createDirectory(Constants.WORKLOAD_REPORTS_EXCEL_PROCESSED_PATH);
+        SemesterTerm semesterTerm = getSemesterTerm();
+        String folderPath = GenericConstant.WORKLOAD_REPORTS_EXCEL_PROCESSED_PATH + semesterTerm.getYear() + "/" + semesterTerm.getSemesterTermName() + "/";
+        FileUtilService.getInstance().createDirectory(folderPath);
+
 
         try {
 
             for (SimplifiedWorkload simplifiedWorkload : simplifiedWorkloadList) {
 
-                String filePath = Constants.WORKLOAD_REPORTS_EXCEL_PROCESSED_PATH + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + "_" + simplifiedWorkload.getDepartmentCode() + ".xls";
+                String filePath = folderPath + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + "_" + simplifiedWorkload.getDepartmentCode() + ".xls";
 
 
                 File file = new File(filePath);
@@ -522,7 +526,7 @@ public class WorkloadReportService {
                 int rawPedaCounter = 0;
                 // FOR LOOP WILL BE BUILDING FOR FILTERED PEDA DATA
                 for (TypeSafeRawWorkload pedWorkloadItems : simplifiedWorkload.getTypeSafeRawWorkloads()) {
-                    if (pedWorkloadItems.getInstructionType().toUpperCase().trim().contains(Constants.INSTRUCTION_TYPE_CONTAINS_KEY_WORD_PED)) {
+                    if (pedWorkloadItems.getInstructionType().toUpperCase().trim().contains(InstructionTypeEnum.PEDAGOGICAL.toString())) {
                         rawPedaCounter++;
                         startingDataPedaColumnNumber = 1;
                         boolean topBorder = true;
@@ -621,7 +625,7 @@ public class WorkloadReportService {
                         secondNotApplicableToColumnNumber = 0;
                 int rawIndivCounter = 0;
                 for (TypeSafeRawWorkload indWorkloadItems : simplifiedWorkload.getTypeSafeRawWorkloads()) {
-                    if (indWorkloadItems.getInstructionType().toUpperCase().trim().contains(Constants.INSTRUCTION_TYPE_CONTAINS_KEY_WORD_IND)) {
+                    if (indWorkloadItems.getInstructionType().toUpperCase().trim().contains(InstructionTypeEnum.INDIVIDUALIZED.toString())) {
                         rawIndivCounter++;
                         startingDataIndivColumnNumber = 1;
                         boolean topBorder = true;

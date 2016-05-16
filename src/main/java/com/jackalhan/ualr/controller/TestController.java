@@ -63,7 +63,7 @@ public class TestController {
         return "fragments/header";
     }*/
 
-    @RequestMapping("/workload")
+    //@RequestMapping("/workload")
     public String workload(Principal principal, Model model) {
         model.addAttribute("username", getUserName(principal));
         model.addAttribute("userroles", getUserRoles(principal));

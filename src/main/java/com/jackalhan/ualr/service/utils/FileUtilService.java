@@ -1,16 +1,20 @@
 package com.jackalhan.ualr.service.utils;
 
 
+import com.jackalhan.ualr.domain.model.WorkloadReport;
 import org.reflections.Reflections;
 import org.reflections.scanners.ResourcesScanner;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Controller;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -24,7 +28,7 @@ public class FileUtilService {
     private static FileUtilService singleton;
     private File file;
 
-    private FileUtilService() {
+    public FileUtilService() {
     }
 
     public static synchronized FileUtilService getInstance() {
@@ -133,6 +137,21 @@ public class FileUtilService {
         return br;
     }
 
+    public List<WorkloadReport> listFolders(String directoryName){
+        File directory = new File(directoryName);
+        //get all the files from a directory
+        File[] fList = directory.listFiles();
+        List<WorkloadReport> files = new ArrayList<WorkloadReport>();
+        for (File file : fList){
+            //if (file.isDirectory()){
+                WorkloadReport workloadReport = new WorkloadReport();
+                workloadReport.setFilePath(directoryName + file.getName());
+                files.add(workloadReport);
+            //}
+        }
+        return files;
+    }
+
 
     private File getFile() {
         return file;
@@ -141,4 +160,7 @@ public class FileUtilService {
     private void setFile(File file) {
         this.file = file;
     }
+
+
+
 }

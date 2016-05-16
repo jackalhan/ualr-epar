@@ -9,7 +9,7 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
-import com.jackalhan.ualr.config.Constants;
+import com.jackalhan.ualr.constant.GenericConstant;
 
 import javax.inject.Inject;
 import java.util.Arrays;
@@ -32,7 +32,7 @@ public class LoggingAspect {
     @AfterThrowing(pointcut = "loggingPointcut()", throwing = "e")
     public void logAfterThrowing(JoinPoint joinPoint, Throwable e)
     {
-        if (env.acceptsProfiles(Constants.PROFILE_DEVELOPMENT)){
+        if (env.acceptsProfiles(GenericConstant.PROFILE_DEVELOPMENT)){
                 log.error("Exception in {}.{}() with cause = {} and exception {}", joinPoint.getSignature().getDeclaringTypeName(),
                         joinPoint.getSignature().getName(), e.getCause(), e);
             } else {

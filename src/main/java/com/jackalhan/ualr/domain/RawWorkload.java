@@ -1,6 +1,6 @@
 package com.jackalhan.ualr.domain;
 
-import com.jackalhan.ualr.config.ValidateMessages;
+import com.jackalhan.ualr.constant.ValidateMessageConstant;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.hibernate.validator.constraints.Range;
 
@@ -29,16 +29,16 @@ public class RawWorkload implements Serializable, Cloneable {
     @NotEmpty
     private String instructorNameSurname; // NEEDS TO BE PARSED
 
-    @Pattern(regexp="[\\d]{6}", message = ValidateMessages.VALIDATE_FIELD_FORMAT)
+    @Pattern(regexp="[\\d]{6}", message = ValidateMessageConstant.VALIDATE_FIELD_FORMAT)
     private String semesterTermCode; // 201610  {SPRING, 2016}
     private String crn;
 
     @NotNull
     @NotEmpty
-    @Size(min=4, max = 4, message = ValidateMessages.VALIDATE_FIELD_FORMAT)
+    @Size(min=4, max = 4, message = ValidateMessageConstant.VALIDATE_FIELD_FORMAT)
     private String subjectCode;
 
-    @Pattern(regexp="[\\d]{4}", message = ValidateMessages.VALIDATE_FIELD_FORMAT)
+    @Pattern(regexp="[\\d]{4}", message = ValidateMessageConstant.VALIDATE_FIELD_FORMAT)
     private String courseNumber; // USE TO CALCULATE CourseType, CourseCode, IU MUltipliers
 
     @NotNull
@@ -54,7 +54,7 @@ public class RawWorkload implements Serializable, Cloneable {
 
     @NotNull
     @NotEmpty
-    @Size(min=4, max = 4, message = ValidateMessages.VALIDATE_FIELD_FORMAT)
+    @Size(min=4, max = 4, message = ValidateMessageConstant.VALIDATE_FIELD_FORMAT)
     private String instructorDepartmentCode;
 
     @NotNull
@@ -70,15 +70,15 @@ public class RawWorkload implements Serializable, Cloneable {
     @NotEmpty
     private String dean;
 
-    @Range(min = 0, max= 1000, message = ValidateMessages.VALIDATE_FIELD_FORMAT)
+    @Range(min = 0, max= 1000, message = ValidateMessageConstant.VALIDATE_FIELD_FORMAT)
     private String taEleventhDayCount; // Just for info : What is that 17 =========> ?
-    @Range(min = 0, max= 1000, message = ValidateMessages.VALIDATE_FIELD_FORMAT)
+    @Range(min = 0, max= 1000, message = ValidateMessageConstant.VALIDATE_FIELD_FORMAT)
     private String taCeditHours;
 
     private String taLectureHours;
     private String taLabHours;
 
-    @Range(min = 0, max= 1000, message = ValidateMessages.VALIDATE_FIELD_FORMAT)
+    @Range(min = 0, max= 1000, message = ValidateMessageConstant.VALIDATE_FIELD_FORMAT)
     private String totalSsch; // Just for info : What is that SS =========> 51 ?
 
 

@@ -1,21 +1,16 @@
 package com.jackalhan.ualr;
 
 
-import com.jackalhan.ualr.config.Constants;
+import com.jackalhan.ualr.constant.GenericConstant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.SimpleCommandLinePropertySource;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.validation.Validator;
-import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 
@@ -44,7 +39,7 @@ public class UalrEparApplication {
 		} else {
 			log.info("Running with Spring profile(s) : {}", Arrays.toString(env.getActiveProfiles()));
 			Collection<String> activeProfiles = Arrays.asList(env.getActiveProfiles());
-			if (activeProfiles.contains(Constants.PROFILE_DEVELOPMENT) && activeProfiles.contains(Constants.PROFILE_PRODUCTION)) {
+			if (activeProfiles.contains(GenericConstant.PROFILE_DEVELOPMENT) && activeProfiles.contains(GenericConstant.PROFILE_PRODUCTION)) {
 				log.error("You have misconfigured your application! " +
 						"It should not run with both the 'dev' and 'prod' profiles at the same time.");
 			}
@@ -86,7 +81,7 @@ public class UalrEparApplication {
 		if (!source.containsProperty("spring.profiles.active") &&
 				!System.getenv().containsKey("SPRING_PROFILES_ACTIVE")) {
 
-			app.setAdditionalProfiles(Constants.PROFILE_DEVELOPMENT);
+			app.setAdditionalProfiles(GenericConstant.PROFILE_DEVELOPMENT);
 		}
 	}
 
