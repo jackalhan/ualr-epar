@@ -26,4 +26,6 @@ public final class GenericConstant {
 
     public static final String COMA_CHARACTER = ",";
 
+    public static final String SIMPLE_DATE_TIME_FORMAT_WITH_MILISECOND = "EEE MMM dd HH:mm:ss zzz yyyy";
+
 }

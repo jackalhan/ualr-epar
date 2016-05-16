@@ -1,30 +1,41 @@
 package com.jackalhan.ualr.domain.model;
 
+import com.jackalhan.ualr.constant.GenericConstant;
+import com.jackalhan.ualr.service.batch.WorkloadReportService;
+import jxl.write.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 /**
  * Created by txcakaloglu on 5/10/16.
  */
-//@Entity
-//@Table(name = "Faculty")
+@Entity
+@Table(name = "Faculty")
 public class Faculty extends AbstractAuditingEntity implements Serializable{
 
 
-   /* //@NotNull
+    //@NotNull
     private String name;
 
     @Id
     private String code;
 
     @NotNull
-    private String deanNameAndSurname;
+    private String deanNameSurname;
 
-    @OneToMany(mappedBy = "faculty")
+    /*@OneToMany(mappedBy = "faculty")
     List<Department> departments;
 
+    @OneToMany(mappedBy = "faculty")
+    List<WorkloadReportTerm> workloadReportTerms;*/
 
     public String getName() {
         return name;
@@ -42,15 +53,15 @@ public class Faculty extends AbstractAuditingEntity implements Serializable{
         this.code = code;
     }
 
-    public String getDeanNameAndSurname() {
-        return deanNameAndSurname;
+    public String getDeanNameSurname() {
+        return deanNameSurname;
     }
 
-    public void setDeanNameAndSurname(String deanNameAndSurname) {
-        this.deanNameAndSurname = deanNameAndSurname;
+    public void setDeanNameSurname(String deanNameSurname) {
+        this.deanNameSurname = deanNameSurname;
     }
 
-    public List<Department> getDepartments() {
+   /* public List<Department> getDepartments() {
         return departments;
     }
 
@@ -58,24 +69,42 @@ public class Faculty extends AbstractAuditingEntity implements Serializable{
         this.departments = departments;
     }
 
+    public List<WorkloadReportTerm> getWorkloadReportTerms() {
+        return workloadReportTerms;
+    }
+
+    public void setWorkloadReportTerms(List<WorkloadReportTerm> workloadReportTerms) {
+        this.workloadReportTerms = workloadReportTerms;
+    }
+
     @Override
     public String toString() {
         return "Faculty{" +
-                //"id=" + id +
-                ", name='" + name + '\'' +
+                "name='" + name + '\'' +
                 ", code='" + code + '\'' +
-                ", deanName='" + deanNameAndSurname + '\'' +
+                ", deanNameAndSurname='" + deanNameAndSurname + '\'' +
+                ", departments=" + departments +
+                ", workloadReportTerms=" + workloadReportTerms +
                 '}';
-    }
+    }*/
 
-    public Faculty(String name, String code, String deanNameAndSurname) {
+    public Faculty(String name, String code, String deanNameSurname, List<Department> departments, List<WorkloadReportTerm> workloadReportTerms) {
         this.name = name;
         this.code = code;
-        this.deanNameAndSurname = deanNameAndSurname;
+        this.deanNameSurname = deanNameSurname;
+       /* this.departments = departments;
+        this.workloadReportTerms = workloadReportTerms;*/
+
+    }
+
+    public Faculty(String code) {
+        this.code = code;
+
     }
 
     public Faculty() {
-    }*/
+
+    }
 
 
 }

@@ -1,14 +1,13 @@
 package com.jackalhan.ualr.service.utils;
 
 
-import com.jackalhan.ualr.domain.model.WorkloadReport;
+import com.jackalhan.ualr.domain.model.WorkloadReportTerm;
 import org.reflections.Reflections;
 import org.reflections.scanners.ResourcesScanner;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Controller;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -22,7 +21,7 @@ import java.util.regex.Pattern;
  * Created by jackalhan on 4/25/16.
  */
 public class FileUtilService {
-    private final Logger log = LoggerFactory.getLogger(StringUtilService.class);
+    private final Logger log = LoggerFactory.getLogger(FileUtilService.class);
 
 
     private static FileUtilService singleton;
@@ -137,20 +136,20 @@ public class FileUtilService {
         return br;
     }
 
-    public List<WorkloadReport> listFolders(String directoryName){
+    /*public List<WorkloadReportTerm> listFolders(String directoryName){
         File directory = new File(directoryName);
         //get all the files from a directory
         File[] fList = directory.listFiles();
-        List<WorkloadReport> files = new ArrayList<WorkloadReport>();
+        List<WorkloadReportTerm> files = new ArrayList<WorkloadReportTerm>();
         for (File file : fList){
             //if (file.isDirectory()){
-                WorkloadReport workloadReport = new WorkloadReport();
+                WorkloadReportTerm workloadReport = new WorkloadReportTerm();
                 workloadReport.setFilePath(directoryName + file.getName());
                 files.add(workloadReport);
             //}
         }
         return files;
-    }
+    }*/
 
 
     private File getFile() {

@@ -1,8 +1,16 @@
 package com.jackalhan.ualr.domain.model;
 
+import com.jackalhan.ualr.constant.GenericConstant;
+import com.jackalhan.ualr.service.batch.WorkloadReportService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -10,7 +18,7 @@ import java.util.List;
  */
 @Entity
 @Table(name = "User")
-public class User extends AbstractAuditingEntity implements Serializable{
+public class User extends AbstractAuditingEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -33,14 +41,14 @@ public class User extends AbstractAuditingEntity implements Serializable{
     @NotNull
     private boolean locked = true;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL )
-    @JoinTable(name="UserRole" , //New generated middle table between two tables.
-               joinColumns = @JoinColumn(   // first column details of newly generatedTable that is UserRole, referenced to user entity
-                       name = "userId",
-                       referencedColumnName = "id"),
-                inverseJoinColumns = @JoinColumn(  // second column details of newly generatedTable that is UserRole, referenced to role entity
-                        name = "roleId",
-                        referencedColumnName = "id")
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinTable(name = "UserRole", //New generated middle table between two tables.
+            joinColumns = @JoinColumn(   // first column details of newly generatedTable that is UserRole, referenced to user entity
+                    name = "userId",
+                    referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(  // second column details of newly generatedTable that is UserRole, referenced to role entity
+                    name = "roleId",
+                    referencedColumnName = "id")
 
     )//we do not want to refresh or update userRoles entity therefore this pattern used
     private List<Role> userRoles;

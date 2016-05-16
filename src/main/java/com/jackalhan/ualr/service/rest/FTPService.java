@@ -20,7 +20,7 @@ import java.util.Vector;
 @Service
 public class FTPService {
 
-    private final Logger log = LoggerFactory.getLogger(StringUtilService.class);
+    private final Logger log = LoggerFactory.getLogger(FTPService.class);
 
     @Autowired
     private FTPConfiguration ftpConfiguration;
@@ -134,15 +134,24 @@ public class FTPService {
     public boolean moveTo(String sourcePath, String destinationPath, String fileName) {
         boolean result = true;
         FTPConnection connection = null;
+        ChannelSftp channel = null;
         try {
             connection = connect();
-            ChannelSftp channel = (ChannelSftp) connection.getChannel();
+            channel = (ChannelSftp) connection.getChannel();
             createFolder(channel, destinationPath);
             channel.rename(channel.getHome() + "/" + sourcePath + fileName, channel.getHome() + destinationPath + fileName);
             log.info(fileName + " is successfuly moved from " + channel.getHome() + " to " + channel.getHome() + destinationPath);
         } catch (Exception ex) {
-            result = false;
-            log.error(ex.toString());
+            try
+            {
+                channel.rm(channel.getHome() + destinationPath + fileName);
+                channel.rename(channel.getHome() + "/" + sourcePath + fileName, channel.getHome() + destinationPath + fileName);
+                log.info(fileName + " is successfuly deleted and moved from " + channel.getHome() + " to " + channel.getHome() + destinationPath);
+            }
+            catch (Exception e) {
+                result = false;
+                log.error(ex.toString());
+            }
         }
         finally {
             disconnect(connection);

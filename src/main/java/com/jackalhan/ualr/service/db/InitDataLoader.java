@@ -1,7 +1,9 @@
 package com.jackalhan.ualr.service.db;
 
+import com.jackalhan.ualr.domain.model.Faculty;
 import com.jackalhan.ualr.domain.model.Role;
 import com.jackalhan.ualr.enums.RoleEnum;
+import com.jackalhan.ualr.repository.FacultyRepository;
 import com.jackalhan.ualr.repository.RoleRepository;
 import com.jackalhan.ualr.service.utils.StringUtilService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +24,10 @@ public class InitDataLoader implements ApplicationListener<ContextRefreshedEvent
     boolean alreadySetup = false;
 
     @Autowired
-    private RoleRepository roleRepository;
+    private UserRoleDBService userRoleDBService;
+
+    @Autowired
+    private FacultyDBService facultyDBService;
 
     @Override
     @Transactional
@@ -34,28 +39,28 @@ public class InitDataLoader implements ApplicationListener<ContextRefreshedEvent
         Role adminRole = new Role();
         adminRole.setName(RoleEnum.ADMIN.getAuthority());
         adminRole.setDescription("Administrative Roles for the faculty");
-        createRolesIfNotFound(adminRole);
+        userRoleDBService.createRolesIfNotFound(adminRole);
 
         Role userRole = new Role();
         userRole.setName(RoleEnum.USER.getAuthority());
         userRole.setDescription("Regular User Roles for the faculty");
-        createRolesIfNotFound(userRole);
+        userRoleDBService.createRolesIfNotFound(userRole);
 
         Role sysAdminRole = new Role();
         sysAdminRole.setName(RoleEnum.SYSADMIN.getAuthority());
         sysAdminRole.setDescription("Sys Admin Role for the university");
-        createRolesIfNotFound(sysAdminRole);
+        userRoleDBService.createRolesIfNotFound(sysAdminRole);
+
+        Faculty faculty = new Faculty();
+        faculty.setCode("SS");
+        faculty.setDeanNameSurname("Lawrence E. Whitman");
+        faculty.setName("Engineering and Information Technology Faculty");
+        facultyDBService.createFacultyIfNotFound(faculty);
+
 
         alreadySetup = true;
     }
 
-    @Transactional
-    private Role createRolesIfNotFound(Role role) {
-        Role rol = roleRepository.findByName(role.getName());
-        if (rol == null) {
-            roleRepository.save(role);
-        }
-        return role;
 
-    }
+
 }

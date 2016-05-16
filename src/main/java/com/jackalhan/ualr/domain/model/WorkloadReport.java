@@ -1,99 +1,103 @@
 package com.jackalhan.ualr.domain.model;
 
+import com.jackalhan.ualr.constant.GenericConstant;
+import com.jackalhan.ualr.service.batch.WorkloadReportService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
 
 /**
- * Created by txcakaloglu on 5/10/16.
+ * Created by jackalhan on 5/10/16.
  */
-//@Entity
-//@Table(name = "WorkloadReport")
+@Entity
+@Table(name = "WorkloadReport")
 public class WorkloadReport extends AbstractAuditingEntity implements Serializable {
 
+    @Id
+    @GeneratedValue (strategy = GenerationType.AUTO)
+    private Long id;
+
+    @Lob @Basic(fetch = FetchType.LAZY)
+    @Column(length=100000)
+    private byte[] report;
 
     @NotNull
-    private String filePath;
-
-    public String getFilePath() {
-        return filePath;
-    }
-
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
-    }
-
-    @Override
-    public String toString() {
-        return "WorkloadReport{" +
-                "filePath='" + filePath + '\'' +
-                '}';
-    }
-
-   /* @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private long id;
+    private String reportName;
 
     @NotNull
-    private String semesterTerm;
+    private String instructorNameSurname;
 
-    @NotNull
-    private int semesterYear;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="workload_report_term_id", referencedColumnName = "id")
+    private WorkloadReportTerm workloadReportTerm;
 
-    @ManyToOne (fetch = FetchType.LAZY, cascade=CascadeType.ALL)
-    @JoinColumn(name = "workload_to_faculty_fk", referencedColumnName = "")
-    private Faculty faculty;
+    public WorkloadReport(byte[] report, String reportName, String instructorNameSurname, WorkloadReportTerm workloadReportTerm) {
+        this.report = report;
+        this.reportName = reportName;
+        this.instructorNameSurname = instructorNameSurname;
+        this.workloadReportTerm = workloadReportTerm;
 
+    }
 
     public WorkloadReport() {
-        super();
+
     }
 
-    public WorkloadReport(String semesterTerm, int semesterYear) {
-        super();
-        this.semesterTerm = semesterTerm;
-        this.semesterYear = semesterYear;
-    }
-
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public String getSemesterTerm() {
-        return semesterTerm;
+    public byte[] getReport() {
+        return report;
     }
 
-    public void setSemesterTerm(String semesterTerm) {
-        this.semesterTerm = semesterTerm;
+    public void setReport(byte[] report) {
+        this.report = report;
     }
 
-    public int getSemesterYear() {
-        return semesterYear;
+    public String getReportName() {
+        return reportName;
     }
 
-    public void setSemesterYear(int semesterYear) {
-        this.semesterYear = semesterYear;
+    public void setReportName(String reportName) {
+        this.reportName = reportName;
     }
 
-    public Faculty getFaculty() {
-        return faculty;
+    public String getInstructorNameSurname() {
+        return instructorNameSurname;
     }
 
-    public void setFaculty(Faculty faculty) {
-        this.faculty = faculty;
+    public void setInstructorNameSurname(String instructorNameSurname) {
+        this.instructorNameSurname = instructorNameSurname;
+    }
+
+    public WorkloadReportTerm getWorkloadReportTerm() {
+        return workloadReportTerm;
+    }
+
+    public void setWorkloadReportTerm(WorkloadReportTerm workloadReportTermid) {
+        this.workloadReportTerm = workloadReportTermid;
     }
 
     @Override
     public String toString() {
         return "WorkloadReport{" +
                 "id=" + id +
-                ", semesterTerm='" + semesterTerm + '\'' +
-                ", semesterYear=" + semesterYear +
-                ", faculty=" + faculty +
+                ", report=" + Arrays.toString(report) +
+                ", reportName='" + reportName + '\'' +
+                ", instructorNameSurname='" + instructorNameSurname + '\'' +
+                ", workloadReportTerm=" + workloadReportTerm +
                 '}';
-    }*/
+    }
 }

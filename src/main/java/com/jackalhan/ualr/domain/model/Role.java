@@ -1,10 +1,17 @@
 package com.jackalhan.ualr.domain.model;
 
+import com.jackalhan.ualr.constant.GenericConstant;
+import com.jackalhan.ualr.service.batch.WorkloadReportService;
 import org.hibernate.annotations.GeneratorType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Created by jackalhan on 5/11/16.
@@ -24,8 +31,8 @@ public class Role extends AbstractAuditingEntity implements Serializable {
     private String description;
 
     public Role() {
-    }
 
+    }
     public Long getId() {
         return id;
     }

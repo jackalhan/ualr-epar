@@ -29,7 +29,7 @@ import java.util.Locale;
 public class MailService {
 
 
-    private final Logger log = LoggerFactory.getLogger(StringUtilService.class);
+    private final Logger log = LoggerFactory.getLogger(MailService.class);
 
     @Autowired
     private JavaMailSender javaMailService;

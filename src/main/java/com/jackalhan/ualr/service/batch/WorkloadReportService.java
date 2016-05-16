@@ -4,9 +4,17 @@ import com.jackalhan.ualr.config.*;
 import com.jackalhan.ualr.constant.GenericConstant;
 import com.jackalhan.ualr.constant.SchedulingConstant;
 import com.jackalhan.ualr.domain.*;
+import com.jackalhan.ualr.domain.model.Faculty;
+import com.jackalhan.ualr.domain.model.WorkloadReport;
+import com.jackalhan.ualr.domain.model.WorkloadReportTerm;
 import com.jackalhan.ualr.enums.CourseTypeEnum;
 import com.jackalhan.ualr.enums.InstructionTypeEnum;
 import com.jackalhan.ualr.enums.SemesterTermEnum;
+import com.jackalhan.ualr.repository.FacultyRepository;
+import com.jackalhan.ualr.repository.WorkloadReportRepository;
+import com.jackalhan.ualr.repository.WorkloadReportTermRepository;
+import com.jackalhan.ualr.service.db.FacultyDBService;
+import com.jackalhan.ualr.service.db.WorkloadReportDBService;
 import com.jackalhan.ualr.service.rest.FTPService;
 import com.jackalhan.ualr.service.rest.MailService;
 import com.jackalhan.ualr.service.utils.FileUtilService;
@@ -22,6 +30,7 @@ import jxl.format.Colour;
 import jxl.format.VerticalAlignment;
 import jxl.write.*;
 import jxl.write.Label;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +45,7 @@ import javax.validation.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.List;
@@ -59,6 +69,14 @@ public class WorkloadReportService {
 
     @Autowired
     private FTPConfiguration ftpConfiguration;
+
+    @Autowired
+    private WorkloadReportDBService workloadReportDBService;
+
+    @Autowired
+    private FacultyDBService facultyDBService;
+
+
 
 
     private final Logger log = LoggerFactory.getLogger(WorkloadReportService.class);
@@ -431,24 +449,38 @@ public class WorkloadReportService {
 
         boolean result = true;
         SemesterTerm semesterTerm = getSemesterTerm();
-        String folderPath = GenericConstant.WORKLOAD_REPORTS_EXCEL_PROCESSED_PATH + semesterTerm.getYear() + "/" + semesterTerm.getSemesterTermName() + "/";
-        FileUtilService.getInstance().createDirectory(folderPath);
+        //String folderPath = GenericConstant.WORKLOAD_REPORTS_EXCEL_PROCESSED_PATH + semesterTerm.getYear() + "/" + semesterTerm.getSemesterTermName() + "/";
+        //FileUtilService.getInstance().createDirectory(folderPath);
+
 
 
         try {
 
+            Faculty faculty = facultyDBService.createFacultyIfNotFound(new Faculty("SS"));
+            WorkloadReportTerm workloadReportTerm = new WorkloadReportTerm();
+            workloadReportTerm.setSemesterYear(semesterTerm.getYear());
+            workloadReportTerm.setSemesterTerm(semesterTerm.getSemesterTermName());
+            workloadReportTerm.setFaculty(faculty);
+            workloadReportTerm = workloadReportDBService.createWorkloadReportTermIfNotFound(workloadReportTerm);
+
+
+            List<WorkloadReport> workloadReportList = new ArrayList<WorkloadReport>();
+            WorkloadReport workloadReport = null;
+
             for (SimplifiedWorkload simplifiedWorkload : simplifiedWorkloadList) {
 
-                String filePath = folderPath + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + "_" + simplifiedWorkload.getDepartmentCode() + ".xls";
+                //String filePath = folderPath + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + "_" + simplifiedWorkload.getDepartmentCode() + ".xls";
 
 
-                File file = new File(filePath);
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+                //File file = new File(filePath);
 
                 int startingColumnFrame = 1;
                 int endingColumnFrame = 25;
                 //Creates a writable workbook with the given file name
                 //WritableWorkbook workbook = Workbook.createWorkbook(new File(simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + ".xls"));
-                WritableWorkbook workbook = Workbook.createWorkbook(file);
+                WritableWorkbook workbook = Workbook.createWorkbook(outputStream);
                 WritableSheet sheet = workbook.createSheet(simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_"), 0);
 
                 // Create cell font and format
@@ -1240,7 +1272,15 @@ public class WorkloadReportService {
 
                 //Close and free allocated memory
                 workbook.close();
+                workloadReport = new WorkloadReport();
+                workloadReport.setInstructorNameSurname(simplifiedWorkload.getInstructorNameAndSurname());
+                workloadReport.setReportName(simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + "_" + simplifiedWorkload.getDepartmentCode() + ".xls");
+                workloadReport.setReport(outputStream.toByteArray());
+                workloadReport.setWorkloadReportTerm(workloadReportTerm);
+                workloadReportList.add(workloadReport);
             }
+            workloadReportDBService.createWorkloadReportIfNotFoundAsBulk(workloadReportList);
+
         } catch (Exception ex) {
             result = false;
             log.error(ex.toString());
