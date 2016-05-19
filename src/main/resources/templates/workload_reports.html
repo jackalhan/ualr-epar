@@ -2,6 +2,34 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <!--/*/ <th:block th:include="fragments/header :: header"></th:block> /*/-->
+    <script>
+        $(document).ready(function() {
+            $(".search").keyup(function () {
+                var searchTerm = $(".search").val();
+                var listItem = $('.results tbody').children('tr');
+                var searchSplit = searchTerm.replace(/ /g, "'):containsi('")
+
+                $.extend($.expr[':'], {'containsi': function(elem, i, match, array){
+                    return (elem.textContent || elem.innerText || '').toLowerCase().indexOf((match[3] || "").toLowerCase()) >= 0;
+                }
+                });
+
+                $(".results tbody tr").not(":containsi('" + searchSplit + "')").each(function(e){
+                    $(this).attr('visible','false');
+                });
+
+                $(".results tbody tr:containsi('" + searchSplit + "')").each(function(e){
+                    $(this).attr('visible','true');
+                });
+
+                var jobCount = $('.results tbody tr[visible="true"]').length;
+                $('.counter').text(jobCount + ' item');
+
+                if(jobCount == '0') {$('.no-result').show();}
+                else {$('.no-result').hide();}
+            });
+        });
+    </script>
 </head>
 <body class="skin-black">
 <!--/*/ <th:block th:include="fragments/header_title :: header_title"></th:block> /*/-->
@@ -74,13 +102,26 @@
 
                 </header>
                 <div class="panel-body table-responsive" th:if="${not #lists.isEmpty(workloadReports)}">
-                    <table class="table table-hover">
+                    <div class="input-group">
+                        <input type="text" name="table_search" id="table_search" class="search form-control input-sm pull-right" style="width: 150px;" placeholder="Search"/>
+                        <div class="input-group-btn">
+                            <button class="btn btn-sm btn-default"><i class="fa fa-search"></i></button>
+                        </div>
+                    </div>
+                    <span class="counter pull-right"></span>
+                    <table class="table table-hover results">
+                        <thead>
                         <tr>
                             <th>Name - Surname</th>
                             <th>Department Name</th>
                             <th>Department Code</th>
                             <th></th>
                         </tr>
+                        <tr class="warning no-result">
+                            <td colspan="4"><i class="fa fa-warning"></i> No result</td>
+                        </tr>
+                        </thead>
+                        <tbody>
                         <tr th:each="workloadReport : ${workloadReports}">
                             <td th:text="${workloadReport.instructorNameSurname}"></td>
                             <td th:text="${workloadReport.departmentCode}"></td>
@@ -92,6 +133,7 @@
                                 </div>
                             </td>
                         </tr>
+                        </tbody>
                     </table>
                 </div><!-- /.box-body -->
             </div> <!--/.box-->

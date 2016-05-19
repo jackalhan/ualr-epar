@@ -8,3 +8,17 @@
 @import url('iCheck/all.css');
 @import url('style.css');
 @import url('http://fonts.googleapis.com/css?family=Lato');
+
+.results tr[visible='false'],
+.no-result{
+    display:none;
+}
+
+.results tr[visible='true']{
+    display:table-row;
+}
+
+.counter{
+    padding:8px;
+    color:#ccc;
+}
