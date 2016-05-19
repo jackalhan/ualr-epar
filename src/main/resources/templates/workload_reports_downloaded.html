@@ -63,35 +63,30 @@
                         <span class="sm-st-icon st-red"><i class="fa fa-check-square-o"></i></span>
                         <div class="sm-st-info">
                             <span th:text="${facultyName}"></span>
-                            <h4 th:text="'Year: ' + ${semesterYear}"></h4>
+                            <h4 th:text="'Year: ' + ${semesterYear} + ' Semester Term : ' + ${semesterTermName}"></h4>
                         </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat">
+                        <div class="stat-icon" style="color:#45cf95;">
+                            <i class="fa fa-paperclip fa-3x stat-elem"></i>
+                        </div>
+                        <h5 class="stat-info" th:text="'Name : ' + ${instructorNameSurname} + ' Deparment Name: ' + ${departmentName}"></h5>
                     </div>
                 </div>
             </div>
             <div class="panel">
-                <header class="panel-heading">
-                    <b>Semester Term based Generated Workload Reports for Each Faculty of UALR</b>
+                <div class="panel-body" id="noti-box">
 
-                </header>
-                <div class="panel-body table-responsive" th:if="${not #lists.isEmpty(facultyWorkloadsReportTerms)}">
-                    <table class="table table-hover">
-                        <tr>
-                            <th>Year of Workload Reports</th>
-                            <th>Semester Term</th>
-                            <th></th>
-                        </tr>
-                        <tr th:each="facultyWorkloadsReportTerm : ${facultyWorkloadsReportTerms}">
-                            <td th:text="${facultyWorkloadsReportTerm.semesterYear}"></td>
-                            <td th:text="${facultyWorkloadsReportTerm.semesterTerm}"></td>
-                            <td>
-                                <div class="pull-right hidden-phone">
-                                    <a href="workload_reports.html" th:href="${'workload_reports?workloadReportTermId='+ facultyWorkloadsReportTerm.id}"><button class="btn btn-default btn-sm"><i class="fa fa-search"></i>
-                                    </button></a>
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
-                </div><!-- /.box-body -->
+                    <div class="alert alert-block alert-danger">
+                        <button data-dismiss="alert" class="close close-sm" type="button">
+                            <i class="fa fa-times"></i>
+                        </button>
+                        <strong th:text="${reportName}"></strong> is downloaded successfully.
+                    </div>
+                </div>
+
             </div> <!--/.box-->
         </section><!-- /.content -->
 

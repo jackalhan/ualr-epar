@@ -88,5 +88,11 @@ public class WorkloadReportDBService {
         return workloadReportRepository.findByWorkloadReportTermIdOrderByInstructorNameSurnameAsc(workloadReportTermId);
     }
 
+    @Transactional
+    public WorkloadReport listOneWorkloadReportsBasedOnId(Long workloadReportId) {
+        log.info("listOneWorkloadReportsBasedOnId " + " listed successfully");
+        return workloadReportRepository.getOne(workloadReportId);
+    }
+
 
 }
