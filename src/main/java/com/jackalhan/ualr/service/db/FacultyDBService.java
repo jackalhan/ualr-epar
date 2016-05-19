@@ -31,4 +31,14 @@ public class FacultyDBService {
         }
         return fac;
     }
+
+    @Transactional
+    public Faculty listAllTermsBasedOnFacultyAndYear(String facultyCode, int year) {
+        Faculty fac = facultyRepository.findByCode(faculty.getCode());
+        if (fac == null) {
+            facultyRepository.save(faculty);
+            log.info("createFacultyIfNotFound " + "saved data successfully");
+        }
+        return fac;
+    }
 }

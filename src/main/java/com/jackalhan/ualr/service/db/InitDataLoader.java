@@ -2,6 +2,7 @@ package com.jackalhan.ualr.service.db;
 
 import com.jackalhan.ualr.domain.model.Faculty;
 import com.jackalhan.ualr.domain.model.Role;
+import com.jackalhan.ualr.domain.model.WorkloadReportTerm;
 import com.jackalhan.ualr.enums.RoleEnum;
 import com.jackalhan.ualr.repository.FacultyRepository;
 import com.jackalhan.ualr.repository.RoleRepository;
@@ -28,6 +29,9 @@ public class InitDataLoader implements ApplicationListener<ContextRefreshedEvent
 
     @Autowired
     private FacultyDBService facultyDBService;
+
+    @Autowired
+    private WorkloadReportDBService workloadReportDBService;
 
     @Override
     @Transactional
@@ -57,6 +61,20 @@ public class InitDataLoader implements ApplicationListener<ContextRefreshedEvent
         faculty.setName("Engineering and Information Technology Faculty");
         facultyDBService.createFacultyIfNotFound(faculty);
 
+        WorkloadReportTerm wlReportTerm = new WorkloadReportTerm();
+        wlReportTerm.setFaculty(faculty);
+        wlReportTerm.setSemesterTermCode(10);
+        wlReportTerm.setSemesterTerm("SPRING");
+        wlReportTerm.setSemesterYear(2016);
+        workloadReportDBService.createWorkloadReportTermIfNotFound(wlReportTerm);
+
+        wlReportTerm = new WorkloadReportTerm();
+        wlReportTerm.setFaculty(faculty);
+        wlReportTerm.setSemesterTermCode(30);
+        wlReportTerm.setSemesterTerm("SUMMER");
+        wlReportTerm.setSemesterYear(2016);
+
+        workloadReportDBService.createWorkloadReportTermIfNotFound(wlReportTerm);
 
         alreadySetup = true;
     }

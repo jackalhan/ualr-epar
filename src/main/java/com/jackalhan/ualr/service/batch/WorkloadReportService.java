@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
  * Created by jackalhan on 4/18/16.
  */
 
-@Component
+//@Component
 public class WorkloadReportService {
 
     @Autowired
@@ -75,8 +75,6 @@ public class WorkloadReportService {
 
     @Autowired
     private FacultyDBService facultyDBService;
-
-
 
 
     private final Logger log = LoggerFactory.getLogger(WorkloadReportService.class);
@@ -453,13 +451,13 @@ public class WorkloadReportService {
         //FileUtilService.getInstance().createDirectory(folderPath);
 
 
-
         try {
 
             Faculty faculty = facultyDBService.createFacultyIfNotFound(new Faculty("SS"));
             WorkloadReportTerm workloadReportTerm = new WorkloadReportTerm();
             workloadReportTerm.setSemesterYear(semesterTerm.getYear());
             workloadReportTerm.setSemesterTerm(semesterTerm.getSemesterTermName());
+            workloadReportTerm.setSemesterTermCode(semesterTerm.getSemesterTermCode());
             workloadReportTerm.setFaculty(faculty);
             workloadReportTerm = workloadReportDBService.createWorkloadReportTermIfNotFound(workloadReportTerm);
 

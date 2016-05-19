@@ -32,6 +32,9 @@ public class WorkloadReportTerm extends AbstractAuditingEntity implements Serial
     private String semesterTerm;
 
     @NotNull
+    private int semesterTermCode;
+
+    @NotNull
     private int semesterYear;
 
     @ManyToOne(cascade = CascadeType.MERGE)
@@ -45,9 +48,10 @@ public class WorkloadReportTerm extends AbstractAuditingEntity implements Serial
     public WorkloadReportTerm() {
     }
 
-    public WorkloadReportTerm(String semesterTerm, int semesterYear, Faculty faculty, List<WorkloadReport> workloadReports)  {
+    public WorkloadReportTerm(String semesterTerm, int semesterTermCode, int semesterYear, Faculty faculty, List<WorkloadReport> workloadReports)  {
         this.semesterTerm = semesterTerm;
         this.semesterYear = semesterYear;
+        this.semesterTermCode = semesterTermCode;
         this.faculty = faculty;
         this.workloadReports = workloadReports;
 
@@ -94,11 +98,20 @@ public class WorkloadReportTerm extends AbstractAuditingEntity implements Serial
         this.workloadReports = workloadReports;
     }
 
+    public int getSemesterTermCode() {
+        return semesterTermCode;
+    }
+
+    public void setSemesterTermCode(int semesterTermCode) {
+        this.semesterTermCode = semesterTermCode;
+    }
+
     @Override
     public String toString() {
         return "WorkloadReportTerm{" +
                 "id=" + id +
                 ", semesterTerm='" + semesterTerm + '\'' +
+                ", semesterTermCode='" + semesterTermCode+ '\'' +
                 ", semesterYear=" + semesterYear +
                 ", faculty=" + faculty +
                 ", workloadReports=" + workloadReports +

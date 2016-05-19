@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <!--/*/ <th:block th:include="fragments/header :: header"></th:block> /*/-->
+</head>
+<body class="skin-black">
+<!--/*/ <th:block th:include="fragments/header_title :: header_title"></th:block> /*/-->
+
+<div class="wrapper row-offcanvas row-offcanvas-left">
+
+    <!-- Left side column. contains the logo and sidebar -->
+    <aside class="left-side sidebar-offcanvas">
+        <!-- sidebar: style can be found in sidebar.less -->
+        <section class="sidebar">
+            <!-- Sidebar user panel -->
+            <div class="user-panel">
+                <div class="pull-left image">
+                    <img src="img/26115.jpg" th:href="@{/img/26115.jpg}" class="img-circle" alt="User Image"/>
+                </div>
+                <div class="pull-left info">
+                    <p th:text="'Hello, ' + ${username} + '!'"/>
+
+                    <a href="#"><i class="fa fa-circle text-success"></i> Online</a>
+                </div>
+            </div>
+            <!-- search form -->
+            <form action="#" method="get" class="sidebar-form">
+                <div class="input-group">
+                    <input type="text" name="q" class="form-control" placeholder="Search..."/>
+                                    <span class="input-group-btn">
+                                        <button type='submit' name='seach' id='search-btn' class="btn btn-flat"><i
+                                                class="fa fa-search"></i></button>
+                                    </span>
+                </div>
+            </form>
+            <!-- /.search form -->
+            <!-- sidebar menu: : style can be found in sidebar.less -->
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="index.html">
+                        <i class="fa fa-dashboard"></i> <span>Dashboard(Still Prog.)</span>
+                    </a>
+                </li>
+                <li class="active">
+                    <a href="workload_reports_faculty_terms.html">
+                        <i class="fa fa-gavel"></i> <span>Workload Report(s)</span>
+                    </a>
+                </li>
+
+            </ul>
+        </section>
+        <!-- /.sidebar -->
+    </aside>
+
+    <aside class="right-side">
+
+        <!-- Main content -->
+        <section class="content">
+            <div class="panel">
+                <header class="panel-heading">
+                    Year based Generated Workload Reports for Each Faculty of UALR
+
+                </header>
+                <div class="panel-body table-responsive" th:if="${not #lists.isEmpty(workloadsReportTerms)}">
+                    <table class="table table-hover">
+                        <tr>
+                            <th>Faculty Name</th>
+                            <th>Faculty Code</th>
+                            <th>Year of Workload Reports</th>
+                            <th></th>
+                        </tr>
+                        <tr th:each="workloadReportTerm : ${workloadsReportTerms}">
+                            <td th:text="${workloadReportTerm.faculty!=null}?${workloadReportTerm.faculty.name}"></td>
+                            <td th:text="${workloadReportTerm.faculty!=null}?${workloadReportTerm.faculty.code}"></td>
+                            <td th:text="${workloadReportTerm.semesterYear}"></td>
+                            <td>
+                                <div class="pull-right hidden-phone">
+                                    <a href="workload_reports_faculty_terms.html" th:href="@{'/faculty/'+ ${workloadReportTerm.faculty!=null}?${workloadReportTerm.faculty.code} + '/' + ${workloadReportTerm.semesterYear}}" <button class="btn btn-default btn-sm" th:onclick=""><i class="fa fa-search"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div><!-- /.box-body -->
+            </div> <!--/.box-->
+        </section><!-- /.content -->
+        <!--/*/ <th:block th:include="fragments/footer :: footer"></th:block> /*/-->
+    </aside><!-- /.right-side -->
+</div>
+</body>
+</html>

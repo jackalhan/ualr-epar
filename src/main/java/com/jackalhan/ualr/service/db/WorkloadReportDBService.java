@@ -62,5 +62,11 @@ public class WorkloadReportDBService {
 
     }
 
+    @Transactional
+    public List<WorkloadReportTerm> listAllWorkloadReportTermsAndGroupByFacultyCodeAndYear() {
+        log.info("listAllGroupByFacultyCodeAndYear " + " listed successfully");
+        return workloadReportTermRepository.listAllGroupByFacultyCodeAndYear();
+    }
+
 
 }
