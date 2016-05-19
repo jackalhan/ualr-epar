@@ -34,14 +34,22 @@ public class WorkloadReport extends AbstractAuditingEntity implements Serializab
     @NotNull
     private String instructorNameSurname;
 
+    @NotNull
+    private String departmentName;
+
+    @NotNull
+    private String departmentCode;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="workload_report_term_id", referencedColumnName = "id")
     private WorkloadReportTerm workloadReportTerm;
 
-    public WorkloadReport(byte[] report, String reportName, String instructorNameSurname, WorkloadReportTerm workloadReportTerm) {
+    public WorkloadReport(byte[] report, String reportName, String instructorNameSurname, String departmentName, String departmentCode, WorkloadReportTerm workloadReportTerm) {
         this.report = report;
         this.reportName = reportName;
         this.instructorNameSurname = instructorNameSurname;
+        this.departmentCode = departmentCode;
+        this.departmentName = departmentName;
         this.workloadReportTerm = workloadReportTerm;
 
     }
@@ -90,6 +98,22 @@ public class WorkloadReport extends AbstractAuditingEntity implements Serializab
         this.workloadReportTerm = workloadReportTermid;
     }
 
+    public String getDepartmentName() {
+        return departmentName;
+    }
+
+    public void setDepartmentName(String departmentName) {
+        this.departmentName = departmentName;
+    }
+
+    public String getDepartmentCode() {
+        return departmentCode;
+    }
+
+    public void setDepartmentCode(String departmentCode) {
+        this.departmentCode = departmentCode;
+    }
+
     @Override
     public String toString() {
         return "WorkloadReport{" +
@@ -97,6 +121,8 @@ public class WorkloadReport extends AbstractAuditingEntity implements Serializab
                 ", report=" + Arrays.toString(report) +
                 ", reportName='" + reportName + '\'' +
                 ", instructorNameSurname='" + instructorNameSurname + '\'' +
+                ", departmentName='" + departmentName + '\'' +
+                ", departmentCode='" + departmentCode + '\'' +
                 ", workloadReportTerm=" + workloadReportTerm +
                 '}';
     }

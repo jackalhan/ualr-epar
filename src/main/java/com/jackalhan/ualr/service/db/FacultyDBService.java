@@ -33,12 +33,8 @@ public class FacultyDBService {
     }
 
     @Transactional
-    public Faculty listAllTermsBasedOnFacultyAndYear(String facultyCode, int year) {
-        Faculty fac = facultyRepository.findByCode(faculty.getCode());
-        if (fac == null) {
-            facultyRepository.save(faculty);
-            log.info("createFacultyIfNotFound " + "saved data successfully");
-        }
-        return fac;
+    public Faculty findByCode(String code) {
+        log.info("findByCode " + " listed data successfully");
+        return facultyRepository.findByCode(code);
     }
 }

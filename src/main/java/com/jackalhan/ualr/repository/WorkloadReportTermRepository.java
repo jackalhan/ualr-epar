@@ -19,4 +19,6 @@ public interface WorkloadReportTermRepository extends JpaRepository<WorkloadRepo
             "group by t.faculty_code, t.semester_year", nativeQuery = true)
     List<WorkloadReportTerm> listAllGroupByFacultyCodeAndYear();
 
+    List<WorkloadReportTerm> findByFacultyCodeAndSemesterYearOrderBySemesterTermCodeAsc (String facultyCode, int semesterYear);
+
 }

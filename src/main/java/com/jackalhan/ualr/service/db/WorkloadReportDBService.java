@@ -64,8 +64,28 @@ public class WorkloadReportDBService {
 
     @Transactional
     public List<WorkloadReportTerm> listAllWorkloadReportTermsAndGroupByFacultyCodeAndYear() {
-        log.info("listAllGroupByFacultyCodeAndYear " + " listed successfully");
+        log.info("listAllWorkloadReportTermsAndGroupByFacultyCodeAndYear " + " listed successfully");
         return workloadReportTermRepository.listAllGroupByFacultyCodeAndYear();
+    }
+
+
+
+    @Transactional
+    public List<WorkloadReportTerm>  listAllTermsBasedOnFacultyAndYear(String facultyCode, int semesterYear) {
+        log.info("listAllWorkloadReportTermsAndGroupByFacultyCodeAndYear " + " listed successfully");
+        return workloadReportTermRepository.findByFacultyCodeAndSemesterYearOrderBySemesterTermCodeAsc(facultyCode, semesterYear);
+    }
+
+    @Transactional
+    public WorkloadReportTerm  listOneWorkloadReportTermBasedOnId(Long workloadReportTermId) {
+        log.info("listOneWorkloadReportTermBasedOnId " + " listed successfully");
+        return workloadReportTermRepository.findOne(workloadReportTermId);
+    }
+
+    @Transactional
+    public List<WorkloadReport>  listAllWorkloadReportsBasedOnTermId(Long workloadReportTermId) {
+        log.info("listAllWorkloadReportsBasedOnTermId " + " listed successfully");
+        return workloadReportRepository.findByWorkloadReportTermIdOrderByInstructorNameSurnameAsc(workloadReportTermId);
     }
 
 

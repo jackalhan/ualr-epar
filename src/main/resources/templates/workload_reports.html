@@ -53,30 +53,42 @@
     </aside>
 
     <aside class="right-side">
-
         <!-- Main content -->
         <section class="content">
+            <div class="row" style="margin-bottom:5px;">
+
+
+                <div class="col-md-5" th:class="${dynamicColumnClassName}">
+                    <div class="sm-st clearfix">
+                        <span class="sm-st-icon st-red"><i class="fa fa-check-square-o"></i></span>
+                        <div class="sm-st-info">
+                            <span th:text="${facultyName}"></span>
+                            <h4 th:text="'Year: ' + ${semesterYear} + ' Semester Term : ' + ${semesterTermName}"></h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="panel">
                 <header class="panel-heading">
-                    <b>Year based Generated Workload Reports for Each Faculty of UALR</b>
+                    <b>Workload Reports for Each Faculty Staff</b>
 
                 </header>
-                <div class="panel-body table-responsive" th:if="${not #lists.isEmpty(workloadsReportTerms)}">
+                <div class="panel-body table-responsive" th:if="${not #lists.isEmpty(workloadReports)}">
                     <table class="table table-hover">
                         <tr>
-                            <th>Faculty Name</th>
-                            <th>Faculty Code</th>
-                            <th>Year of Workload Reports</th>
+                            <th>Name - Surname</th>
+                            <th>Department Name</th>
+                            <th>Department Code</th>
                             <th></th>
                         </tr>
-                        <tr th:each="workloadReportTerm : ${workloadsReportTerms}">
-                            <td th:text="${workloadReportTerm.faculty!=null}?${workloadReportTerm.faculty.name}"></td>
-                            <td th:text="${workloadReportTerm.faculty!=null}?${workloadReportTerm.faculty.code}"></td>
-                            <td th:text="${workloadReportTerm.semesterYear}"></td>
+                        <tr th:each="workloadReport : ${workloadReports}">
+                            <td th:text="${workloadReport.instructorNameSurname}"></td>
+                            <td th:text="${workloadReport.departmentCode}"></td>
+                            <td th:text="${workloadReport.departmentName}"></td>
                             <td>
                                 <div class="pull-right hidden-phone">
-                                    <a href="workload_reports_faculty_terms.html" th:href="${'workload_reports_faculty_terms?facultyCode='+ workloadReportTerm.faculty.code + '&amp;semesterTermYear=' + workloadReportTerm.semesterYear}"><button class="btn btn-default btn-sm"><i class="fa fa-search"></i>
-                                    </button></a>
+                                    <button class="btn btn-default btn-sm"><i class="fa fa-envelope"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -84,6 +96,7 @@
                 </div><!-- /.box-body -->
             </div> <!--/.box-->
         </section><!-- /.content -->
+
         <!--/*/ <th:block th:include="fragments/footer :: footer"></th:block> /*/-->
     </aside><!-- /.right-side -->
 </div>

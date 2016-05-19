@@ -61,13 +61,13 @@ public class InitDataLoader implements ApplicationListener<ContextRefreshedEvent
         faculty.setName("Engineering and Information Technology Faculty");
         facultyDBService.createFacultyIfNotFound(faculty);
 
-        WorkloadReportTerm wlReportTerm = new WorkloadReportTerm();
-        wlReportTerm.setFaculty(faculty);
+        WorkloadReportTerm wlReportTerm = null; //new WorkloadReportTerm();
+       /* wlReportTerm.setFaculty(faculty);
         wlReportTerm.setSemesterTermCode(10);
         wlReportTerm.setSemesterTerm("SPRING");
         wlReportTerm.setSemesterYear(2016);
         workloadReportDBService.createWorkloadReportTermIfNotFound(wlReportTerm);
-
+*/
         wlReportTerm = new WorkloadReportTerm();
         wlReportTerm.setFaculty(faculty);
         wlReportTerm.setSemesterTermCode(30);

@@ -42,7 +42,7 @@
                     </a>
                 </li>
                 <li class="active">
-                    <a href="workload_reports_faculty_terms.html">
+                    <a href="workload_reports_terms.html">
                         <i class="fa fa-gavel"></i> <span>Workload Report(s)</span>
                     </a>
                 </li>
@@ -58,19 +58,19 @@
             <div class="row" style="margin-bottom:5px;">
 
 
-                <div class="col-md-3">
+                <div class="col-md-5" th:class="${dynamicColumnClassName}">
                     <div class="sm-st clearfix">
                         <span class="sm-st-icon st-red"><i class="fa fa-check-square-o"></i></span>
                         <div class="sm-st-info">
-                            <span>FACULTY</span>
-                            Year : 2016
+                            <span th:text="${facultyName}"></span>
+                            <h4 th:text="'Year: ' + ${semesterYear}"></h4>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="panel">
                 <header class="panel-heading">
-                    Semester Term based Generated Workload Reports for Each Faculty of UALR
+                    <b>Semester Term based Generated Workload Reports for Each Faculty of UALR</b>
 
                 </header>
                 <div class="panel-body table-responsive" th:if="${not #lists.isEmpty(facultyWorkloadsReportTerms)}">
@@ -85,8 +85,8 @@
                             <td th:text="${facultyWorkloadsReportTerm.semesterTerm}"></td>
                             <td>
                                 <div class="pull-right hidden-phone">
-                                    <button class="btn btn-default btn-sm"><i class="fa fa-envelope"></i>
-                                    </button>
+                                    <a href="workload_reports.html" th:href="${'workload_reports?workloadReportTermId='+ facultyWorkloadsReportTerm.id}"><button class="btn btn-default btn-sm"><i class="fa fa-search"></i>
+                                    </button></a>
                                 </div>
                             </td>
                         </tr>

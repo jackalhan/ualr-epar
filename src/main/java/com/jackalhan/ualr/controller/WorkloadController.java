@@ -2,6 +2,7 @@ package com.jackalhan.ualr.controller;
 
 import com.jackalhan.ualr.constant.GenericConstant;
 import com.jackalhan.ualr.domain.model.Faculty;
+import com.jackalhan.ualr.domain.model.WorkloadReport;
 import com.jackalhan.ualr.domain.model.WorkloadReportTerm;
 import com.jackalhan.ualr.repository.WorkloadReportTermRepository;
 import com.jackalhan.ualr.service.db.FacultyDBService;
@@ -31,7 +32,7 @@ public class WorkloadController {
     @Autowired
     private FacultyDBService facultyDBService;
 
-    @RequestMapping("/workload/all")
+    @RequestMapping("workload_reports_terms")
     public String workload(@RequestParam(value = "name", required = false, defaultValue = "World") String name, Model model, Principal principal) {
         LoginService loginService = new LoginService();
         model.addAttribute("username", loginService.getUserName(principal));
@@ -42,14 +43,44 @@ public class WorkloadController {
         return "workload_reports_terms";
     }
 
-    @RequestMapping("/workload/faculty/{facultyCode}/{semesterTermYear}")
-    public String listWorkloadReportsBasedOnFacultyAndTerms(@PathVariable String facultyCode, @PathVariable int semesterTermYear, Model model, Principal principal) {
+    @RequestMapping("workload_reports_faculty_terms")
+    public String listWorkloadReportsBasedOnFacultyAndTerms(String facultyCode, int semesterTermYear, Model model, Principal principal) {
         LoginService loginService = new LoginService();
+        Faculty faculty = facultyDBService.findByCode(facultyCode);
+        List<WorkloadReportTerm> records = workloadReportDBService.listAllTermsBasedOnFacultyAndYear(facultyCode, semesterTermYear);
+
+
+        model.addAttribute("facultyWorkloadsReportTerms", records);
         model.addAttribute("username", loginService.getUserName(principal));
         model.addAttribute("userroles", loginService.getUserRoles(principal));
-        Faculty faculty = facultyDBService.
-        List<WorkloadReportTerm> records = workloadReportDBService.listAllWorkloadReportTermsAndGroupByFacultyCodeAndYear();
+        model.addAttribute("facultyName", faculty.getName());
+        model.addAttribute("semesterYear", semesterTermYear);
+        model.addAttribute("dynamicColumnClassName", calculateDynamicDivSizeOfFacultyName(faculty.getName().length()));
 
         return "workload_reports_faculty_terms";
+    }
+
+    @RequestMapping("workload_reports")
+    public String listWorkloadReports(Long workloadReportTermId, Model model, Principal principal) {
+        LoginService loginService = new LoginService();
+        WorkloadReportTerm workloadReportTerm = workloadReportDBService.listOneWorkloadReportTermBasedOnId(workloadReportTermId);
+        Faculty faculty = facultyDBService.findByCode(workloadReportTerm.getFaculty().getCode());
+        List<WorkloadReport> workloadReports = workloadReportDBService.listAllWorkloadReportsBasedOnTermId(workloadReportTermId);
+
+        model.addAttribute("workloadReports", workloadReports);
+        model.addAttribute("username", loginService.getUserName(principal));
+        model.addAttribute("userroles", loginService.getUserRoles(principal));
+        model.addAttribute("facultyName", faculty.getName());
+        model.addAttribute("semesterYear", workloadReportTerm.getSemesterYear());
+        model.addAttribute("semesterTermName", workloadReportTerm.getSemesterTerm());
+        model.addAttribute("dynamicColumnClassName", calculateDynamicDivSizeOfFacultyName(faculty.getName().length()));
+
+        return "workload_reports";
+    }
+
+    private String calculateDynamicDivSizeOfFacultyName(int facultyNameLength){
+        double block =  facultyNameLength/ 9;
+        int partSize = (int) Math.ceil(block);
+        return "col-md-" + partSize;
     }
 }

@@ -1275,6 +1275,8 @@ public class WorkloadReportService {
                 workloadReport.setReportName(simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + "_" + simplifiedWorkload.getDepartmentCode() + ".xls");
                 workloadReport.setReport(outputStream.toByteArray());
                 workloadReport.setWorkloadReportTerm(workloadReportTerm);
+                workloadReport.setDepartmentCode(simplifiedWorkload.getDepartmentName());
+                workloadReport.setDepartmentName(simplifiedWorkload.getDepartmentCode());
                 workloadReportList.add(workloadReport);
             }
             workloadReportDBService.createWorkloadReportIfNotFoundAsBulk(workloadReportList);
