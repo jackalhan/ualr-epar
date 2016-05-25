@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
  * Created by jackalhan on 4/18/16.
  */
 
-@Component
+//@Component
 public class WorkloadReportService {
 
     @Autowired
@@ -103,6 +103,7 @@ public class WorkloadReportService {
         } else {
             for (String file : files) {
                 String NEW_MAIL_SUBJECT = MAIL_SUBJECT + file;
+                String importedFileDate = getImportedFileDate(file);
                 File fileFromTemp = FileUtilService.getInstance().getFile(GenericConstant.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH + file);
                 BufferedReader bufferedReader = FileUtilService.getInstance().getFileContent(fileFromTemp);
                 RawWorkloadWithValidationResult rawWorkloadWithValidationResult = parseContent(bufferedReader);
@@ -117,7 +118,7 @@ public class WorkloadReportService {
                             List<TypeSafeRawWorkload> typeSafeRawWorkloadList = convertRawToTypeSafeData(rawWorkloadWithValidationResult.getRawWorkloadList());
                             log.info("Type Safe Raw Workload List Size : " + typeSafeRawWorkloadList.size());
                             List<SimplifiedWorkload> simplifiedWorkloadList = simplifyWorkloadData(typeSafeRawWorkloadList);
-                            result = generateExcelContent(simplifiedWorkloadList);
+                            result = generateExcelContent(simplifiedWorkloadList, importedFileDate);
                             if (result) {
                                 mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Excel files are generated", "Excel files are generated based on following file " + file + ". You can view all generated files by clicking following link......");
 
@@ -156,6 +157,11 @@ public class WorkloadReportService {
         SemesterTerm semesterTerm = getSemesterTerm();
         return "Load_Report_" + semesterTerm.getYear() + semesterTerm.getSemesterTermCode() + "*.txt";
 
+    }
+
+    private String getImportedFileDate(String fileName)
+    {
+        return fileName.substring(19, fileName.indexOf(GenericConstant.DOT_CHARACTER));
     }
 
     private SemesterTerm getSemesterTerm() {
@@ -388,14 +394,17 @@ public class WorkloadReportService {
                 if (!isInstructorNameParsed) {
                     isInstructorNameParsed = true;
                     simplifiedWorkload.setInstructorNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getInstructorNameSurname(), GenericConstant.COMA_CHARACTER));
+                    simplifiedWorkload.setWithoutSwitchingInstructorNameAndSurname(newRawData.getInstructorNameSurname());
                 }
                 if (!isDeanNameParsed) {
                     isDeanNameParsed = true;
                     simplifiedWorkload.setDeanNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getDean(), GenericConstant.COMA_CHARACTER));
+                    simplifiedWorkload.setWithoutSwitchingdeanNameAndSurname(newRawData.getDean());
                 }
                 if (!isChairNameParsed) {
                     isChairNameParsed = true;
                     simplifiedWorkload.setChairNameAndSurname(StringUtilService.getInstance().switchText(newRawData.getChair(), GenericConstant.COMA_CHARACTER));
+                    simplifiedWorkload.setWithoutSwitchingChairNameAndSurname(newRawData.getChair());
                 }
                 if (!isSemestreCodeParsed) {
                     if (!StringUtilService.getInstance().isEmpty(String.valueOf(newRawData.getSemesterTermCode()))) {
@@ -443,7 +452,7 @@ public class WorkloadReportService {
 
     }
 
-    private boolean generateExcelContent(List<SimplifiedWorkload> simplifiedWorkloadList) {
+    private boolean generateExcelContent(List<SimplifiedWorkload> simplifiedWorkloadList, String importedFileDate) {
 
         boolean result = true;
         SemesterTerm semesterTerm = getSemesterTerm();
@@ -459,6 +468,7 @@ public class WorkloadReportService {
             workloadReportTerm.setSemesterTerm(semesterTerm.getSemesterTermName());
             workloadReportTerm.setSemesterTermCode(semesterTerm.getSemesterTermCode());
             workloadReportTerm.setFaculty(faculty);
+            workloadReportTerm.setImportedFileDate(importedFileDate);
             workloadReportTerm = workloadReportDBService.createWorkloadReportTermIfNotFound(workloadReportTerm);
 
 
@@ -1271,12 +1281,14 @@ public class WorkloadReportService {
                 //Close and free allocated memory
                 workbook.close();
                 workloadReport = new WorkloadReport();
-                workloadReport.setInstructorNameSurname(simplifiedWorkload.getInstructorNameAndSurname());
-                workloadReport.setReportName(simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + "_" + simplifiedWorkload.getDepartmentCode() + ".xls");
+                workloadReport.setInstructorNameSurname(simplifiedWorkload.getWithoutSwitchingInstructorNameAndSurname());
+                workloadReport.setReportName(faculty.getShortName() + "_" + simplifiedWorkload.getDepartmentCode() + "_" +
+                        simplifiedWorkload.getWithoutSwitchingInstructorNameAndSurname().substring(0, simplifiedWorkload.getWithoutSwitchingInstructorNameAndSurname().indexOf(GenericConstant.COMA_CHARACTER)) +
+                        "_Load_" + simplifiedWorkload.getSemesterYear() + simplifiedWorkload.getSemesterTerm() + "_" + importedFileDate +".xls");
                 workloadReport.setReport(outputStream.toByteArray());
                 workloadReport.setWorkloadReportTerm(workloadReportTerm);
-                workloadReport.setDepartmentCode(simplifiedWorkload.getDepartmentName());
-                workloadReport.setDepartmentName(simplifiedWorkload.getDepartmentCode());
+                workloadReport.setDepartmentCode(simplifiedWorkload.getDepartmentCode());
+                workloadReport.setDepartmentName(simplifiedWorkload.getDepartmentName());
                 workloadReportList.add(workloadReport);
             }
             workloadReportDBService.createWorkloadReportIfNotFoundAsBulk(workloadReportList);

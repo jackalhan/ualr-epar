@@ -57,8 +57,9 @@ public class InitDataLoader implements ApplicationListener<ContextRefreshedEvent
 
         Faculty faculty = new Faculty();
         faculty.setCode("SS");
-        faculty.setDeanNameSurname("Lawrence E. Whitman");
+        faculty.setDeanNameSurname("Whitman, Lawrence E.");
         faculty.setName("Engineering and Information Technology Faculty");
+        faculty.setShortName("EIT");
         facultyDBService.createFacultyIfNotFound(faculty);
 
         //WorkloadReportTerm wlReportTerm = null; //new WorkloadReportTerm();

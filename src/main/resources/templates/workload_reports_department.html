@@ -57,46 +57,50 @@
         <section class="content">
             <div class="row" style="margin-bottom:5px;">
 
-
                 <div class="col-md-5" th:class="${dynamicColumnClassName}">
                     <div class="sm-st clearfix">
                         <span class="sm-st-icon st-red"><i class="fa fa-check-square-o"></i></span>
                         <div class="sm-st-info">
                             <span th:text="${facultyName}"></span>
-                            <h4 th:text="'Year: ' + ${semesterYear}"></h4>
+                            <h4 th:text="'Year: ' + ${semesterYear} + ' Semester Term : ' + ${semesterTermName}"></h4>
                         </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat">
+                        <div class="stat-icon" style="color:#45cf95;">
+                            <i class="fa fa-paperclip fa-3x stat-elem"></i>
+                        </div>
+                        <h5 class="stat-info" th:text="'Imported File Date : ' + ${importedFileDate}"></h5>
                     </div>
                 </div>
             </div>
             <div class="panel">
                 <header class="panel-heading">
-                    <b>Semester Term and Imported File Date based Generated Workload Reports for Each Faculty of UALR</b>
+                    <b>Department based of Workload Reports for Each Year, Semester Term and Imported File Date of Faculty</b>
 
                 </header>
-                <div class="panel-body table-responsive" th:if="${not #lists.isEmpty(facultyWorkloadsReportTerms)}">
+                <div class="panel-body table-responsive" th:if="${not #lists.isEmpty(departmentListOfWorkloadLoadReports)}">
                     <table class="table table-hover">
                         <tr>
-                            <th>Year of Workload Reports</th>
-                            <th>Semester Term</th>
+                            <th>Department Name</th>
+                            <th>Department Code</th>
+                            <th>Imported File Date</th>
                             <th></th>
                         </tr>
-                        <tr th:each="facultyWorkloadsReportTerm : ${facultyWorkloadsReportTerms}">
-                            <td th:text="${facultyWorkloadsReportTerm.semesterYear}"></td>
-                            <td th:text="${facultyWorkloadsReportTerm.semesterTerm}"></td>
-                            <td th:text="${facultyWorkloadsReportTerm.importedFileDate}"></td>
+                        <tr th:each="department : ${departmentListOfWorkloadLoadReports}">
+                            <td th:text="${department.departmentName}"></td>
+                            <td th:text="${department.departmentCode}"></td>
+                            <td th:text="${importedFileDate}"></td>
                             <td>
                                 <div class="pull-right hidden-phone">
-                                    <a href="workload_reports_downloaded.html" th:href="${'workload_reports_downloaded?workloadReportId='+ workloadReport.id + '&amp;workloadReportTermId=' + workloadReport.workloadReportTerm.id}" target="_blank"><button class="btn btn-default btn-sm"><i class="fa fa-download"></i>
+                                    <a href="workload_reports_downloaded.html" th:href="${'workload_reports_downloaded?workloadReportId='+ workloadReport.id + '&amp;workloadReportTermId=' + workloadReport.workloadReportTerm.id + '&amp;departmentCode=' + }" target="_blank"><button class="btn btn-default btn-sm"><i class="fa fa-download"></i>
                                     </button></a>
                                 </div>
                                 <div class="pull-right hidden-phone">
-                                    <a href="workload_reports_department.html" th:href="${'workload_reports_department?workloadReportTermId='+ facultyWorkloadsReportTerm.id}"><button class="btn btn-default btn-sm"><i class="fa fa-search"></i>
-                                    </button></a>
-                                </div>
-                                <!--<div class="pull-right hidden-phone">
-                                    <a href="workload_reports.html" th:href="${'workload_reports?workloadReportTermId='+ facultyWorkloadsReportTerm.id}"><button class="btn btn-default btn-sm"><i class="fa fa-search"></i>
-                                    </button></a>
-                                </div>-->
+                                 <a href="workload_reports.html" th:href="${'workload_reports?workloadReportTermId='+ workloadReportTermId + '&amp;departmentCode=' + department.departmentCode}"><button class="btn btn-default btn-sm"><i class="fa fa-search"></i>
+                                 </button></a>
+                             </div>
                             </td>
                         </tr>
                     </table>

@@ -27,6 +27,9 @@ public class SimplifiedWorkload implements Serializable {
     private double totalTotalIUs;
     private int totalSsch;
     private List<TypeSafeRawWorkload> typeSafeRawWorkloads;
+    private String withoutSwitchingInstructorNameAndSurname;
+    private String withoutSwitchingChairNameAndSurname;
+    private String withoutSwitchingdeanNameAndSurname;
 
     public SimplifiedWorkload() {
     }
@@ -167,6 +170,30 @@ public class SimplifiedWorkload implements Serializable {
         this.collegeCode = collegeCode;
     }
 
+    public String getWithoutSwitchingInstructorNameAndSurname() {
+        return withoutSwitchingInstructorNameAndSurname;
+    }
+
+    public void setWithoutSwitchingInstructorNameAndSurname(String withoutSwitchingInstructorNameAndSurname) {
+        this.withoutSwitchingInstructorNameAndSurname = withoutSwitchingInstructorNameAndSurname;
+    }
+
+    public String getWithoutSwitchingChairNameAndSurname() {
+        return withoutSwitchingChairNameAndSurname;
+    }
+
+    public void setWithoutSwitchingChairNameAndSurname(String withoutSwitchingChairNameAndSurname) {
+        this.withoutSwitchingChairNameAndSurname = withoutSwitchingChairNameAndSurname;
+    }
+
+    public String getWithoutSwitchingdeanNameAndSurname() {
+        return withoutSwitchingdeanNameAndSurname;
+    }
+
+    public void setWithoutSwitchingdeanNameAndSurname(String withoutSwitchingdeanNameAndSurname) {
+        this.withoutSwitchingdeanNameAndSurname = withoutSwitchingdeanNameAndSurname;
+    }
+
     @Override
     public String toString() {
         return "SimplifiedWorkload{" +
@@ -187,6 +214,9 @@ public class SimplifiedWorkload implements Serializable {
                 ", totalTotalIUs=" + totalTotalIUs +
                 ", totalSsch=" + totalSsch +
                 ", typeSafeRawWorkloads=" + typeSafeRawWorkloads +
+                ", withoutSwitchingInstructorNameAndSurname='" + withoutSwitchingInstructorNameAndSurname + '\'' +
+                ", withoutSwitchingChairNameAndSurname='" + withoutSwitchingChairNameAndSurname + '\'' +
+                ", withoutSwitchingdeanNameAndSurname='" + withoutSwitchingdeanNameAndSurname + '\'' +
                 '}';
     }
 }

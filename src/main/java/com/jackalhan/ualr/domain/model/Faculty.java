@@ -3,6 +3,7 @@ package com.jackalhan.ualr.domain.model;
 import com.jackalhan.ualr.constant.GenericConstant;
 import com.jackalhan.ualr.service.batch.WorkloadReportService;
 import jxl.write.DateTime;
+import org.omg.CORBA.PRIVATE_MEMBER;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +31,9 @@ public class Faculty extends AbstractAuditingEntity implements Serializable{
 
     @NotNull
     private String deanNameSurname;
+
+    @NotNull
+    private String shortName;
 
     /*@OneToMany(mappedBy = "faculty")
     List<Department> departments;
@@ -61,7 +65,15 @@ public class Faculty extends AbstractAuditingEntity implements Serializable{
         this.deanNameSurname = deanNameSurname;
     }
 
-   /* public List<Department> getDepartments() {
+    public String getShortName() {
+        return shortName;
+    }
+
+    public void setShortName(String shortName) {
+        this.shortName = shortName;
+    }
+
+    /* public List<Department> getDepartments() {
         return departments;
     }
 
@@ -88,10 +100,11 @@ public class Faculty extends AbstractAuditingEntity implements Serializable{
                 '}';
     }*/
 
-    public Faculty(String name, String code, String deanNameSurname, List<Department> departments, List<WorkloadReportTerm> workloadReportTerms) {
+    public Faculty(String name, String code, String deanNameSurname, String shortName,  List<Department> departments, List<WorkloadReportTerm> workloadReportTerms) {
         this.name = name;
         this.code = code;
         this.deanNameSurname = deanNameSurname;
+        this.shortName = shortName;
        /* this.departments = departments;
         this.workloadReportTerms = workloadReportTerms;*/
 

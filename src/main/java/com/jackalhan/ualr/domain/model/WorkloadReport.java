@@ -40,6 +40,7 @@ public class WorkloadReport extends AbstractAuditingEntity implements Serializab
     @NotNull
     private String departmentCode;
 
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="workload_report_term_id", referencedColumnName = "id")
     private WorkloadReportTerm workloadReportTerm;
@@ -113,6 +114,7 @@ public class WorkloadReport extends AbstractAuditingEntity implements Serializab
     public void setDepartmentCode(String departmentCode) {
         this.departmentCode = departmentCode;
     }
+
 
     @Override
     public String toString() {

@@ -37,6 +37,9 @@ public class WorkloadReportTerm extends AbstractAuditingEntity implements Serial
     @NotNull
     private int semesterYear;
 
+    @NotNull
+    private String importedFileDate;
+
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name="facultyCode", referencedColumnName = "code")
     private Faculty faculty;
@@ -48,12 +51,13 @@ public class WorkloadReportTerm extends AbstractAuditingEntity implements Serial
     public WorkloadReportTerm() {
     }
 
-    public WorkloadReportTerm(String semesterTerm, int semesterTermCode, int semesterYear, Faculty faculty, List<WorkloadReport> workloadReports)  {
+    public WorkloadReportTerm(String semesterTerm, int semesterTermCode, int semesterYear, Faculty faculty, List<WorkloadReport> workloadReports, String importedFileDate)  {
         this.semesterTerm = semesterTerm;
         this.semesterYear = semesterYear;
         this.semesterTermCode = semesterTermCode;
         this.faculty = faculty;
         this.workloadReports = workloadReports;
+        this.importedFileDate = importedFileDate;
 
     }
 
@@ -106,13 +110,22 @@ public class WorkloadReportTerm extends AbstractAuditingEntity implements Serial
         this.semesterTermCode = semesterTermCode;
     }
 
+    public String getImportedFileDate() {
+        return importedFileDate;
+    }
+
+    public void setImportedFileDate(String importedFileDate) {
+        this.importedFileDate = importedFileDate;
+    }
+
     @Override
     public String toString() {
         return "WorkloadReportTerm{" +
                 "id=" + id +
                 ", semesterTerm='" + semesterTerm + '\'' +
-                ", semesterTermCode='" + semesterTermCode+ '\'' +
+                ", semesterTermCode=" + semesterTermCode +
                 ", semesterYear=" + semesterYear +
+                ", importedFileDate='" + importedFileDate + '\'' +
                 ", faculty=" + faculty +
                 ", workloadReports=" + workloadReports +
                 '}';

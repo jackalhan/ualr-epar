@@ -1,7 +1,9 @@
 package com.jackalhan.ualr.repository;
 
 import com.jackalhan.ualr.domain.model.WorkloadReport;
+import com.jackalhan.ualr.domain.model.WorkloadReportTerm;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
@@ -13,4 +15,13 @@ public interface WorkloadReportRepository extends JpaRepository<WorkloadReport, 
     WorkloadReport findByInstructorNameSurnameAndReportNameAndWorkloadReportTermId(String namesurname, String reportname, Long workloadreporttermid);
 
     List<WorkloadReport> findByWorkloadReportTermIdOrderByInstructorNameSurnameAsc(Long workloadreporttermid);
+
+    @Query(value =
+            "SELECT t.* " +
+                    "FROM workload_report t join workload_report_term w " +
+                    "WHERE t.workload_report_term_id=?1 GROUP BY w.department_name, w.department_code " +
+                    "ORDER BY t.department_name asc", nativeQuery = true)
+    List<WorkloadReport> listAllGroupByDepartmentNameAndCodeOrderedByDepartmentName(Long workloadreporttermid);
+
+    List<WorkloadReport> findByWorkloadReportTermIdAndDepartmentCodeOrderByInstructorNameSurnameAsc(Long workloadreporttermid, String departmentCode);
 }

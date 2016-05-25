@@ -31,7 +31,7 @@ public class WorkloadReportDBService {
 
     @Transactional
     public WorkloadReportTerm createWorkloadReportTermIfNotFound(WorkloadReportTerm workloadReportTerm) {
-        WorkloadReportTerm wlterm = workloadReportTermRepository.findBySemesterTermAndSemesterYearAndFacultyCode(workloadReportTerm.getSemesterTerm(), workloadReportTerm.getSemesterYear(), workloadReportTerm.getFaculty().getCode());
+        WorkloadReportTerm wlterm = workloadReportTermRepository.findBySemesterTermAndSemesterYearAndFacultyCode(workloadReportTerm.getSemesterTerm(), workloadReportTerm.getSemesterYear(), workloadReportTerm.getFaculty().getCode(), workloadReportTerm.getImportedFileDate());
         if (wlterm == null) {
             workloadReportTermRepository.save(workloadReportTerm);
             log.info("createWorkloadReportTermIfNotFound " + "saved data successfully");
@@ -73,7 +73,7 @@ public class WorkloadReportDBService {
     @Transactional
     public List<WorkloadReportTerm>  listAllTermsBasedOnFacultyAndYear(String facultyCode, int semesterYear) {
         log.info("listAllWorkloadReportTermsAndGroupByFacultyCodeAndYear " + " listed successfully");
-        return workloadReportTermRepository.findByFacultyCodeAndSemesterYearOrderBySemesterTermCodeAsc(facultyCode, semesterYear);
+        return workloadReportTermRepository.findByFacultyCodeAndSemesterYearOrderBySemesterTermCodeAscImportedFileDateDesc(facultyCode, semesterYear);
     }
 
     @Transactional
@@ -89,9 +89,21 @@ public class WorkloadReportDBService {
     }
 
     @Transactional
+    public List<WorkloadReport>  listAllGroupByDepartmentNameAndCodeOrderedByDepartmentNameBasedOnTermId(Long workloadReportTermId) {
+        log.info("listAllWorkloadReportsBasedOnTermId " + " listed successfully");
+        return workloadReportRepository.listAllGroupByDepartmentNameAndCodeOrderedByDepartmentName(workloadReportTermId);
+    }
+
+    @Transactional
     public WorkloadReport listOneWorkloadReportsBasedOnId(Long workloadReportId) {
         log.info("listOneWorkloadReportsBasedOnId " + " listed successfully");
         return workloadReportRepository.getOne(workloadReportId);
+    }
+
+    @Transactional
+    public List<WorkloadReport>  listAllWorkloadReportsBasedOnWorkloadReportTermIdAndDepartmentCode(Long workloadReportTermId, String departmentCode) {
+        log.info("listAllWorkloadReportsBasedOnWorkloadReportTermIdAndDepartmentCode " + " listed successfully");
+        return workloadReportRepository.findByWorkloadReportTermIdAndDepartmentCodeOrderByInstructorNameSurnameAsc(workloadReportTermId, departmentCode);
     }
 
 
