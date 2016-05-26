@@ -600,7 +600,7 @@ public class WorkloadReportService {
                         createText(sheet, pedWorkloadItems.getTaStudent(), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         sheet.mergeCells(startingDataPedaColumnNumber, startingDataPedaRowNumber, endingDataPedaColumnNumber, endingDataPedaRowNumber);
                         startingDataPedaColumnNumber = endingDataPedaColumnNumber + 1;
-                        cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THIN, false, topBorder, true, true, false);
                         createText(sheet, "", cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         startingDataPedaColumnNumber++;
                         cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
@@ -618,7 +618,7 @@ public class WorkloadReportService {
                         cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
                         createText(sheet, String.valueOf(pedWorkloadItems.getTaLabHours()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         startingDataPedaColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THIN, false, topBorder, true, true, false);
                         createText(sheet, "", cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         startingDataPedaColumnNumber++;
                         cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.RED, true);
@@ -741,14 +741,14 @@ public class WorkloadReportService {
                 if (rawIndivCounter > 0) {
                     // NOT APPLICABLE 1 PRINTING
                     cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-                    cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THIN, true, false, false, false, false);
+                    cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THIN, true, false, false, false, false);
                     createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, firstNotApplicableFromColumnNumber, endingIndivRowNumber + 1);
                     // mergeCells(colStart, rowStart, colEnd, rowEnd)
                     sheet.mergeCells(firstNotApplicableFromColumnNumber, endingIndivRowNumber + 1, firstNotApplicableToColumnNumber, endingDataIndivRowNumber - 1);
 
                     // NOT APPLICABLE 2 PRINTING
                     cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-                    cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THIN, true, false, false, false, false);
+                    cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THIN, true, false, false, false, false);
                     createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, secondNotApplicableFromColumnNumber, endingIndivRowNumber + 1);
                     // mergeCells(colStart, rowStart, colEnd, rowEnd)
                     sheet.mergeCells(secondNotApplicableFromColumnNumber, endingIndivRowNumber + 1, secondNotApplicableToColumnNumber, endingDataIndivRowNumber - 1);
@@ -778,7 +778,7 @@ public class WorkloadReportService {
 
                 endingDataAdminColumnNumber = startingDataAdminColumnNumber + 15;
                 cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THICK, true, true, true, true, true);
+                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, true, true, true, true, true);
                 createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
                 // mergeCells(colStart, rowStart, colEnd, rowEnd)
                 sheet.mergeCells(startingColumnFrame, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
@@ -811,7 +811,7 @@ public class WorkloadReportService {
                 endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
 
                 cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THICK, true, true, true, true, true);
+                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, true, true, true, true, true);
                 createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
                 // mergeCells(colStart, rowStart, colEnd, rowEnd)1
                 sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
@@ -860,7 +860,7 @@ public class WorkloadReportService {
                 endingDataAdminColumnNumber = startingDataAdminColumnNumber + 1;
 
                 cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THICK, true, true, true, true, true);
+                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, true, true, true, true, true);
                 createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
                 // mergeCells(colStart, rowStart, colEnd, rowEnd)
                 sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
@@ -931,7 +931,7 @@ public class WorkloadReportService {
                 endingDataNonAdminRowNumber = startingDataNonAdminRowNumber + 13;
 
                 cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THICK, true, true, true, true, true);
+                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, true, true, true, true, true);
                 createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
                 sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
@@ -958,7 +958,7 @@ public class WorkloadReportService {
                 endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber + 1;
 
                 cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THICK, true, true, true, true, true);
+                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, true, true, true, true, true);
                 createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
                 sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
@@ -989,7 +989,7 @@ public class WorkloadReportService {
                 endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
                 cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THICK, false, true, true, true, true);
+                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, false, true, true, true, true);
                 createText(sheet, "", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
                 sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
@@ -1021,7 +1021,7 @@ public class WorkloadReportService {
                 endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
                 cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THICK, false, true, true, true, true);
+                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, false, true, true, true, true);
                 createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
                 sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
@@ -1037,7 +1037,7 @@ public class WorkloadReportService {
                 endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
                 cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THICK, false, true, true, true, true);
+                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, false, true, true, true, true);
                 createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
                 sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
@@ -1053,7 +1053,7 @@ public class WorkloadReportService {
                 endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
                 cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.RED, BorderLineStyle.THICK, false, true, true, true, true);
+                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, false, true, true, true, true);
                 createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
                 sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 

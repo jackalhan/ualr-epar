@@ -55,8 +55,9 @@ public class UalrEparApplication {
 	public static void main(String[] args) throws UnknownHostException {
 		SpringApplication app = new SpringApplication(UalrEparApplication.class);
 		SimpleCommandLinePropertySource source = new SimpleCommandLinePropertySource(args);
-		addDefaultProfile(app, source);
 		Environment env = app.run(args).getEnvironment();
+		addDefaultProfile(app, source, env);
+
 		log.info("\n----------------------------------------------------------\n\t" +
 						"Application '{}' is running! Access URLs:\n\t" +
 						"Local: \t\thttp://127.0.0.1:{}\n\t" +
@@ -77,11 +78,15 @@ public class UalrEparApplication {
 	/**
 	 * If no profile has been configured, set by default the "dev" profile.
 	 */
-	private static void addDefaultProfile(SpringApplication app, SimpleCommandLinePropertySource source) {
+	private static void addDefaultProfile(SpringApplication app, SimpleCommandLinePropertySource source, Environment env) {
 		if (!source.containsProperty("spring.profiles.active") &&
 				!System.getenv().containsKey("SPRING_PROFILES_ACTIVE")) {
 
 			app.setAdditionalProfiles(GenericConstant.PROFILE_DEVELOPMENT);
+		}
+		else
+		{
+			app.setAdditionalProfiles(env.getProperty("spring.profiles.active"));
 		}
 	}
 

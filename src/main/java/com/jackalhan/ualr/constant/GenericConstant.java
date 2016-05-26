@@ -7,6 +7,7 @@ public final class GenericConstant {
     public static final String APPLICATION_NAME = "ualr-epar";
     public static final String PROFILE_DEVELOPMENT = "dev";
     public static final String PROFILE_PRODUCTION = "prod";
+    public static final String PROFILE_TEST = "test";
     private static final String BASE_PATH = "files";
     private static final String WORKLOAD_REPORTS_PATH = BASE_PATH + "/workloadReports";
     private static final String WORKLOAD_REPORTS_RAWTXT_PATH = WORKLOAD_REPORTS_PATH + "/rawtxtfiles";
