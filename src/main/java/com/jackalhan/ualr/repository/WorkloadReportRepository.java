@@ -19,7 +19,7 @@ public interface WorkloadReportRepository extends JpaRepository<WorkloadReport, 
     @Query(value =
             "SELECT t.* " +
                     "FROM workload_report t join workload_report_term w " +
-                    "WHERE t.workload_report_term_id=?1 GROUP BY w.department_name, w.department_code " +
+                    "WHERE t.workload_report_term_id=?1 GROUP BY t.department_name, t.department_code " +
                     "ORDER BY t.department_name asc", nativeQuery = true)
     List<WorkloadReport> listAllGroupByDepartmentNameAndCodeOrderedByDepartmentName(Long workloadreporttermid);
 

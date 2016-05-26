@@ -11,7 +11,7 @@ import java.util.List;
  */
 public interface WorkloadReportTermRepository extends JpaRepository<WorkloadReportTerm, Long> {
 
-    WorkloadReportTerm findBySemesterTermAndSemesterYearAndFacultyCode(String term, int year, String facultyCode, String importedFileDate);
+    WorkloadReportTerm findBySemesterTermAndSemesterYearAndFacultyCodeAndImportedFileDate(String term, int year, String facultyCode, String importedFileDate);
 
     @Query(value =
             "SELECT t.* " +

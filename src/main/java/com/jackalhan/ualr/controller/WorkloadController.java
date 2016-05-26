@@ -73,11 +73,11 @@ public class WorkloadController {
     }
 
     @RequestMapping("workload_reports")
-    public String listWorkloadReports(Long workloadReportTermId, Model model, Principal principal) {
+    public String listWorkloadReports(Long workloadReportTermId, String departmentCode,  Model model, Principal principal) {
         LoginService loginService = new LoginService();
         WorkloadReportTerm workloadReportTerm = workloadReportDBService.listOneWorkloadReportTermBasedOnId(workloadReportTermId);
         Faculty faculty = facultyDBService.findByCode(workloadReportTerm.getFaculty().getCode());
-        List<WorkloadReport> workloadReports = workloadReportDBService.listAllWorkloadReportsBasedOnTermId(workloadReportTermId);
+        List<WorkloadReport> workloadReports = workloadReportDBService.listAllWorkloadReportsBasedOnTermIdAndDepartmentCode(workloadReportTermId, departmentCode);
 
         model.addAttribute("workloadReports", workloadReports);
         model.addAttribute("username", loginService.getUserName(principal));
@@ -142,11 +142,11 @@ public class WorkloadController {
 
     }
 
-    @RequestMapping(value = "allWorkloadAsAZipBasedOnDepartmentCode",  method = RequestMethod.GET )
-    public String getAllWorkloadAsAZipBasedOnDepartmentCode(Long workloadReportTermId, String departmentCode, HttpServletResponse httpServletResponse, Model model, Principal principal) {
+    @RequestMapping(value = "allWorkloadOfEachDepartmentAsAZipBasedOnDepartmentCode",  method = RequestMethod.GET )
+    public String getAllWorkloadOfEachDepartmentAsAZipBasedOnDepartmentCode(@RequestParam("workloadReportTermId") Long workloadReportTermId, @RequestParam("departmentCode") String departmentCode, HttpServletResponse httpServletResponse, Model model, Principal principal) {
         String zipFileName = null;
         try {
-            LoginService loginService = new LoginService();
+
             WorkloadReportTerm workloadReportTerm = workloadReportDBService.listOneWorkloadReportTermBasedOnId(workloadReportTermId);
             Faculty faculty = facultyDBService.findByCode(workloadReportTerm.getFaculty().getCode());
             List<WorkloadReport> workloadReports = workloadReportDBService.listAllWorkloadReportsBasedOnWorkloadReportTermIdAndDepartmentCode(workloadReportTerm.getId(), departmentCode);
@@ -160,11 +160,7 @@ public class WorkloadController {
             for (WorkloadReport workloadReport : workloadReports)
             {
                 zipOutputStream.putNextEntry(new ZipEntry(workloadReport.getReportName()));
-                FileInputStream fileInputStream = new FileInputStream(workloadReport.getReport().toString());
-
-                IOUtils.copy(fileInputStream, zipOutputStream);
-
-                fileInputStream.close();
+                zipOutputStream.write(workloadReport.getReport());
                 zipOutputStream.closeEntry();
             }
 
@@ -177,7 +173,48 @@ public class WorkloadController {
             IOUtils.closeQuietly(byteArrayOutputStream);
 
             httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + zipFileName);
-            httpServletResponse.addHeader("Content-Disposition", "attachment; filename=" + zipFileName);
+            httpServletResponse.setContentType("application/zip");
+            httpServletResponse.getOutputStream().write(byteArrayOutputStream.toByteArray());
+            httpServletResponse.flushBuffer();
+
+        } catch (IOException ex) {
+            log.error("Error writing file to output stream. Filename was '{}'", zipFileName, ex);
+        }
+        return "workload_reports_downloaded";
+
+    }
+
+    @RequestMapping(value = "allWorkloadsOfEachImportedFileDateforAllDepartmentAsAZipBasedOnImportedFileDate",  method = RequestMethod.GET )
+    public String getAllWorkloadsOfEachImportedFileDateforAllDepartmentAsAZipBasedOnImportedFileDate(@RequestParam("workloadReportTermId") Long workloadReportTermId, HttpServletResponse httpServletResponse, Model model, Principal principal) {
+        String zipFileName = null;
+        try {
+
+            WorkloadReportTerm workloadReportTerm = workloadReportDBService.listOneWorkloadReportTermBasedOnId(workloadReportTermId);
+            Faculty faculty = facultyDBService.findByCode(workloadReportTerm.getFaculty().getCode());
+            List<WorkloadReport> workloadReports = workloadReportDBService.listAllWorkloadReportsBasedOnWorkloadReportTermId(workloadReportTerm.getId());
+
+            zipFileName = faculty.getShortName() + "_AllDepartments_AllLoads_" + workloadReportTerm.getSemesterYear() + workloadReportTerm.getSemesterTerm() + "_" + workloadReportTerm.getImportedFileDate() + ".zip";
+
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
+            ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
+
+            for (WorkloadReport workloadReport : workloadReports)
+            {
+                zipOutputStream.putNextEntry(new ZipEntry(workloadReport.getReportName()));
+                zipOutputStream.write(workloadReport.getReport());
+                zipOutputStream.closeEntry();
+            }
+
+            if (zipOutputStream != null) {
+                zipOutputStream.finish();
+                zipOutputStream.flush();
+                IOUtils.closeQuietly(zipOutputStream);
+            }
+            IOUtils.closeQuietly(bufferedOutputStream);
+            IOUtils.closeQuietly(byteArrayOutputStream);
+
+            httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + zipFileName);
             httpServletResponse.setContentType("application/zip");
             httpServletResponse.getOutputStream().write(byteArrayOutputStream.toByteArray());
             httpServletResponse.flushBuffer();

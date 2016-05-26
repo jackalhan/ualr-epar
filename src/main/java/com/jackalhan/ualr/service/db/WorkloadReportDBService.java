@@ -31,7 +31,7 @@ public class WorkloadReportDBService {
 
     @Transactional
     public WorkloadReportTerm createWorkloadReportTermIfNotFound(WorkloadReportTerm workloadReportTerm) {
-        WorkloadReportTerm wlterm = workloadReportTermRepository.findBySemesterTermAndSemesterYearAndFacultyCode(workloadReportTerm.getSemesterTerm(), workloadReportTerm.getSemesterYear(), workloadReportTerm.getFaculty().getCode(), workloadReportTerm.getImportedFileDate());
+        WorkloadReportTerm wlterm = workloadReportTermRepository.findBySemesterTermAndSemesterYearAndFacultyCodeAndImportedFileDate(workloadReportTerm.getSemesterTerm(), workloadReportTerm.getSemesterYear(), workloadReportTerm.getFaculty().getCode(), workloadReportTerm.getImportedFileDate());
         if (wlterm == null) {
             workloadReportTermRepository.save(workloadReportTerm);
             log.info("createWorkloadReportTermIfNotFound " + "saved data successfully");
@@ -83,9 +83,9 @@ public class WorkloadReportDBService {
     }
 
     @Transactional
-    public List<WorkloadReport>  listAllWorkloadReportsBasedOnTermId(Long workloadReportTermId) {
+    public List<WorkloadReport>  listAllWorkloadReportsBasedOnTermIdAndDepartmentCode(Long workloadReportTermId, String departmentCode) {
         log.info("listAllWorkloadReportsBasedOnTermId " + " listed successfully");
-        return workloadReportRepository.findByWorkloadReportTermIdOrderByInstructorNameSurnameAsc(workloadReportTermId);
+        return workloadReportRepository.findByWorkloadReportTermIdAndDepartmentCodeOrderByInstructorNameSurnameAsc(workloadReportTermId, departmentCode);
     }
 
     @Transactional
@@ -105,6 +105,13 @@ public class WorkloadReportDBService {
         log.info("listAllWorkloadReportsBasedOnWorkloadReportTermIdAndDepartmentCode " + " listed successfully");
         return workloadReportRepository.findByWorkloadReportTermIdAndDepartmentCodeOrderByInstructorNameSurnameAsc(workloadReportTermId, departmentCode);
     }
+
+    @Transactional
+    public List<WorkloadReport>  listAllWorkloadReportsBasedOnWorkloadReportTermId(Long workloadReportTermId) {
+        log.info("listAllWorkloadReportsBasedOnWorkloadReportTermId " + " listed successfully");
+        return workloadReportRepository.findByWorkloadReportTermIdOrderByInstructorNameSurnameAsc(workloadReportTermId);
+    }
+
 
 
 }

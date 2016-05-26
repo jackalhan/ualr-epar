@@ -78,6 +78,7 @@
                         <tr>
                             <th>Year of Workload Reports</th>
                             <th>Semester Term</th>
+                            <th>Imported File Date</th>
                             <th></th>
                         </tr>
                         <tr th:each="facultyWorkloadsReportTerm : ${facultyWorkloadsReportTerms}">
@@ -86,7 +87,7 @@
                             <td th:text="${facultyWorkloadsReportTerm.importedFileDate}"></td>
                             <td>
                                 <div class="pull-right hidden-phone">
-                                    <a href="workload_reports_downloaded.html" th:href="${'workload_reports_downloaded?workloadReportId='+ workloadReport.id + '&amp;workloadReportTermId=' + workloadReport.workloadReportTerm.id}" target="_blank"><button class="btn btn-default btn-sm"><i class="fa fa-download"></i>
+                                    <a href="workload_reports_downloaded.html" th:href="${'allWorkloadsOfEachImportedFileDateforAllDepartmentAsAZipBasedOnImportedFileDate?workloadReportTermId=' + facultyWorkloadsReportTerm.id}" target="_blank"><button class="btn btn-default btn-sm"><i class="fa fa-download"></i>
                                     </button></a>
                                 </div>
                                 <div class="pull-right hidden-phone">

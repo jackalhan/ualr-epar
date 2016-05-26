@@ -18,7 +18,7 @@ import java.util.Locale;
 /**
  * Created by txcakaloglu on 5/25/16.
  */
-@Component
+//@Component
 public class TestExcelColorService {
 
     @Scheduled(fixedDelay = SchedulingConstant.TEST_SERVICE_EXECUTE_FIXED_DELAY)
@@ -40,7 +40,7 @@ public class TestExcelColorService {
         int blockRowCounter = 0;
         int k = 0;
         int row = 0;
-        for (int r = 0 ; r<=250 ; r++)
+        for (int r = 0 ; r<=10 ; r++)
         {
             for (int g = 0 ; g<=250 ; g++)
             {

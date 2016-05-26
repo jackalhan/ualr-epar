@@ -94,7 +94,7 @@
                             <td th:text="${importedFileDate}"></td>
                             <td>
                                 <div class="pull-right hidden-phone">
-                                    <a href="workload_reports_downloaded.html" th:href="${'workload_reports_downloaded?workloadReportId='+ workloadReport.id + '&amp;workloadReportTermId=' + workloadReport.workloadReportTerm.id + '&amp;departmentCode=' + }" target="_blank"><button class="btn btn-default btn-sm"><i class="fa fa-download"></i>
+                                    <a href="workload_reports_downloaded.html" th:href="${'allWorkloadOfEachDepartmentAsAZipBasedOnDepartmentCode?workloadReportTermId=' + workloadReportTermId + '&amp;departmentCode=' + department.departmentCode}" target="_blank"><button class="btn btn-default btn-sm"><i class="fa fa-download"></i>
                                     </button></a>
                                 </div>
                                 <div class="pull-right hidden-phone">
