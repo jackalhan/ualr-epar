@@ -85,6 +85,7 @@ public class WorkloadController {
         model.addAttribute("facultyName", faculty.getName());
         model.addAttribute("semesterYear", workloadReportTerm.getSemesterYear());
         model.addAttribute("semesterTermName", workloadReportTerm.getSemesterTerm());
+        model.addAttribute("importedFileDate", workloadReportTerm.getImportedFileDate());
         model.addAttribute("dynamicColumnClassName", calculateDynamicDivSizeOfFacultyName(faculty.getName().length()));
 
         return "workload_reports";

@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
  * Created by jackalhan on 4/18/16.
  */
 
-//@Component
+@Component
 public class WorkloadReportService {
 
     @Autowired
