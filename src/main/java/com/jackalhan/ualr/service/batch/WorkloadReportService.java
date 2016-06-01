@@ -504,7 +504,9 @@ public class WorkloadReportService {
                 cellFont = createCellFont("workloadReport.report.name.fontsize", Colour.BLACK, true);
                 cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, false, true, true, false);
                 sheet.mergeCells(startingColumnFrame, 4, endingColumnFrame, 5);
-                createText(sheet, "workloadReport.report.name", null, cellFormat, startingColumnFrame, 4);
+                // ADDED IMPORTED FILE DATE TO THE EXCEL
+                createText(sheet, "workloadReport.report.name", new Object[]{importedFileDate}, cellFormat, startingColumnFrame, 4);
+
 
                 // *****************************************************************************************************
                 //DEPARTMENT HEADER

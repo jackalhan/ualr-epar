@@ -6,68 +6,38 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Created by txcakaloglu on 5/10/16.
+ * Created by txcakaloglu on 6/1/16.
  */
-//@Entity
-//@Table(name = "Department")
+@Entity
+@Table(name = "Department")
 public class Department extends AbstractAuditingEntity implements Serializable {
 
 
-   /* @Id
+    @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name="id", nullable = false)
     private long id;
-
-    @NotNull
-    private String name;
 
     @NotNull
     private String code;
 
     @NotNull
-    private String chairNameAndSurname;
+    private String description;
 
-    @ManyToOne(cascade=CascadeType.ALL)
-    @JoinColumn(name="dept_to_faculty_fk", referencedColumnName = "code")
+    @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Employee> employeeList;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="faculty_code", referencedColumnName = "code")
     private Faculty faculty;
 
-    @ManyToMany(mappedBy = "departmentList")
-    private List<DepartmentStaff> departmentStaffList;
 
-    public Department() {
-        super();
-    }
-
-    public Department(String name, String code, String chairNameAndSurname) {
-        super();
-        this.name = name;
-        this.code = code;
-        this.chairNameAndSurname = chairNameAndSurname;
-    }
-
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
-    }
-
-
-    public List<DepartmentStaff> getDepartmentStaffList() {
-        return departmentStaffList;
-    }
-
-    public void setDepartmentStaffList(List<DepartmentStaff> departmentStaffList) {
-        this.departmentStaffList = departmentStaffList;
-    }
-
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getCode() {
@@ -78,12 +48,20 @@ public class Department extends AbstractAuditingEntity implements Serializable {
         this.code = code;
     }
 
-    public String getChairNameAndSurname() {
-        return chairNameAndSurname;
+    public String getDescription() {
+        return description;
     }
 
-    public void setChairNameAndSurname(String chairNameAndSurname) {
-        this.chairNameAndSurname = chairNameAndSurname;
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public List<Employee> getEmployeeList() {
+        return employeeList;
+    }
+
+    public void setEmployeeList(List<Employee> employeeList) {
+        this.employeeList = employeeList;
     }
 
     public Faculty getFaculty() {
@@ -94,16 +72,24 @@ public class Department extends AbstractAuditingEntity implements Serializable {
         this.faculty = faculty;
     }
 
+    public Department(String code, String description, List<Employee> employeeList, Faculty faculty) {
+        this.code = code;
+        this.description = description;
+        this.employeeList = employeeList;
+        this.faculty = faculty;
+    }
+
+    public Department() {
+    }
 
     @Override
     public String toString() {
         return "Department{" +
                 "id=" + id +
-                ", name='" + name + '\'' +
                 ", code='" + code + '\'' +
-                ", chairNameAndSurname='" + chairNameAndSurname + '\'' +
+                ", description='" + description + '\'' +
+                ", employeeList=" + employeeList +
                 ", faculty=" + faculty +
-                ", departmentStaffList=" + departmentStaffList +
                 '}';
-    }*/
+    }
 }

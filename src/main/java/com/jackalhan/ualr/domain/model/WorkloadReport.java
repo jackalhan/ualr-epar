@@ -12,6 +12,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by jackalhan on 5/10/16.
@@ -45,14 +46,17 @@ public class WorkloadReport extends AbstractAuditingEntity implements Serializab
     @JoinColumn(name="workload_report_term_id", referencedColumnName = "id")
     private WorkloadReportTerm workloadReportTerm;
 
-    public WorkloadReport(byte[] report, String reportName, String instructorNameSurname, String departmentName, String departmentCode, WorkloadReportTerm workloadReportTerm) {
+    @OneToMany(mappedBy = "workloadReport", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    List<WorkloadReportValues> workloadReportValuesList;
+
+    public WorkloadReport(byte[] report, String reportName, String instructorNameSurname, String departmentName, String departmentCode, WorkloadReportTerm workloadReportTerm, List<WorkloadReportValues> workloadReportValuesList) {
         this.report = report;
         this.reportName = reportName;
         this.instructorNameSurname = instructorNameSurname;
-        this.departmentCode = departmentCode;
         this.departmentName = departmentName;
+        this.departmentCode = departmentCode;
         this.workloadReportTerm = workloadReportTerm;
-
+        this.workloadReportValuesList = workloadReportValuesList;
     }
 
     public WorkloadReport() {
@@ -115,6 +119,13 @@ public class WorkloadReport extends AbstractAuditingEntity implements Serializab
         this.departmentCode = departmentCode;
     }
 
+    public List<WorkloadReportValues> getWorkloadReportValuesList() {
+        return workloadReportValuesList;
+    }
+
+    public void setWorkloadReportValuesList(List<WorkloadReportValues> workloadReportValuesList) {
+        this.workloadReportValuesList = workloadReportValuesList;
+    }
 
     @Override
     public String toString() {
@@ -126,6 +137,7 @@ public class WorkloadReport extends AbstractAuditingEntity implements Serializab
                 ", departmentName='" + departmentName + '\'' +
                 ", departmentCode='" + departmentCode + '\'' +
                 ", workloadReportTerm=" + workloadReportTerm +
+                ", workloadReportValuesList=" + workloadReportValuesList +
                 '}';
     }
 }

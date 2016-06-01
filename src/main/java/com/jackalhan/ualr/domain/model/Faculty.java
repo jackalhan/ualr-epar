@@ -23,23 +23,17 @@ import java.util.List;
 public class Faculty extends AbstractAuditingEntity implements Serializable{
 
 
-    //@NotNull
+    @NotNull
     private String name;
 
     @Id
     private String code;
 
     @NotNull
-    private String deanNameSurname;
-
-    @NotNull
     private String shortName;
 
-    /*@OneToMany(mappedBy = "faculty")
-    List<Department> departments;
-
-    @OneToMany(mappedBy = "faculty")
-    List<WorkloadReportTerm> workloadReportTerms;*/
+    @OneToMany(mappedBy = "faculty", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    List<Department> departmentList;
 
     public String getName() {
         return name;
@@ -57,14 +51,6 @@ public class Faculty extends AbstractAuditingEntity implements Serializable{
         this.code = code;
     }
 
-    public String getDeanNameSurname() {
-        return deanNameSurname;
-    }
-
-    public void setDeanNameSurname(String deanNameSurname) {
-        this.deanNameSurname = deanNameSurname;
-    }
-
     public String getShortName() {
         return shortName;
     }
@@ -73,40 +59,19 @@ public class Faculty extends AbstractAuditingEntity implements Serializable{
         this.shortName = shortName;
     }
 
-    /* public List<Department> getDepartments() {
-        return departments;
+    public List<Department> getDepartmentList() {
+        return departmentList;
     }
 
-    public void setDepartments(List<Department> departments) {
-        this.departments = departments;
+    public void setDepartmentList(List<Department> departmentList) {
+        this.departmentList = departmentList;
     }
 
-    public List<WorkloadReportTerm> getWorkloadReportTerms() {
-        return workloadReportTerms;
-    }
-
-    public void setWorkloadReportTerms(List<WorkloadReportTerm> workloadReportTerms) {
-        this.workloadReportTerms = workloadReportTerms;
-    }
-
-    @Override
-    public String toString() {
-        return "Faculty{" +
-                "name='" + name + '\'' +
-                ", code='" + code + '\'' +
-                ", deanNameAndSurname='" + deanNameAndSurname + '\'' +
-                ", departments=" + departments +
-                ", workloadReportTerms=" + workloadReportTerms +
-                '}';
-    }*/
-
-    public Faculty(String name, String code, String deanNameSurname, String shortName,  List<Department> departments, List<WorkloadReportTerm> workloadReportTerms) {
+    public Faculty(String name, String code, String shortName, List<Department> departmentList) {
         this.name = name;
         this.code = code;
-        this.deanNameSurname = deanNameSurname;
         this.shortName = shortName;
-       /* this.departments = departments;
-        this.workloadReportTerms = workloadReportTerms;*/
+        this.departmentList = departmentList;
 
     }
 
@@ -119,5 +84,13 @@ public class Faculty extends AbstractAuditingEntity implements Serializable{
 
     }
 
-
+    @Override
+    public String toString() {
+        return "Faculty{" +
+                "name='" + name + '\'' +
+                ", code='" + code + '\'' +
+                ", shortName='" + shortName + '\'' +
+                ", departmentList=" + departmentList +
+                '}';
+    }
 }
