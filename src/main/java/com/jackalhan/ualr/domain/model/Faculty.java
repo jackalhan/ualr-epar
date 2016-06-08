@@ -32,6 +32,9 @@ public class Faculty extends AbstractAuditingEntity implements Serializable{
     @NotNull
     private String shortName;
 
+    @NotNull
+    private String deanNameSurname;
+
     @OneToMany(mappedBy = "faculty", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     List<Department> departmentList;
 
@@ -67,11 +70,20 @@ public class Faculty extends AbstractAuditingEntity implements Serializable{
         this.departmentList = departmentList;
     }
 
-    public Faculty(String name, String code, String shortName, List<Department> departmentList) {
+    public String getDeanNameSurname() {
+        return deanNameSurname;
+    }
+
+    public void setDeanNameSurname(String deanNameSurname) {
+        this.deanNameSurname = deanNameSurname;
+    }
+
+    public Faculty(String name, String code, String shortName, List<Department> departmentList, String deanNameSurname) {
         this.name = name;
         this.code = code;
         this.shortName = shortName;
         this.departmentList = departmentList;
+        this.deanNameSurname = deanNameSurname;
 
     }
 

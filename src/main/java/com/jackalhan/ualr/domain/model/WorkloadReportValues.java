@@ -63,17 +63,11 @@ public class WorkloadReportValues extends AbstractAuditingEntity implements Seri
 
     private int totalSsch;
 
-    @NotNull
-    private String chair;
-
-    @NotNull
-    private String dean;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="workload_report_id", referencedColumnName = "id")
     private WorkloadReport workloadReport;
 
-    public WorkloadReportValues(String instructionType, String subjectCode, String courseTypeName, String courseTypeCode, int courseNumber, String section, String courseTitle, String taStudent, int taSupport, int taEleventhDayCount, int taCeditHours, int taLectureHours, double iuMultipliertaLectureHours, int taLabHours, double iuMultipliertaLabHours, double totalIus, String otherInstructorsInTeam, int totalSsch, String chair, String dean, WorkloadReport workloadReport) {
+    public WorkloadReportValues(String instructionType, String subjectCode, String courseTypeName, String courseTypeCode, int courseNumber, String section, String courseTitle, String taStudent, int taSupport, int taEleventhDayCount, int taCeditHours, int taLectureHours, double iuMultipliertaLectureHours, int taLabHours, double iuMultipliertaLabHours, double totalIus, String otherInstructorsInTeam, int totalSsch, WorkloadReport workloadReport) {
         this.instructionType = instructionType;
         this.subjectCode = subjectCode;
         this.courseTypeName = courseTypeName;
@@ -92,8 +86,6 @@ public class WorkloadReportValues extends AbstractAuditingEntity implements Seri
         this.totalIus = totalIus;
         this.otherInstructorsInTeam = otherInstructorsInTeam;
         this.totalSsch = totalSsch;
-        this.chair = chair;
-        this.dean = dean;
         this.workloadReport = workloadReport;
     }
 
@@ -252,22 +244,6 @@ public class WorkloadReportValues extends AbstractAuditingEntity implements Seri
         this.totalSsch = totalSsch;
     }
 
-    public String getChair() {
-        return chair;
-    }
-
-    public void setChair(String chair) {
-        this.chair = chair;
-    }
-
-    public String getDean() {
-        return dean;
-    }
-
-    public void setDean(String dean) {
-        this.dean = dean;
-    }
-
     public WorkloadReport getWorkloadReport() {
         return workloadReport;
     }
@@ -298,8 +274,6 @@ public class WorkloadReportValues extends AbstractAuditingEntity implements Seri
                 ", totalIus=" + totalIus +
                 ", otherInstructorsInTeam='" + otherInstructorsInTeam + '\'' +
                 ", totalSsch=" + totalSsch +
-                ", chair='" + chair + '\'' +
-                ", dean='" + dean + '\'' +
                 ", workloadReport=" + workloadReport +
                 '}';
     }

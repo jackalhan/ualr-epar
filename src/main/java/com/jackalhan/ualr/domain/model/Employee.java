@@ -49,16 +49,16 @@ public class Employee extends AbstractAuditingEntity implements Serializable {
     @JoinColumn(name="department_id", referencedColumnName = "id")
     private Department department;
 
-    @OneToMany(mappedBy = "Employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Publication> publicationList;
 
-    @OneToMany(mappedBy = "Employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ScholarlyActivity> scholarlyActivityList;
 
-    @OneToMany(mappedBy = "Employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<CitationTrend> citationTrendList;
 
-    @OneToMany(mappedBy = "Employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<YearlyCitation> yearlyCitationList;
 
     public long getId() {

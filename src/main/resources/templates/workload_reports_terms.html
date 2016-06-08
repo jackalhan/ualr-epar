@@ -2,6 +2,16 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <!--/*/ <th:block th:include="fragments/header :: header"></th:block> /*/-->
+    <script type="text/javascript">
+        $('#idTourDateDetails').datepicker({
+            dateFormat: 'dd-mm-yy',
+            minDate: '+5d',
+            changeMonth: true,
+            changeYear: true,
+            altField: "#idTourDateDetailsHidden",
+            altFormat: "yy-mm-dd"
+        });
+    </script>
 </head>
 <body class="skin-black">
 <!--/*/ <th:block th:include="fragments/header_title :: header_title"></th:block> /*/-->
@@ -62,6 +72,12 @@
 
                 </header>
                 <div class="panel-body table-responsive" th:if="${not #lists.isEmpty(workloadsReportTerms)}">
+                    <div align="right">
+                        <button class="btn btn-primary btn-addon btn-sm" data-toggle="modal" data-target="#myModal">
+                            <i class="fa fa-plus"></i>
+                            Add Workload Report
+                        </button>
+                    </div>
                     <table class="table table-hover">
                         <tr>
                             <th>Faculty Name</th>
@@ -81,11 +97,65 @@
                             </td>
                         </tr>
                     </table>
+                    <div align="right">
+                    <button class="btn btn-primary btn-addon btn-sm" data-toggle="modal" data-target="#myModal">
+                        <i class="fa fa-plus"></i>
+                        Add Workload Report
+                    </button>
+                    </div>
                 </div><!-- /.box-body -->
+
             </div> <!--/.box-->
         </section><!-- /.content -->
         <!--/*/ <th:block th:include="fragments/footer :: footer"></th:block> /*/-->
     </aside><!-- /.right-side -->
+</div>
+<!-- Modal -->
+<div id="myModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">New Workload Report</h4>
+            </div>
+            <div class="modal-body">
+                <p>Please select a FTP file to import and generate Workload Report </p>
+                <table class="table table-hover">
+                    <tr>
+                        <th>FTP File</th>
+                        <th>Uploaded Date</th>
+                        <th></th>
+                    </tr>
+                    <tr th:each="ftpWorkloadFile : ${ftpWorkloadFiles}">
+                        <td th:text="${workloadReportTerm.faculty!=null}?${workloadReportTerm.faculty.name}"></td>
+                        <td th:text="${workloadReportTerm.faculty!=null}?${workloadReportTerm.faculty.code}"></td>
+                        <td th:text="${workloadReportTerm.semesterYear}"></td>
+                        <td>
+                            <div class="pull-right hidden-phone">
+                                <a href="workload_reports_faculty_terms.html" th:href="${'workload_reports_faculty_terms?facultyCode='+ workloadReportTerm.faculty.code + '&amp;semesterTermYear=' + workloadReportTerm.semesterYear}"><button class="btn btn-default btn-sm"><i class="fa fa-search"></i>
+                                </button></a>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <div class="table-foot">
+                    <ul class="pagination pagination-sm no-margin pull-right">
+                        <li><a href="#">&laquo;</a></li>
+                        <li><a href="#">1</a></li>
+                        <li><a href="#">2</a></li>
+                        <li><a href="#">3</a></li>
+                        <li><a href="#">&raquo;</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                    <button class="btn btn-danger" type="button">Add</button>
+            </div>
+        </div>
+
+    </div>
 </div>
 </body>
 </html>

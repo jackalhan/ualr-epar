@@ -21,6 +21,9 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .fullyAuthenticated().and()
                 .formLogin().loginPage("/login")
                 .failureUrl("/login?error").permitAll().and().logout().permitAll();
+                /*and()
+                .exceptionHandling().accessDeniedPage("/unauthorized");*/
+
     }
 
     @Configuration

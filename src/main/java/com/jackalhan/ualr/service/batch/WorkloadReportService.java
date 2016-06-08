@@ -7,6 +7,7 @@ import com.jackalhan.ualr.domain.*;
 import com.jackalhan.ualr.domain.model.Faculty;
 import com.jackalhan.ualr.domain.model.WorkloadReport;
 import com.jackalhan.ualr.domain.model.WorkloadReportTerm;
+import com.jackalhan.ualr.domain.model.WorkloadReportValues;
 import com.jackalhan.ualr.enums.CourseTypeEnum;
 import com.jackalhan.ualr.enums.InstructionTypeEnum;
 import com.jackalhan.ualr.enums.SemesterTermEnum;
@@ -55,7 +56,7 @@ import java.util.stream.Collectors;
  * Created by jackalhan on 4/18/16.
  */
 
-@Component
+//@Component
 public class WorkloadReportService {
 
     @Autowired
@@ -472,10 +473,16 @@ public class WorkloadReportService {
             workloadReportTerm = workloadReportDBService.createWorkloadReportTermIfNotFound(workloadReportTerm);
 
 
+
             List<WorkloadReport> workloadReportList = new ArrayList<WorkloadReport>();
             WorkloadReport workloadReport = null;
+            List<WorkloadReportValues> workloadReportValuesList = new ArrayList<WorkloadReportValues>();
+            WorkloadReportValues workloadReportValues = null;
+
 
             for (SimplifiedWorkload simplifiedWorkload : simplifiedWorkloadList) {
+
+                workloadReportValues = new WorkloadReportValues();
 
                 //String filePath = folderPath + simplifiedWorkload.getSemesterYear() + "_" + simplifiedWorkload.getSemesterTerm() + "_WLReport_of_" + simplifiedWorkload.getInstructorNameAndSurname().replace(" ", "_") + "_" + simplifiedWorkload.getDepartmentCode() + ".xls";
 
@@ -636,6 +643,7 @@ public class WorkloadReportService {
 
                         startingDataPedaRowNumber++;
                         endingDataPedaRowNumber = startingDataPedaRowNumber;
+
 
                     }
 
@@ -1282,16 +1290,12 @@ public class WorkloadReportService {
 
                 //Close and free allocated memory
                 workbook.close();
-                workloadReport = new WorkloadReport();
-                workloadReport.setInstructorNameSurname(simplifiedWorkload.getWithoutSwitchingInstructorNameAndSurname());
-                workloadReport.setReportName(faculty.getShortName() + "_" + simplifiedWorkload.getDepartmentCode() + "_" +
-                        simplifiedWorkload.getWithoutSwitchingInstructorNameAndSurname().substring(0, simplifiedWorkload.getWithoutSwitchingInstructorNameAndSurname().indexOf(GenericConstant.COMA_CHARACTER)) +
-                        "_Load_" + simplifiedWorkload.getSemesterYear() + simplifiedWorkload.getSemesterTerm() + "_" + importedFileDate +".xls");
-                workloadReport.setReport(outputStream.toByteArray());
-                workloadReport.setWorkloadReportTerm(workloadReportTerm);
-                workloadReport.setDepartmentCode(simplifiedWorkload.getDepartmentCode());
-                workloadReport.setDepartmentName(simplifiedWorkload.getDepartmentName());
+
+
+                workloadReport = getWorkloadItems(simplifiedWorkload, faculty, workloadReportTerm, importedFileDate, outputStream.toByteArray() );
                 workloadReportList.add(workloadReport);
+
+
             }
             workloadReportDBService.createWorkloadReportIfNotFoundAsBulk(workloadReportList);
 
@@ -1300,6 +1304,53 @@ public class WorkloadReportService {
             log.error(ex.toString());
         }
         return result;
+    }
+
+    private WorkloadReport getWorkloadItems(SimplifiedWorkload simplifiedWorkload, Faculty faculty, WorkloadReportTerm workloadReportTerm, String importedFileDate, byte[] reportContent)
+    {
+        WorkloadReport workloadReport = null;
+        try {
+            workloadReport = new WorkloadReport();
+            // generic workload report is being created
+            workloadReport.setInstructorNameSurname(simplifiedWorkload.getWithoutSwitchingInstructorNameAndSurname());
+            workloadReport.setReportName(faculty.getShortName() + "_" + simplifiedWorkload.getDepartmentCode() + "_" +
+                    simplifiedWorkload.getWithoutSwitchingInstructorNameAndSurname().substring(0, simplifiedWorkload.getWithoutSwitchingInstructorNameAndSurname().indexOf(GenericConstant.COMA_CHARACTER)) +
+                    "_Load_" + simplifiedWorkload.getSemesterYear() + simplifiedWorkload.getSemesterTerm() + "_" + importedFileDate + ".xls");
+            workloadReport.setReport(reportContent);
+            workloadReport.setWorkloadReportTerm(workloadReportTerm);
+            workloadReport.setDepartmentCode(simplifiedWorkload.getDepartmentCode());
+            workloadReport.setDepartmentName(simplifiedWorkload.getDepartmentName());
+            List<WorkloadReportValues> workloadReportValuesList = new ArrayList<WorkloadReportValues>();
+            for (TypeSafeRawWorkload typeSafeRawWorkload : simplifiedWorkload.getTypeSafeRawWorkloads())
+            {
+                WorkloadReportValues workloadReportValues = new WorkloadReportValues();
+                workloadReportValues.setCourseNumber(typeSafeRawWorkload.getCourseNumber());
+                workloadReportValues.setInstructionType(typeSafeRawWorkload.getInstructionType());
+                workloadReportValues.setSubjectCode(typeSafeRawWorkload.getSubjectCode());
+                workloadReportValues.setCourseTypeName(typeSafeRawWorkload.getCourseTypeName());
+                workloadReportValues.setCourseTypeCode(typeSafeRawWorkload.getCourseTypeCode());
+                workloadReportValues.setSection(typeSafeRawWorkload.getSection());
+                workloadReportValues.setCourseTitle(typeSafeRawWorkload.getCourseTitle());
+                workloadReportValues.setTaStudent(typeSafeRawWorkload.getTaStudent());
+                workloadReportValues.setTaSupport(typeSafeRawWorkload.getTaSupport());
+                workloadReportValues.setTaEleventhDayCount(typeSafeRawWorkload.getTaEleventhDayCount());
+                workloadReportValues.setTaCeditHours(typeSafeRawWorkload.getTaCeditHours());
+                workloadReportValues.setTaLectureHours(typeSafeRawWorkload.getTaLectureHours());
+                workloadReportValues.setIuMultipliertaLectureHours(typeSafeRawWorkload.getIuMultipliertaLectureHours());
+                workloadReportValues.setTaLabHours(typeSafeRawWorkload.getTaLabHours());
+                workloadReportValues.setIuMultipliertaLabHours(typeSafeRawWorkload.getIuMultipliertaLabHours());
+                workloadReportValues.setTotalIus(typeSafeRawWorkload.getTotalIus());
+                workloadReportValues.setOtherInstructorsInTeam(typeSafeRawWorkload.getOtherInstructorsInTeam());
+                workloadReportValues.setTotalSsch(typeSafeRawWorkload.getTotalSsch());
+                workloadReportValuesList.add(workloadReportValues);
+            }
+            workloadReport.setWorkloadReportValuesList(workloadReportValuesList);
+        }
+        catch (Exception ex)
+        {
+            log.error(ex.toString());
+        }
+        return workloadReport;
     }
 
     private WritableFont createCellFont(String propertyNameForFontSize, Colour color, boolean isBold) throws WriteException {
