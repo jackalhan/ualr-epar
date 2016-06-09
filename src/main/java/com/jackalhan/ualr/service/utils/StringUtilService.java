@@ -4,6 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  * Created by jackalhan on 4/19/16.
  */
@@ -54,5 +58,24 @@ public class StringUtilService {
         }
         return result;
     }
+
+    public String dateToTargetFormat(String date, String oldFormat, String targetFormat)
+    {
+
+        SimpleDateFormat sdfO= new SimpleDateFormat(oldFormat);
+        SimpleDateFormat sdfT = new SimpleDateFormat(targetFormat);
+        Date dateTemp = null;
+        String formattedDate = "";
+        try {
+            dateTemp = sdfO.parse(date);
+        } catch (ParseException e) {
+            log.error(e.toString());
+        }
+        if (dateTemp != null) {
+            formattedDate = sdfT.format(dateTemp);
+        }
+      return formattedDate;
+    }
+
 
 }

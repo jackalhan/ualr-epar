@@ -1,14 +1,20 @@
 package com.jackalhan.ualr.controller;
 
 import com.jackalhan.ualr.constant.GenericConstant;
+import com.jackalhan.ualr.domain.FTPFile;
 import com.jackalhan.ualr.domain.model.Faculty;
 import com.jackalhan.ualr.domain.model.WorkloadReport;
 import com.jackalhan.ualr.domain.model.WorkloadReportTerm;
 import com.jackalhan.ualr.repository.WorkloadReportTermRepository;
+import com.jackalhan.ualr.service.batch.WorkloadReportService;
 import com.jackalhan.ualr.service.db.FacultyDBService;
 import com.jackalhan.ualr.service.db.WorkloadReportDBService;
+import com.jackalhan.ualr.service.rest.FTPService;
 import com.jackalhan.ualr.service.rest.LoginService;
 import com.jackalhan.ualr.service.utils.FileUtilService;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.SftpException;
+import jxl.write.WriteException;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.security.Principal;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -44,15 +51,37 @@ public class WorkloadController {
     @Autowired
     private FacultyDBService facultyDBService;
 
+    @Autowired
+    private FTPService ftpService;
+
+    @Autowired
+    private WorkloadReportService workloadReportBatchService;
+
     @RequestMapping("workload_reports_terms")
-    public String workload(@RequestParam(value = "name", required = false, defaultValue = "World") String name, Model model, Principal principal) {
+    public String workload(Model model, Principal principal) {
         LoginService loginService = new LoginService();
         model.addAttribute("username", loginService.getUserName(principal));
         model.addAttribute("userroles", loginService.getUserRoles(principal));
         List<WorkloadReportTerm> records = workloadReportDBService.listAllWorkloadReportTermsAndGroupByFacultyCodeAndYear();
         model.addAttribute("workloadsReportTerms", records);
-
+        List<FTPFile> ftpFiles = ftpService.listFiles(workloadReportBatchService.getPrefixNameOfFTPFile() + "*.txt");
+        //sorting based on file date
+        if (ftpFiles != null && !ftpFiles.isEmpty()) {
+            ftpFiles = ftpFiles.stream().sorted((f2, f1) -> Integer.compare(f1.getFileUploadedDateAsInt(),
+                    f2.getFileUploadedDateAsInt())).collect(Collectors.toList());
+        }
+        model.addAttribute("ftpWorkloadFiles", ftpFiles);
         return "workload_reports_terms";
+    }
+
+    @RequestMapping("importingFTPFile")
+    public String importFTPFile(@RequestParam("fileName") String fileName, Model model, Principal principal) throws WriteException, SftpException, JSchException, CloneNotSupportedException, IOException {
+
+        workloadReportBatchService.setFileName(fileName);
+        workloadReportBatchService.executeService();
+        workload(model, principal);
+        return "workload_reports_terms";
+
     }
 
     @RequestMapping("workload_reports_faculty_terms")
@@ -73,7 +102,7 @@ public class WorkloadController {
     }
 
     @RequestMapping("workload_reports")
-    public String listWorkloadReports(Long workloadReportTermId, String departmentCode,  Model model, Principal principal) {
+    public String listWorkloadReports(Long workloadReportTermId, String departmentCode, Model model, Principal principal) {
         LoginService loginService = new LoginService();
         WorkloadReportTerm workloadReportTerm = workloadReportDBService.listOneWorkloadReportTermBasedOnId(workloadReportTermId);
         Faculty faculty = facultyDBService.findByCode(workloadReportTerm.getFaculty().getCode());
@@ -143,7 +172,7 @@ public class WorkloadController {
 
     }
 
-    @RequestMapping(value = "allWorkloadOfEachDepartmentAsAZipBasedOnDepartmentCode",  method = RequestMethod.GET )
+    @RequestMapping(value = "allWorkloadOfEachDepartmentAsAZipBasedOnDepartmentCode", method = RequestMethod.GET)
     public String getAllWorkloadOfEachDepartmentAsAZipBasedOnDepartmentCode(@RequestParam("workloadReportTermId") Long workloadReportTermId, @RequestParam("departmentCode") String departmentCode, HttpServletResponse httpServletResponse, Model model, Principal principal) {
         String zipFileName = null;
         try {
@@ -158,8 +187,7 @@ public class WorkloadController {
             BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
             ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
 
-            for (WorkloadReport workloadReport : workloadReports)
-            {
+            for (WorkloadReport workloadReport : workloadReports) {
                 zipOutputStream.putNextEntry(new ZipEntry(workloadReport.getReportName()));
                 zipOutputStream.write(workloadReport.getReport());
                 zipOutputStream.closeEntry();
@@ -185,7 +213,7 @@ public class WorkloadController {
 
     }
 
-    @RequestMapping(value = "allWorkloadsOfEachImportedFileDateforAllDepartmentAsAZipBasedOnImportedFileDate",  method = RequestMethod.GET )
+    @RequestMapping(value = "allWorkloadsOfEachImportedFileDateforAllDepartmentAsAZipBasedOnImportedFileDate", method = RequestMethod.GET)
     public String getAllWorkloadsOfEachImportedFileDateforAllDepartmentAsAZipBasedOnImportedFileDate(@RequestParam("workloadReportTermId") Long workloadReportTermId, HttpServletResponse httpServletResponse, Model model, Principal principal) {
         String zipFileName = null;
         try {
@@ -200,8 +228,7 @@ public class WorkloadController {
             BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
             ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
 
-            for (WorkloadReport workloadReport : workloadReports)
-            {
+            for (WorkloadReport workloadReport : workloadReports) {
                 zipOutputStream.putNextEntry(new ZipEntry(workloadReport.getReportName()));
                 zipOutputStream.write(workloadReport.getReport());
                 zipOutputStream.closeEntry();

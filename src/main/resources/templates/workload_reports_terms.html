@@ -72,12 +72,7 @@
 
                 </header>
                 <div class="panel-body table-responsive" th:if="${not #lists.isEmpty(workloadsReportTerms)}">
-                    <div align="right">
-                        <button class="btn btn-primary btn-addon btn-sm" data-toggle="modal" data-target="#myModal">
-                            <i class="fa fa-plus"></i>
-                            Add Workload Report
-                        </button>
-                    </div>
+
                     <table class="table table-hover">
                         <tr>
                             <th>Faculty Name</th>
@@ -97,14 +92,14 @@
                             </td>
                         </tr>
                     </table>
-                    <div align="right">
+                </div><!-- /.box-body -->
+
+                <div align="right">
                     <button class="btn btn-primary btn-addon btn-sm" data-toggle="modal" data-target="#myModal">
                         <i class="fa fa-plus"></i>
                         Add Workload Report
                     </button>
-                    </div>
-                </div><!-- /.box-body -->
-
+                </div>
             </div> <!--/.box-->
         </section><!-- /.content -->
         <!--/*/ <th:block th:include="fragments/footer :: footer"></th:block> /*/-->
@@ -125,33 +120,24 @@
                 <table class="table table-hover">
                     <tr>
                         <th>FTP File</th>
-                        <th>Uploaded Date</th>
+                        <th>Uploaded Date/Time</th>
                         <th></th>
                     </tr>
                     <tr th:each="ftpWorkloadFile : ${ftpWorkloadFiles}">
-                        <td th:text="${workloadReportTerm.faculty!=null}?${workloadReportTerm.faculty.name}"></td>
-                        <td th:text="${workloadReportTerm.faculty!=null}?${workloadReportTerm.faculty.code}"></td>
-                        <td th:text="${workloadReportTerm.semesterYear}"></td>
+                        <td th:text="${ftpWorkloadFile.fileName!=null}?${ftpWorkloadFile.fileName}"></td>
+                        <td th:text="${ftpWorkloadFile.fileUploadedDate!=null}?${ftpWorkloadFile.fileUploadedDate}"></td>
                         <td>
-                            <div class="pull-right hidden-phone">
-                                <a href="workload_reports_faculty_terms.html" th:href="${'workload_reports_faculty_terms?facultyCode='+ workloadReportTerm.faculty.code + '&amp;semesterTermYear=' + workloadReportTerm.semesterYear}"><button class="btn btn-default btn-sm"><i class="fa fa-search"></i>
-                                </button></a>
-                            </div>
+                           <div class="pull-right hidden-phone">
+                                <a href="workload_reports_terms.html" th:href="${'importingFTPFile?fileName='+ ftpWorkloadFile.fileName}"><button class="btn btn-danger" type="button">Add</button></a>
+                           </div>
                         </td>
                     </tr>
                 </table>
-                <div class="table-foot">
-                    <ul class="pagination pagination-sm no-margin pull-right">
-                        <li><a href="#">&laquo;</a></li>
-                        <li><a href="#">1</a></li>
-                        <li><a href="#">2</a></li>
-                        <li><a href="#">3</a></li>
-                        <li><a href="#">&raquo;</a></li>
-                    </ul>
+                <div align="left">
+                    <p><b>NOTE</b> : System is only keeping last 15 days file. Files, older than 15 days are automatically being removed from the system due to managing resources well.</p>
                 </div>
             </div>
             <div class="modal-footer">
-                    <button class="btn btn-danger" type="button">Add</button>
             </div>
         </div>
 

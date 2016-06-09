@@ -40,6 +40,7 @@ import org.springframework.context.MessageSource;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 
 import javax.validation.*;
@@ -57,6 +58,7 @@ import java.util.stream.Collectors;
  */
 
 //@Component
+@Service
 public class WorkloadReportService {
 
     @Autowired
@@ -89,14 +91,23 @@ public class WorkloadReportService {
     private ValidatorFactory validatorFactory;
     private Validator validator;
     private String MAIL_SUBJECT = "Workload Report Execution Status for ";
+    private String fileName;
 
+    public String getFileName() {
+        return fileName;
+    }
 
-    @Scheduled(fixedDelay = SchedulingConstant.WORKLOAD_REPORT_SERVICE_EXECUTE_FIXED_DELAY)
-    private void executeService() throws IOException, WriteException, CloneNotSupportedException, JSchException, SftpException {
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    //@Scheduled(fixedDelay = SchedulingConstant.WORKLOAD_REPORT_SERVICE_EXECUTE_FIXED_DELAY)
+    public void executeService() throws IOException, WriteException, CloneNotSupportedException, JSchException, SftpException {
 
         log.info("TypeSafeRawWorkload Reports execution started");
         initializeValidator();
-        String filePattern = getFilePatternAccordingToSemesterTerm();
+
+        String filePattern = StringUtilService.getInstance().isEmpty(getFileName())? getFilePatternAccordingToSemesterTerm() : getFileName();
         List<String> files = ftpService.downloadAndGetExactFileNames(GenericConstant.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH, filePattern);
         if (files.size() == 0) {
             mailService.sendNewsletterMail(MAIL_SUBJECT, "No file found to be executed", "There is no file found based on expected pattern " + filePattern + " in FTP server");
@@ -156,12 +167,16 @@ public class WorkloadReportService {
     private String getFilePatternAccordingToSemesterTerm() {
 
         SemesterTerm semesterTerm = getSemesterTerm();
-        return "Load_Report_" + semesterTerm.getYear() + semesterTerm.getSemesterTermCode() + "*.txt";
+        return getPrefixNameOfFTPFile() + semesterTerm.getYear() + semesterTerm.getSemesterTermCode() + "*.txt";
 
     }
 
-    private String getImportedFileDate(String fileName)
+    public String getPrefixNameOfFTPFile()
     {
+        return "Load_Report_";
+    }
+
+    private String getImportedFileDate(String fileName) {
         return fileName.substring(19, fileName.indexOf(GenericConstant.DOT_CHARACTER));
     }
 
@@ -471,7 +486,6 @@ public class WorkloadReportService {
             workloadReportTerm.setFaculty(faculty);
             workloadReportTerm.setImportedFileDate(importedFileDate);
             workloadReportTerm = workloadReportDBService.createWorkloadReportTermIfNotFound(workloadReportTerm);
-
 
 
             List<WorkloadReport> workloadReportList = new ArrayList<WorkloadReport>();
@@ -1292,7 +1306,7 @@ public class WorkloadReportService {
                 workbook.close();
 
 
-                workloadReport = getWorkloadItems(simplifiedWorkload, faculty, workloadReportTerm, importedFileDate, outputStream.toByteArray() );
+                workloadReport = getWorkloadItems(simplifiedWorkload, faculty, workloadReportTerm, importedFileDate, outputStream.toByteArray());
                 workloadReportList.add(workloadReport);
 
 
@@ -1306,8 +1320,7 @@ public class WorkloadReportService {
         return result;
     }
 
-    private WorkloadReport getWorkloadItems(SimplifiedWorkload simplifiedWorkload, Faculty faculty, WorkloadReportTerm workloadReportTerm, String importedFileDate, byte[] reportContent)
-    {
+    private WorkloadReport getWorkloadItems(SimplifiedWorkload simplifiedWorkload, Faculty faculty, WorkloadReportTerm workloadReportTerm, String importedFileDate, byte[] reportContent) {
         WorkloadReport workloadReport = null;
         try {
             workloadReport = new WorkloadReport();
@@ -1321,8 +1334,7 @@ public class WorkloadReportService {
             workloadReport.setDepartmentCode(simplifiedWorkload.getDepartmentCode());
             workloadReport.setDepartmentName(simplifiedWorkload.getDepartmentName());
             List<WorkloadReportValues> workloadReportValuesList = new ArrayList<WorkloadReportValues>();
-            for (TypeSafeRawWorkload typeSafeRawWorkload : simplifiedWorkload.getTypeSafeRawWorkloads())
-            {
+            for (TypeSafeRawWorkload typeSafeRawWorkload : simplifiedWorkload.getTypeSafeRawWorkloads()) {
                 WorkloadReportValues workloadReportValues = new WorkloadReportValues();
                 workloadReportValues.setCourseNumber(typeSafeRawWorkload.getCourseNumber());
                 workloadReportValues.setInstructionType(typeSafeRawWorkload.getInstructionType());
@@ -1345,9 +1357,7 @@ public class WorkloadReportService {
                 workloadReportValuesList.add(workloadReportValues);
             }
             workloadReport.setWorkloadReportValuesList(workloadReportValuesList);
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             log.error(ex.toString());
         }
         return workloadReport;

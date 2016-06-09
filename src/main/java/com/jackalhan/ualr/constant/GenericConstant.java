@@ -29,5 +29,6 @@ public final class GenericConstant {
     public static final String DOT_CHARACTER = ".";
 
     public static final String SIMPLE_DATE_TIME_FORMAT_WITH_MILISECOND = "EEE MMM dd HH:mm:ss zzz yyyy";
-
+    public static final String SIMPLE_DATE_TIME_DEFAULT_ALL_DATE_FORMAT= "EEE MMM dd kk:mm:ss z yyyy";
+    public static final String SIMPLE_DATE_TIME_DATE_AND_TIME=  "yyyy-MM-dd HH:mm:ss";
 }

@@ -1,7 +1,9 @@
 package com.jackalhan.ualr.service.rest;
 
 import com.jackalhan.ualr.config.FTPConfiguration;
+import com.jackalhan.ualr.constant.GenericConstant;
 import com.jackalhan.ualr.domain.FTPConnection;
+import com.jackalhan.ualr.domain.FTPFile;
 import com.jackalhan.ualr.service.utils.FileUtilService;
 import com.jackalhan.ualr.service.utils.StringUtilService;
 import com.jcraft.jsch.*;
@@ -11,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
@@ -65,8 +68,8 @@ public class FTPService {
         }
     }
 
-    public List<String> listFiles(String filePattern) {
-        List<String> files = null;
+    public List<FTPFile> listFiles(String filePattern) {
+        List<FTPFile> files = null;
         FTPConnection connection = null;
         try {
 
@@ -75,9 +78,13 @@ public class FTPService {
 
             // channel.cd(ftpConfiguration.getRemoteDirectory()); // default value enter the welcome folder
             Vector<ChannelSftp.LsEntry> lsEntryVector = channel.ls(filePattern); //Vector is a technically list. Vector implementation of list.
-            files = new ArrayList<String>();
+            files = new ArrayList<FTPFile>();
             for (ChannelSftp.LsEntry entry : lsEntryVector) {
-                files.add(entry.getFilename());
+                FTPFile ftpFile = new FTPFile();
+                ftpFile.setFileName(entry.getFilename());
+                ftpFile.setFileUploadedDate(StringUtilService.getInstance().dateToTargetFormat(entry.getAttrs().getMtimeString(), GenericConstant.SIMPLE_DATE_TIME_DEFAULT_ALL_DATE_FORMAT, GenericConstant.SIMPLE_DATE_TIME_DATE_AND_TIME));
+                ftpFile.setFileUploadedDateAsInt(entry.getAttrs().getMTime());
+                files.add(ftpFile);
                 log.info(entry.getFilename() + " is found");
             }
 
