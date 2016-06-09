@@ -57,7 +57,7 @@ import java.util.stream.Collectors;
  * Created by jackalhan on 4/18/16.
  */
 
-//@Component
+@Component
 @Service
 public class WorkloadReportService {
 
@@ -100,6 +100,7 @@ public class WorkloadReportService {
     public void setFileName(String fileName) {
         this.fileName = fileName;
     }
+
 
     //@Scheduled(fixedDelay = SchedulingConstant.WORKLOAD_REPORT_SERVICE_EXECUTE_FIXED_DELAY)
     public void executeService() throws IOException, WriteException, CloneNotSupportedException, JSchException, SftpException {
