@@ -3,17 +3,44 @@
 <head>
     <!--/*/ <th:block th:include="fragments/header :: header"></th:block> /*/-->
     <script type="text/javascript">
-        $('#idTourDateDetails').datepicker({
-            dateFormat: 'dd-mm-yy',
-            minDate: '+5d',
-            changeMonth: true,
-            changeYear: true,
-            altField: "#idTourDateDetailsHidden",
-            altFormat: "yy-mm-dd"
-        });
+        function hide(){
+            $("#resultsBlock").hide();
+        }
+        function importFile(fileName, data, callBack){
+            var r = confirm("Are you sure you want to process following file '" + fileName + "' ?");
+
+            if (r == true) {
+               /* $("#resultsBlock").show();
+                var url = '/importingFTPFile?fileName=' + fileName;
+                $("#resultsBlock").load(url);
+                setTimeout(doNothing,15000);
+*/
+                $.ajax({
+                    type: "GET",
+                    url: "importingFTPFile",
+                    data: {
+                        fileName: fileName
+                    },
+                    beforeSend: function(){$("#resultsBlock").show();},
+                    async:false,
+                    success: function(data, textStatus, xhr)
+                    {
+                        return callBack("success");
+                    },
+                    error: function (xhr, textStatus, errorThrown ){
+                        return callBack("success");
+                    }
+                });
+                //$("#resultsBlock").load(url);
+
+            }
+        }
+        function doNothing(){
+            //nothing
+        }
     </script>
 </head>
-<body class="skin-black">
+<body class="skin-black" onload="hide()">
 <!--/*/ <th:block th:include="fragments/header_title :: header_title"></th:block> /*/-->
 
 <div class="wrapper row-offcanvas row-offcanvas-left">
@@ -113,9 +140,18 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title">New Workload Report</h4>
+                <h4 class="modal-title" style="color:#e56c69">New Workload Report</h4>
             </div>
             <div class="modal-body">
+                <!-- Results block -->
+                <div id="resultsBlock">
+                    <div class="stat">
+                        <div class="stat-icon" style="color:#fa8564">
+                            <i class="fa fa-refresh fa-spin fa-3x stat-elem"></i>
+                        </div>
+                        <h5 class="stat-info" style="color:#e56c69">Procesing....Please wait....</h5>
+                    </div>
+                </div>
                 <p>Please select a FTP file to import and generate Workload Report </p>
                 <table class="table table-hover">
                     <tr>
@@ -128,16 +164,18 @@
                         <td th:text="${ftpWorkloadFile.fileUploadedDate!=null}?${ftpWorkloadFile.fileUploadedDate}"></td>
                         <td>
                            <div class="pull-right hidden-phone">
-                                <a href="workload_reports_terms.html" th:href="${'importingFTPFile?fileName='+ ftpWorkloadFile.fileName}"><button class="btn btn-danger" type="button">Add</button></a>
+                                <a href="workload_reports_terms.html" th:onclick="'importFile(\'' + ${ftpWorkloadFile.fileName}+ '\');'"><button class="btn btn-danger" type="button">Add</button></a>
+
+
                            </div>
                         </td>
                     </tr>
                 </table>
                 <div align="left">
-                    <p><b>NOTE</b> : System is only keeping last 15 days file. Files, older than 15 days are automatically being removed from the system due to managing resources well.</p>
+                    <p><b style="color:#e56c69">NOTE 1: </b><label th:text="#{workload_reports_terms.addworkloadreport.note1.label}"></label></p>
+                    <p><b style="color:#e56c69">NOTE 2: </b><label th:text="#{workload_reports_terms.addworkloadreport.note2.label}"></label></p>
                 </div>
-            </div>
-            <div class="modal-footer">
+
             </div>
         </div>
 

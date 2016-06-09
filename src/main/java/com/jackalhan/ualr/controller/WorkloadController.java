@@ -11,6 +11,7 @@ import com.jackalhan.ualr.service.db.FacultyDBService;
 import com.jackalhan.ualr.service.db.WorkloadReportDBService;
 import com.jackalhan.ualr.service.rest.FTPService;
 import com.jackalhan.ualr.service.rest.LoginService;
+import com.jackalhan.ualr.service.utils.DateUtilService;
 import com.jackalhan.ualr.service.utils.FileUtilService;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
@@ -20,17 +21,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.Banner;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.security.Principal;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -65,8 +65,15 @@ public class WorkloadController {
         List<WorkloadReportTerm> records = workloadReportDBService.listAllWorkloadReportTermsAndGroupByFacultyCodeAndYear();
         model.addAttribute("workloadsReportTerms", records);
         List<FTPFile> ftpFiles = ftpService.listFiles(workloadReportBatchService.getPrefixNameOfFTPFile() + "*.txt");
-        //sorting based on file date
         if (ftpFiles != null && !ftpFiles.isEmpty()) {
+            //filter out files older than 15 days.
+            ftpFiles = ftpFiles.stream().filter(f ->
+                    DateUtilService.getInstance().isFirstDateIsAfterThanSecondDate(
+                            DateUtilService.getInstance().convertToLocalDateTime(GenericConstant.SIMPLE_DATE_TIME_DEFAULT_ALL_DATE_FORMAT, f.getFileUploadedDateAsOriginal()),
+                            DateUtilService.getInstance().getPreviousDateFromCurrentTime(15)
+                    )).collect(Collectors.toList());
+
+            //sorting based on file date
             ftpFiles = ftpFiles.stream().sorted((f2, f1) -> Integer.compare(f1.getFileUploadedDateAsInt(),
                     f2.getFileUploadedDateAsInt())).collect(Collectors.toList());
         }

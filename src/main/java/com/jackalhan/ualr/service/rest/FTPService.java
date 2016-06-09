@@ -84,6 +84,7 @@ public class FTPService {
                 ftpFile.setFileName(entry.getFilename());
                 ftpFile.setFileUploadedDate(StringUtilService.getInstance().dateToTargetFormat(entry.getAttrs().getMtimeString(), GenericConstant.SIMPLE_DATE_TIME_DEFAULT_ALL_DATE_FORMAT, GenericConstant.SIMPLE_DATE_TIME_DATE_AND_TIME));
                 ftpFile.setFileUploadedDateAsInt(entry.getAttrs().getMTime());
+                ftpFile.setFileUploadedDateAsOriginal(entry.getAttrs().getMtimeString());
                 files.add(ftpFile);
                 log.info(entry.getFilename() + " is found");
             }

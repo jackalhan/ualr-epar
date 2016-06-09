@@ -20,7 +20,8 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
         http.authorizeRequests().antMatchers("/css/**").permitAll().antMatchers("/img/**").permitAll().antMatchers("/js/**").permitAll().anyRequest()
                 .fullyAuthenticated().and()
                 .formLogin().loginPage("/login")
-                .failureUrl("/login?error").permitAll().and().logout().permitAll();
+                .failureUrl("/login?error").permitAll().and().logout().permitAll()
+        .and().csrf().disable();
                 /*and()
                 .exceptionHandling().accessDeniedPage("/unauthorized");*/
 
