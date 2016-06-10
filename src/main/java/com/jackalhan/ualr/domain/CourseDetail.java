@@ -18,13 +18,13 @@ public class CourseDetail implements Cloneable {
     private String subjectCode;
     private String courseTypeName;
     private String courseTypeCode;
-    private int lectureHours;
+    private double lectureHours;
     private boolean hasDualCourse;
     private int dualCourseCode;
-    private int numberOfTotalEnrollmentInDualCourse;
+    private double numberOfTotalEnrollmentInDualCourse;
     private double iuMultiplierLectureHours;
     private double iuMultiplicationResultOfLectureHours;
-    private int numberOfTotaltotalSsch;
+    private double numberOfTotaltotalSsch;
 
     public int getCodeNumber() {
         return codeNumber;
@@ -90,11 +90,11 @@ public class CourseDetail implements Cloneable {
         this.dualCourseCode = dualCourseCode;
     }
 
-    public int getNumberOfTotalEnrollmentInDualCourse() {
+    public double getNumberOfTotalEnrollmentInDualCourse() {
         return numberOfTotalEnrollmentInDualCourse;
     }
 
-    public void setNumberOfTotalEnrollmentInDualCourse(int numberOfTotalEnrollmentInDualCourse) {
+    public void setNumberOfTotalEnrollmentInDualCourse(double numberOfTotalEnrollmentInDualCourse) {
         this.numberOfTotalEnrollmentInDualCourse = numberOfTotalEnrollmentInDualCourse;
     }
 
@@ -114,11 +114,11 @@ public class CourseDetail implements Cloneable {
         this.iuMultiplicationResultOfLectureHours = iuMultiplicationResultOfLectureHours;
     }
 
-    public int getNumberOfTotaltotalSsch() {
+    public double getNumberOfTotaltotalSsch() {
         return numberOfTotaltotalSsch;
     }
 
-    public void setNumberOfTotaltotalSsch(int numberOfTotaltotalSsch) {
+    public void setNumberOfTotaltotalSsch(double numberOfTotaltotalSsch) {
         this.numberOfTotaltotalSsch = numberOfTotaltotalSsch;
     }
 
@@ -138,11 +138,11 @@ public class CourseDetail implements Cloneable {
         this.subjectCode = subjectCode;
     }
 
-    public int getLectureHours() {
+    public double getLectureHours() {
         return lectureHours;
     }
 
-    public void setLectureHours(int lectureHours) {
+    public void setLectureHours(double lectureHours) {
         this.lectureHours = lectureHours;
     }
 

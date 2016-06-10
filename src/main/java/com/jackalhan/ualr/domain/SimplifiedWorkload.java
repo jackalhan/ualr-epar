@@ -18,14 +18,14 @@ public class SimplifiedWorkload implements Serializable {
     private String departmentCode;
     private String chairNameAndSurname;
     private String deanNameAndSurname;
-    private int totalTaSupport;
-    private int total11thDayCount;
-    private int totalCreditHours;
-    private int totalLectureHours;
+    private double totalTaSupport;
+    private double total11thDayCount;
+    private double totalCreditHours;
+    private double totalLectureHours;
     private double totalIUMultiplierForLectureHours;
-    private int totalLabHours;
+    private double totalLabHours;
     private double totalTotalIUs;
-    private int totalSsch;
+    private double totalSsch;
     private List<TypeSafeRawWorkload> typeSafeRawWorkloads;
     private String withoutSwitchingInstructorNameAndSurname;
     private String withoutSwitchingChairNameAndSurname;
@@ -82,35 +82,35 @@ public class SimplifiedWorkload implements Serializable {
         this.deanNameAndSurname = deanNameAndSurname.trim();
     }
 
-    public int getTotalTaSupport() {
+    public double getTotalTaSupport() {
         return totalTaSupport;
     }
 
-    public void setTotalTaSupport(int totalTaSupport) {
+    public void setTotalTaSupport(double totalTaSupport) {
         this.totalTaSupport = totalTaSupport;
     }
 
-    public int getTotal11thDayCount() {
+    public double getTotal11thDayCount() {
         return total11thDayCount;
     }
 
-    public void setTotal11thDayCount(int total11thDayCount) {
+    public void setTotal11thDayCount(double total11thDayCount) {
         this.total11thDayCount = total11thDayCount;
     }
 
-    public int getTotalCreditHours() {
+    public double getTotalCreditHours() {
         return totalCreditHours;
     }
 
-    public void setTotalCreditHours(int totalCreditHours) {
+    public void setTotalCreditHours(double totalCreditHours) {
         this.totalCreditHours = totalCreditHours;
     }
 
-    public int getTotalLectureHours() {
+    public double getTotalLectureHours() {
         return totalLectureHours;
     }
 
-    public void setTotalLectureHours(int totalLectureHours) {
+    public void setTotalLectureHours(double totalLectureHours) {
         this.totalLectureHours = totalLectureHours;
     }
 
@@ -122,11 +122,11 @@ public class SimplifiedWorkload implements Serializable {
         this.totalIUMultiplierForLectureHours = totalIUMultiplierForLectureHours;
     }
 
-    public int getTotalLabHours() {
+    public double getTotalLabHours() {
         return totalLabHours;
     }
 
-    public void setTotalLabHours(int totalLabHours) {
+    public void setTotalLabHours(double totalLabHours) {
         this.totalLabHours = totalLabHours;
     }
 
@@ -138,11 +138,11 @@ public class SimplifiedWorkload implements Serializable {
         this.totalTotalIUs = totalTotalIUs;
     }
 
-    public int getTotalSsch() {
+    public double getTotalSsch() {
         return totalSsch;
     }
 
-    public void setTotalSsch(int totalSsch) {
+    public void setTotalSsch(double totalSsch) {
         this.totalSsch = totalSsch;
     }
 

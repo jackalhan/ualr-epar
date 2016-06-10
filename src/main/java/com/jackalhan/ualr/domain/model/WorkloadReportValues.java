@@ -43,17 +43,17 @@ public class WorkloadReportValues extends AbstractAuditingEntity implements Seri
 
     private String taStudent;
 
-    private int taSupport;
+    private double taSupport;
 
-    private int taEleventhDayCount;
+    private double taEleventhDayCount;
 
-    private int taCeditHours;
+    private double taCeditHours;
 
-    private int taLectureHours;
+    private double taLectureHours;
 
     private double iuMultipliertaLectureHours;
 
-    private int taLabHours;
+    private double taLabHours;
 
     private double iuMultipliertaLabHours;
 
@@ -61,7 +61,7 @@ public class WorkloadReportValues extends AbstractAuditingEntity implements Seri
 
     private String otherInstructorsInTeam;
 
-    private int totalSsch;
+    private double totalSsch;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="workload_report_id", referencedColumnName = "id")
@@ -164,35 +164,35 @@ public class WorkloadReportValues extends AbstractAuditingEntity implements Seri
         this.taStudent = taStudent;
     }
 
-    public int getTaSupport() {
+    public double getTaSupport() {
         return taSupport;
     }
 
-    public void setTaSupport(int taSupport) {
+    public void setTaSupport(double taSupport) {
         this.taSupport = taSupport;
     }
 
-    public int getTaEleventhDayCount() {
+    public double getTaEleventhDayCount() {
         return taEleventhDayCount;
     }
 
-    public void setTaEleventhDayCount(int taEleventhDayCount) {
+    public void setTaEleventhDayCount(double taEleventhDayCount) {
         this.taEleventhDayCount = taEleventhDayCount;
     }
 
-    public int getTaCeditHours() {
+    public double getTaCeditHours() {
         return taCeditHours;
     }
 
-    public void setTaCeditHours(int taCeditHours) {
+    public void setTaCeditHours(double taCeditHours) {
         this.taCeditHours = taCeditHours;
     }
 
-    public int getTaLectureHours() {
+    public double getTaLectureHours() {
         return taLectureHours;
     }
 
-    public void setTaLectureHours(int taLectureHours) {
+    public void setTaLectureHours(double taLectureHours) {
         this.taLectureHours = taLectureHours;
     }
 
@@ -204,11 +204,11 @@ public class WorkloadReportValues extends AbstractAuditingEntity implements Seri
         this.iuMultipliertaLectureHours = iuMultipliertaLectureHours;
     }
 
-    public int getTaLabHours() {
+    public double getTaLabHours() {
         return taLabHours;
     }
 
-    public void setTaLabHours(int taLabHours) {
+    public void setTaLabHours(double taLabHours) {
         this.taLabHours = taLabHours;
     }
 
@@ -236,11 +236,11 @@ public class WorkloadReportValues extends AbstractAuditingEntity implements Seri
         this.otherInstructorsInTeam = otherInstructorsInTeam;
     }
 
-    public int getTotalSsch() {
+    public double getTotalSsch() {
         return totalSsch;
     }
 
-    public void setTotalSsch(int totalSsch) {
+    public void setTotalSsch(double totalSsch) {
         this.totalSsch = totalSsch;
     }
 

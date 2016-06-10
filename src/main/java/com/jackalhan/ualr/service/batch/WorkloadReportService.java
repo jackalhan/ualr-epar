@@ -18,6 +18,7 @@ import com.jackalhan.ualr.service.db.FacultyDBService;
 import com.jackalhan.ualr.service.db.WorkloadReportDBService;
 import com.jackalhan.ualr.service.rest.FTPService;
 import com.jackalhan.ualr.service.rest.MailService;
+import com.jackalhan.ualr.service.utils.DateUtilService;
 import com.jackalhan.ualr.service.utils.FileUtilService;
 import com.jackalhan.ualr.service.utils.StringUtilService;
 import com.jcraft.jsch.*;
@@ -92,7 +93,7 @@ public class WorkloadReportService {
     private Validator validator;
     private String MAIL_SUBJECT = "Workload Report Execution Status for ";
     private String fileName;
-
+    private String NEW_MAIL_SUBJECT;
     public String getFileName() {
         return fileName;
     }
@@ -108,15 +109,17 @@ public class WorkloadReportService {
         log.info("TypeSafeRawWorkload Reports execution started");
         initializeValidator();
 
-        String filePattern = StringUtilService.getInstance().isEmpty(getFileName())? getFilePatternAccordingToSemesterTerm() : getFileName();
+        // StringUtilService.getInstance().isEmpty(getFileName()) ? getFilePatternAccordingToSemesterTerm() : ---> This is important if the algorithm needs to be run automatically
+        String filePattern = getFileName();
         List<String> files = ftpService.downloadAndGetExactFileNames(GenericConstant.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH, filePattern);
         if (files.size() == 0) {
             mailService.sendNewsletterMail(MAIL_SUBJECT, "No file found to be executed", "There is no file found based on expected pattern " + filePattern + " in FTP server");
 
         } else {
             for (String file : files) {
-                String NEW_MAIL_SUBJECT = MAIL_SUBJECT + file;
+                NEW_MAIL_SUBJECT = MAIL_SUBJECT + file;
                 String importedFileDate = getImportedFileDate(file);
+                String importedFileTerm = getImportedFileTerm(file);
                 File fileFromTemp = FileUtilService.getInstance().getFile(GenericConstant.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH + file);
                 BufferedReader bufferedReader = FileUtilService.getInstance().getFileContent(fileFromTemp);
                 RawWorkloadWithValidationResult rawWorkloadWithValidationResult = parseContent(bufferedReader);
@@ -129,14 +132,21 @@ public class WorkloadReportService {
 
                         } else {
                             List<TypeSafeRawWorkload> typeSafeRawWorkloadList = convertRawToTypeSafeData(rawWorkloadWithValidationResult.getRawWorkloadList());
-                            log.info("Type Safe Raw Workload List Size : " + typeSafeRawWorkloadList.size());
-                            List<SimplifiedWorkload> simplifiedWorkloadList = simplifyWorkloadData(typeSafeRawWorkloadList);
-                            result = generateExcelContent(simplifiedWorkloadList, importedFileDate);
-                            if (result) {
-                                mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Excel files are generated", "Excel files are generated based on following file " + file + ". You can view all generated files by clicking following link......");
+                            if (typeSafeRawWorkloadList != null) {
+                                log.info("Type Safe Raw Workload List Size : " + typeSafeRawWorkloadList.size());
+                                List<SimplifiedWorkload> simplifiedWorkloadList = simplifyWorkloadData(typeSafeRawWorkloadList);
+                                result = generateExcelContent(simplifiedWorkloadList, importedFileDate, importedFileTerm);
+                                if (result) {
+                                    mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Excel files are generated", "Excel files are generated based on following file " + file + ". You can view all generated files by clicking following link......");
 
-                            } else {
+                                } else {
+                                    mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during excel generating", "Excel generating based on following file " + file + " is failed. ");
+                                }
+                            }
+                            else
+                            {
                                 mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during excel generating", "Excel generating based on following file " + file + " is failed. ");
+
                             }
                         }
                     } else {
@@ -167,7 +177,7 @@ public class WorkloadReportService {
 
     private String getFilePatternAccordingToSemesterTerm() {
 
-        SemesterTerm semesterTerm = getSemesterTerm();
+        SemesterTerm semesterTerm = getSemesterTerm(DateUtilService.getInstance().getCurrentTime());
         return getPrefixNameOfFTPFile() + semesterTerm.getYear() + semesterTerm.getSemesterTermCode() + "*.txt";
 
     }
@@ -180,11 +190,13 @@ public class WorkloadReportService {
     private String getImportedFileDate(String fileName) {
         return fileName.substring(19, fileName.indexOf(GenericConstant.DOT_CHARACTER));
     }
+    private String getImportedFileTerm(String fileName) {
+        return fileName.substring(12, 18);
+    }
 
-    private SemesterTerm getSemesterTerm() {
-        LocalDateTime now = LocalDateTime.now();
-        int year = now.getYear();
-        int month = now.getMonthValue();
+    private SemesterTerm getSemesterTerm(LocalDateTime dateTime) {
+        int year = dateTime.getYear();
+        int month = dateTime.getMonthValue();
         int semesterTermCode;
 
         if ((month >= 1) && (month <= 5)) {
@@ -195,7 +207,12 @@ public class WorkloadReportService {
             semesterTermCode = SemesterTermEnum.FALL.getValue();
 
         return new SemesterTerm(semesterTermCode, decideSemester(semesterTermCode), year);
+    }
 
+    private SemesterTerm getSemesterTerm(String importedFileTerm) {
+        int year = Integer.parseInt(importedFileTerm.substring(0, 4));
+        int termCode = Integer.parseInt(importedFileTerm.substring(4, 6));
+        return new SemesterTerm(termCode, decideSemester(termCode), year);
     }
 
     private void initializeValidator() {
@@ -469,10 +486,12 @@ public class WorkloadReportService {
 
     }
 
-    private boolean generateExcelContent(List<SimplifiedWorkload> simplifiedWorkloadList, String importedFileDate) {
+
+
+    private boolean generateExcelContent(List<SimplifiedWorkload> simplifiedWorkloadList, String importedFileDate, String importedFileTerm) {
 
         boolean result = true;
-        SemesterTerm semesterTerm = getSemesterTerm();
+        SemesterTerm semesterTerm = getSemesterTerm(importedFileTerm);
         //String folderPath = GenericConstant.WORKLOAD_REPORTS_EXCEL_PROCESSED_PATH + semesterTerm.getYear() + "/" + semesterTerm.getSemesterTermName() + "/";
         //FileUtilService.getInstance().createDirectory(folderPath);
 
@@ -1359,6 +1378,8 @@ public class WorkloadReportService {
             }
             workloadReport.setWorkloadReportValuesList(workloadReportValuesList);
         } catch (Exception ex) {
+            mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during excel generating", "Excel generating based on following file " + importedFileDate + " is failed. " + ex.toString());
+
             log.error(ex.toString());
         }
         return workloadReport;
@@ -1402,34 +1423,45 @@ public class WorkloadReportService {
     }
 
     private List<TypeSafeRawWorkload> convertRawToTypeSafeData(List<RawWorkload> rawWorkloads) {
+
         log.info("Started to convert raw data to type safe data");
-        List<TypeSafeRawWorkload> typeSafeRawWorkloadList = new ArrayList<TypeSafeRawWorkload>();
-        TypeSafeRawWorkload typeSafeRawWorkload;
-        for (RawWorkload rawWorkload : rawWorkloads) {
-            typeSafeRawWorkload = new TypeSafeRawWorkload();
-            typeSafeRawWorkload.setInstructionType(rawWorkload.getInstructionType());
-            typeSafeRawWorkload.setInstructorTNumber(rawWorkload.getInstructorTNumber());
-            typeSafeRawWorkload.setInstructorNameSurname(rawWorkload.getInstructorNameSurname());
-            typeSafeRawWorkload.setInstructorDepartment(rawWorkload.getInstructorDepartmentDescription());
-            typeSafeRawWorkload.setInstructorDepartmentCode(rawWorkload.getInstructorDepartmentCode());
-            typeSafeRawWorkload.setSemesterTermCode(Integer.parseInt(rawWorkload.getSemesterTermCode()));
-            typeSafeRawWorkload.setCrn(Integer.parseInt(rawWorkload.getCrn()));
-            typeSafeRawWorkload.setSubjectCode(rawWorkload.getSubjectCode());
-            typeSafeRawWorkload.setCourseNumber(Integer.parseInt(rawWorkload.getCourseNumber()));
-            typeSafeRawWorkload.setSection(rawWorkload.getSection());
-            typeSafeRawWorkload.setCourseTitle(rawWorkload.getCourseTitle());
-            typeSafeRawWorkload.setCollCode(rawWorkload.getCollCode());
-            typeSafeRawWorkload.setTaStudent(rawWorkload.getTaStudent());
-            typeSafeRawWorkload.setTaEleventhDayCount(Integer.parseInt(rawWorkload.getTaEleventhDayCount()));
-            typeSafeRawWorkload.setTaCeditHours(Integer.parseInt(rawWorkload.getTaCeditHours()));
-            typeSafeRawWorkload.setTaLectureHours(Integer.parseInt(StringUtilService.getInstance().isEmpty(rawWorkload.getTaLectureHours()) ? "0" : rawWorkload.getTaLectureHours()));
-            typeSafeRawWorkload.setTaLabHours(Integer.parseInt(StringUtilService.getInstance().isEmpty(rawWorkload.getTaLabHours()) ? "0" : rawWorkload.getTaLabHours()));
-            typeSafeRawWorkload.setTotalSsch(Integer.parseInt(rawWorkload.getTotalSsch()));
-            typeSafeRawWorkload.setChair(rawWorkload.getDeptChair());
-            typeSafeRawWorkload.setDean(rawWorkload.getDean());
-            typeSafeRawWorkloadList.add(typeSafeRawWorkload);
+        List<TypeSafeRawWorkload> typeSafeRawWorkloadList = null;
+        try {
+
+            typeSafeRawWorkloadList = new ArrayList<TypeSafeRawWorkload>();
+            TypeSafeRawWorkload typeSafeRawWorkload;
+            for (RawWorkload rawWorkload : rawWorkloads) {
+                typeSafeRawWorkload = new TypeSafeRawWorkload();
+                typeSafeRawWorkload.setInstructionType(rawWorkload.getInstructionType());
+                typeSafeRawWorkload.setInstructorTNumber(rawWorkload.getInstructorTNumber());
+                typeSafeRawWorkload.setInstructorNameSurname(rawWorkload.getInstructorNameSurname());
+                typeSafeRawWorkload.setInstructorDepartment(rawWorkload.getInstructorDepartmentDescription());
+                typeSafeRawWorkload.setInstructorDepartmentCode(rawWorkload.getInstructorDepartmentCode());
+                typeSafeRawWorkload.setSemesterTermCode(Integer.parseInt(rawWorkload.getSemesterTermCode()));
+                typeSafeRawWorkload.setCrn(Integer.parseInt(rawWorkload.getCrn()));
+                typeSafeRawWorkload.setSubjectCode(rawWorkload.getSubjectCode());
+                typeSafeRawWorkload.setCourseNumber(Integer.parseInt(rawWorkload.getCourseNumber()));
+                typeSafeRawWorkload.setSection(rawWorkload.getSection());
+                typeSafeRawWorkload.setCourseTitle(rawWorkload.getCourseTitle());
+                typeSafeRawWorkload.setCollCode(rawWorkload.getCollCode());
+                typeSafeRawWorkload.setTaStudent(rawWorkload.getTaStudent());
+                typeSafeRawWorkload.setTaEleventhDayCount(Double.parseDouble(rawWorkload.getTaEleventhDayCount()));
+                typeSafeRawWorkload.setTaCeditHours(Double.parseDouble(rawWorkload.getTaCeditHours()));
+                typeSafeRawWorkload.setTaLectureHours(Double.parseDouble(StringUtilService.getInstance().isEmpty(rawWorkload.getTaLectureHours()) ? "0" : rawWorkload.getTaLectureHours()));
+                typeSafeRawWorkload.setTaLabHours(Double.parseDouble(StringUtilService.getInstance().isEmpty(rawWorkload.getTaLabHours()) ? "0" : rawWorkload.getTaLabHours()));
+                typeSafeRawWorkload.setTotalSsch(Double.parseDouble(rawWorkload.getTotalSsch()));
+                typeSafeRawWorkload.setChair(rawWorkload.getDeptChair());
+                typeSafeRawWorkload.setDean(rawWorkload.getDean());
+                typeSafeRawWorkloadList.add(typeSafeRawWorkload);
+            }
+            log.info("FInish converting raw data to type safe data");
         }
-        log.info("FInish converting raw data to type safe data");
+        catch (Exception ex)
+        {
+            mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during excel generating", ex.toString());
+
+            log.error(ex.toString());
+        }
         return typeSafeRawWorkloadList;
     }
 
