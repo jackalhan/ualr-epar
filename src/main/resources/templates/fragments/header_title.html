@@ -6,8 +6,10 @@
 <body>
 <div th:fragment="header_title">
     <header class="header">
-        <a href="index.html" class="logo">
-            Dean / Director
+        <a href="index.html" class="logo" style="background-color: white">
+            <img src="img/ualr/EITLogo_eit_art_style.png" th:href="@{/img/ualr/EITLogo_eit_art_style.png}" class="ualr-eit-logo"
+                 alt="UALR EIT Logo"/>
+
         </a>
         <!-- Header Navbar: style can be found in header.less -->
         <nav class="navbar navbar-static-top" role="navigation">
@@ -226,6 +228,8 @@
                         </ul>
                     </li>
                 </ul>
+                <img src="img/ualr/eparLogo.png" th:href="@{/img/ualr/eparLogo.png}" class="ualr-epar-logo"
+                     alt="UALR EIT Logo"/>
             </div>
         </nav>
     </header>

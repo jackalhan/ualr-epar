@@ -113,8 +113,7 @@ public class FTPService {
         }
     }
 
-    public List<String> downloadAndGetExactFileNames(String localDownloadPath, String filePattern)
-    {
+    public List<String> downloadAndGetExactFileNames(String localDownloadPath, String filePattern) {
         List<String> fileNames = null;
         FTPConnection connection = null;
         try {
@@ -139,6 +138,25 @@ public class FTPService {
         return fileNames;
     }
 
+    public boolean delete(String fileName) {
+        boolean result = true;
+        FTPConnection connection = null;
+        ChannelSftp channel = null;
+        try {
+            connection = connect();
+            channel = (ChannelSftp) connection.getChannel();
+            channel.rm(channel.getHome() + "/" + fileName);
+            log.info(fileName + " is successfuly deleted from " + channel.getHome());
+        } catch (Exception ex) {
+            result = false;
+            log.error(ex.toString());
+        } finally {
+            disconnect(connection);
+        }
+
+        return result;
+    }
+
     public boolean moveTo(String sourcePath, String destinationPath, String fileName) {
         boolean result = true;
         FTPConnection connection = null;
@@ -150,18 +168,15 @@ public class FTPService {
             channel.rename(channel.getHome() + "/" + sourcePath + fileName, channel.getHome() + destinationPath + fileName);
             log.info(fileName + " is successfuly moved from " + channel.getHome() + " to " + channel.getHome() + destinationPath);
         } catch (Exception ex) {
-            try
-            {
+            try {
                 channel.rm(channel.getHome() + destinationPath + fileName);
                 channel.rename(channel.getHome() + "/" + sourcePath + fileName, channel.getHome() + destinationPath + fileName);
                 log.info(fileName + " is successfuly deleted and moved from " + channel.getHome() + " to " + channel.getHome() + destinationPath);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 result = false;
                 log.error(ex.toString());
             }
-        }
-        finally {
+        } finally {
             disconnect(connection);
         }
 
