@@ -5,6 +5,7 @@ import com.jackalhan.ualr.domain.FTPFile;
 import com.jackalhan.ualr.domain.model.Faculty;
 import com.jackalhan.ualr.domain.model.WorkloadReport;
 import com.jackalhan.ualr.domain.model.WorkloadReportTerm;
+import com.jackalhan.ualr.domain.model.WorkloadReportValues;
 import com.jackalhan.ualr.repository.WorkloadReportTermRepository;
 import com.jackalhan.ualr.service.batch.WorkloadReportService;
 import com.jackalhan.ualr.service.db.FacultyDBService;
@@ -15,8 +16,11 @@ import com.jackalhan.ualr.service.utils.DateUtilService;
 import com.jackalhan.ualr.service.utils.FileUtilService;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
+import jxl.Sheet;
+import jxl.write.WritableSheet;
 import jxl.write.WriteException;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +33,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.io.ByteArrayOutputStream;
 import java.security.Principal;
 import java.util.Date;
 import java.util.List;
@@ -189,6 +194,53 @@ public class WorkloadController {
             List<WorkloadReport> workloadReports = workloadReportDBService.listAllWorkloadReportsBasedOnWorkloadReportTermIdAndDepartmentCode(workloadReportTerm.getId(), departmentCode);
 
             zipFileName = faculty.getShortName() + "_" + departmentCode + "_AllLoads_" + workloadReportTerm.getSemesterYear() + workloadReportTerm.getSemesterTerm() + "_" + workloadReportTerm.getImportedFileDate() + ".zip";
+
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
+            ZipOutputStream zipOutputStream = new ZipOutputStream(bufferedOutputStream);
+
+            for (WorkloadReport workloadReport : workloadReports) {
+                zipOutputStream.putNextEntry(new ZipEntry(workloadReport.getReportName()));
+                zipOutputStream.write(workloadReport.getReport());
+                zipOutputStream.closeEntry();
+            }
+
+            if (zipOutputStream != null) {
+                zipOutputStream.finish();
+                zipOutputStream.flush();
+                IOUtils.closeQuietly(zipOutputStream);
+            }
+            IOUtils.closeQuietly(bufferedOutputStream);
+            IOUtils.closeQuietly(byteArrayOutputStream);
+
+            httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + zipFileName);
+            httpServletResponse.setContentType("application/zip");
+            httpServletResponse.getOutputStream().write(byteArrayOutputStream.toByteArray());
+            httpServletResponse.flushBuffer();
+
+        } catch (IOException ex) {
+            log.error("Error writing file to output stream. Filename was '{}'", zipFileName, ex);
+        }
+        return "workload_reports_downloaded";
+
+    }
+
+    @RequestMapping(value = "summaryReportOfAllWorkloadsOfSelectedImportedFileDateforAllDepartment", method = RequestMethod.GET)
+    public String getSummaryReportOfAllWorkloadsOfSelectedImportedFileDateforAllDepartment(@RequestParam("workloadReportTermId") Long workloadReportTermId, HttpServletResponse httpServletResponse, Model model, Principal principal) {
+        String zipFileName = null;
+        try {
+
+            WorkloadReportTerm workloadReportTerm = workloadReportDBService.listOneWorkloadReportTermBasedOnId(workloadReportTermId);
+            Faculty faculty = facultyDBService.findByCode(workloadReportTerm.getFaculty().getCode());
+            List<WorkloadReport> workloadReports = workloadReportDBService.listAllWorkloadReportsBasedOnWorkloadReportTermIdOrderByDepartmentCode(workloadReportTerm.getId());
+
+            for (WorkloadReport workloadReport : workloadReports) {
+
+            }
+
+            List<WorkloadReportValues> workloadReportValues = workloadReportDBService.listAllWorkloadReportValuesBasedOnWorkloadReportTermId()
+
+            zipFileName = faculty.getShortName() + "_AllDepartments_AllLoads_" + workloadReportTerm.getSemesterYear() + workloadReportTerm.getSemesterTerm() + "_" + workloadReportTerm.getImportedFileDate() + ".zip";
 
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);

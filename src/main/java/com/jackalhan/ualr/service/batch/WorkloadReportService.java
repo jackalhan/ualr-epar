@@ -19,6 +19,7 @@ import com.jackalhan.ualr.service.db.WorkloadReportDBService;
 import com.jackalhan.ualr.service.rest.FTPService;
 import com.jackalhan.ualr.service.rest.MailService;
 import com.jackalhan.ualr.service.utils.DateUtilService;
+import com.jackalhan.ualr.service.utils.ExcelHelperService;
 import com.jackalhan.ualr.service.utils.FileUtilService;
 import com.jackalhan.ualr.service.utils.StringUtilService;
 import com.jcraft.jsch.*;
@@ -62,11 +63,12 @@ import java.util.stream.Collectors;
 @Service
 public class WorkloadReportService {
 
-    @Autowired
-    private MessageSource messageSource;
 
     @Autowired
     private MailService mailService;
+
+    @Autowired
+    private ExcelHelperService excelHelperService;
 
     @Autowired
     private FTPService ftpService;
@@ -534,34 +536,34 @@ public class WorkloadReportService {
 
                 // Create cell font and format
                 // REPORT HEADER
-                WritableFont cellFont = createCellFont("workloadReport.faculty.name.fontsize", Colour.BLACK, true);
-                WritableCellFormat cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                WritableFont cellFont = excelHelperService.createCellFont("workloadReport.faculty.name.fontsize", Colour.BLACK, true);
+                WritableCellFormat cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
                 sheet.mergeCells(startingColumnFrame, 1, endingColumnFrame, 3);
-                createText(sheet, "workloadReport.faculty.name", null, cellFormat, startingColumnFrame, 1);
+                excelHelperService.createText(sheet, "workloadReport.faculty.name", null, cellFormat, startingColumnFrame, 1);
 
                 // *****************************************************************************************************
                 //REPORT NAME
 
-                cellFont = createCellFont("workloadReport.report.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, false, true, true, false);
+                cellFont = excelHelperService.createCellFont("workloadReport.report.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, false, true, true, false);
                 sheet.mergeCells(startingColumnFrame, 4, endingColumnFrame, 5);
                 // ADDED IMPORTED FILE DATE TO THE EXCEL
-                createText(sheet, "workloadReport.report.name", new Object[]{importedFileDate}, cellFormat, startingColumnFrame, 4);
+                excelHelperService.createText(sheet, "workloadReport.report.name", new Object[]{importedFileDate}, cellFormat, startingColumnFrame, 4);
 
 
                 // *****************************************************************************************************
                 //DEPARTMENT HEADER
 
-                cellFont = createCellFont("workloadReport.department.name.fontsize", Colour.BLACK, false);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, false, true, true, true);
+                cellFont = excelHelperService.createCellFont("workloadReport.department.name.fontsize", Colour.BLACK, false);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, false, true, true, true);
                 sheet.mergeCells(startingColumnFrame, 6, endingColumnFrame, 7);
-                createText(sheet, "workloadReport.department.name", new Object[]{simplifiedWorkload.getDepartmentName(), simplifiedWorkload.getSemesterTerm(), String.valueOf(simplifiedWorkload.getSemesterYear())}, cellFormat, startingColumnFrame, 6);
+                excelHelperService.createText(sheet, "workloadReport.department.name", new Object[]{simplifiedWorkload.getDepartmentName(), simplifiedWorkload.getSemesterTerm(), String.valueOf(simplifiedWorkload.getSemesterYear())}, cellFormat, startingColumnFrame, 6);
 
                 // *****************************************************************************************************
                 //INSTRUCTOR NAME
-                cellFont = createCellFont("workloadReport.instructor.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, false, true, true, true);
-                createText(sheet, "workloadReport.instructor.name", new Object[]{simplifiedWorkload.getInstructorNameAndSurname()}, cellFormat, startingColumnFrame, 8);
+                cellFont = excelHelperService.createCellFont("workloadReport.instructor.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, false, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.instructor.name", new Object[]{simplifiedWorkload.getInstructorNameAndSurname()}, cellFormat, startingColumnFrame, 8);
                 sheet.mergeCells(startingColumnFrame, 8, endingColumnFrame, 9);
 
                 // *****************************************************************************************************
@@ -581,9 +583,9 @@ public class WorkloadReportService {
 
                     columnTitle = "workloadReport.column." + i + ".name";
 
-                    cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                    cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, true, true, true, true, true);
-                    createText(sheet, columnTitle, null, cellFormat, startingColHeadercolumnNumber, startingColHeaderRowNumber);
+                    cellFont = excelHelperService.createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                    cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, true, true, true, true, true);
+                    excelHelperService.createText(sheet, columnTitle, null, cellFormat, startingColHeadercolumnNumber, startingColHeaderRowNumber);
                     sheet.mergeCells(startingColHeadercolumnNumber, startingColHeaderRowNumber, endingColHeadercolumnNumber, endingColHeaderRowNumber);
                 }
 
@@ -592,9 +594,9 @@ public class WorkloadReportService {
                 int startingPedaRowNumber = endingColHeaderRowNumber + 1;
                 int endingPedaRowNumber = startingPedaRowNumber + 2;
 
-                cellFont = createCellFont("workloadReport.pedagogical.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, false, true, true, true);
-                createText(sheet, "workloadReport.pedagogical.name", null, cellFormat, startingColumnFrame, startingPedaRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.pedagogical.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, false, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.pedagogical.name", null, cellFormat, startingColumnFrame, startingPedaRowNumber);
                 sheet.mergeCells(startingColumnFrame, startingPedaRowNumber, endingColumnFrame, endingPedaRowNumber);
 
                 // *****************************************************************************************************
@@ -617,63 +619,63 @@ public class WorkloadReportService {
                             topBorder = false;
                         }
 
-                        cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, false);
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, topBorder, true, false, false);
-                        createText(sheet, String.valueOf(pedWorkloadItems.getCrn()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        cellFont = excelHelperService.createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, false);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, topBorder, true, false, false);
+                        excelHelperService.createText(sheet, String.valueOf(pedWorkloadItems.getCrn()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         startingDataPedaColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, String.valueOf(pedWorkloadItems.getSubjectCode()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, String.valueOf(pedWorkloadItems.getSubjectCode()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         startingDataPedaColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, String.valueOf(pedWorkloadItems.getCourseNumber()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, String.valueOf(pedWorkloadItems.getCourseNumber()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         startingDataPedaColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, String.valueOf(pedWorkloadItems.getSection()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, String.valueOf(pedWorkloadItems.getSection()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         startingDataPedaColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, pedWorkloadItems.getCourseTypeCode(), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, pedWorkloadItems.getCourseTypeCode(), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         startingDataPedaColumnNumber++;
                         endingDataPedaColumnNumber = startingDataPedaColumnNumber + 4;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, true, topBorder, true, true, false);
-                        createText(sheet, pedWorkloadItems.getCourseTitle(), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, true, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, pedWorkloadItems.getCourseTitle(), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         sheet.mergeCells(startingDataPedaColumnNumber, startingDataPedaRowNumber, endingDataPedaColumnNumber, endingDataPedaRowNumber);
                         startingDataPedaColumnNumber = endingDataPedaColumnNumber + 1;
                         endingDataPedaColumnNumber = startingDataPedaColumnNumber + 4;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, pedWorkloadItems.getTaStudent(), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, pedWorkloadItems.getTaStudent(), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         sheet.mergeCells(startingDataPedaColumnNumber, startingDataPedaRowNumber, endingDataPedaColumnNumber, endingDataPedaRowNumber);
                         startingDataPedaColumnNumber = endingDataPedaColumnNumber + 1;
-                        cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, "", cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, "", cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         startingDataPedaColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, String.valueOf(pedWorkloadItems.getTaEleventhDayCount()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, String.valueOf(pedWorkloadItems.getTaEleventhDayCount()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         startingDataPedaColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, String.valueOf(pedWorkloadItems.getTaCeditHours()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, String.valueOf(pedWorkloadItems.getTaCeditHours()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         startingDataPedaColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, String.valueOf(pedWorkloadItems.getTaLectureHours()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, String.valueOf(pedWorkloadItems.getTaLectureHours()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         startingDataPedaColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, String.valueOf(pedWorkloadItems.getIuMultipliertaLectureHours()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, String.valueOf(pedWorkloadItems.getIuMultipliertaLectureHours()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         startingDataPedaColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, String.valueOf(pedWorkloadItems.getTaLabHours()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, String.valueOf(pedWorkloadItems.getTaLabHours()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         startingDataPedaColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, "", cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, "", cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         startingDataPedaColumnNumber++;
-                        cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.RED, true);
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, String.valueOf(pedWorkloadItems.getTotalIus()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        cellFont = excelHelperService.createCellFont("workloadReport.regularvalue.name.fontsize", Colour.RED, true);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, String.valueOf(pedWorkloadItems.getTotalIus()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         startingDataPedaColumnNumber++;
-                        cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, false);
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, VerticalAlignment.TOP, Alignment.LEFT, BorderLineStyle.THIN, true, topBorder, true, true, false);
-                        createText(sheet, pedWorkloadItems.getOtherInstructorsInTeam(), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        cellFont = excelHelperService.createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, false);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, VerticalAlignment.TOP, Alignment.LEFT, BorderLineStyle.THIN, true, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, pedWorkloadItems.getOtherInstructorsInTeam(), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
                         startingDataPedaColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, topBorder, false, true, false);
-                        createText(sheet, String.valueOf(pedWorkloadItems.getTotalSsch()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, topBorder, false, true, false);
+                        excelHelperService.createText(sheet, String.valueOf(pedWorkloadItems.getTotalSsch()), cellFormat, startingDataPedaColumnNumber, startingDataPedaRowNumber);
 
                         startingDataPedaRowNumber++;
                         endingDataPedaRowNumber = startingDataPedaRowNumber;
@@ -689,9 +691,9 @@ public class WorkloadReportService {
                 int startingIndivRowNumber = endingDataPedaRowNumber;
                 int endingIndivRowNumber = startingIndivRowNumber + 2;
 
-                cellFont = createCellFont("workloadReport.individualized.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "workloadReport.individualized.name", null, cellFormat, startingColumnFrame, startingIndivRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.individualized.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.individualized.name", null, cellFormat, startingColumnFrame, startingIndivRowNumber);
                 sheet.mergeCells(startingColumnFrame, startingIndivRowNumber, endingColumnFrame, endingIndivRowNumber);
 
                 // *****************************************************************************************************
@@ -717,31 +719,31 @@ public class WorkloadReportService {
                             topBorder = false;
                         }
 
-                        cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, false);
+                        cellFont = excelHelperService.createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, false);
                         //Exception For Initial Columns in order to draw differntTypeOf
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, topBorder, true, false, false);
-                        createText(sheet, String.valueOf(indWorkloadItems.getCrn()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, topBorder, true, false, false);
+                        excelHelperService.createText(sheet, String.valueOf(indWorkloadItems.getCrn()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
                         startingDataIndivColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, String.valueOf(indWorkloadItems.getSubjectCode()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, String.valueOf(indWorkloadItems.getSubjectCode()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
                         startingDataIndivColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, String.valueOf(indWorkloadItems.getCourseNumber()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, String.valueOf(indWorkloadItems.getCourseNumber()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
                         startingDataIndivColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, String.valueOf(indWorkloadItems.getSection()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, String.valueOf(indWorkloadItems.getSection()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
                         startingDataIndivColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, indWorkloadItems.getCourseTypeCode(), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, indWorkloadItems.getCourseTypeCode(), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
                         startingDataIndivColumnNumber++;
                         endingDataIndivColumnNumber = startingDataIndivColumnNumber + 4;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, true, topBorder, true, true, false);
-                        createText(sheet, indWorkloadItems.getCourseTitle(), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, true, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, indWorkloadItems.getCourseTitle(), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
                         sheet.mergeCells(startingDataIndivColumnNumber, startingDataIndivRowNumber, endingDataIndivColumnNumber, endingDataIndivRowNumber);
                         startingDataIndivColumnNumber = endingDataIndivColumnNumber + 1;
                         endingDataIndivColumnNumber = startingDataIndivColumnNumber + 4;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, indWorkloadItems.getTaStudent(), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, indWorkloadItems.getTaStudent(), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
                         sheet.mergeCells(startingDataIndivColumnNumber, startingDataIndivRowNumber, endingDataIndivColumnNumber, endingDataIndivRowNumber);
                         startingDataIndivColumnNumber = endingDataIndivColumnNumber + 1;
 
@@ -750,11 +752,11 @@ public class WorkloadReportService {
                         firstNotApplicableToColumnNumber = firstNotApplicableFromColumnNumber;
 
                         startingDataIndivColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, String.valueOf(indWorkloadItems.getTaEleventhDayCount()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, String.valueOf(indWorkloadItems.getTaEleventhDayCount()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
                         startingDataIndivColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, String.valueOf(indWorkloadItems.getTaCeditHours()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, String.valueOf(indWorkloadItems.getTaCeditHours()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
                         startingDataIndivColumnNumber++;
 
                         // NOT APPLICABLE 2
@@ -764,16 +766,16 @@ public class WorkloadReportService {
 
 
                         startingDataIndivColumnNumber++;
-                        cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.RED, true);
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
-                        createText(sheet, String.valueOf(indWorkloadItems.getTotalIus()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        cellFont = excelHelperService.createCellFont("workloadReport.regularvalue.name.fontsize", Colour.RED, true);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THIN, false, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, String.valueOf(indWorkloadItems.getTotalIus()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
                         startingDataIndivColumnNumber++;
-                        cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, false);
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, VerticalAlignment.TOP, Alignment.LEFT, BorderLineStyle.THIN, true, topBorder, true, true, false);
-                        createText(sheet, indWorkloadItems.getOtherInstructorsInTeam(), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        cellFont = excelHelperService.createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, false);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, VerticalAlignment.TOP, Alignment.LEFT, BorderLineStyle.THIN, true, topBorder, true, true, false);
+                        excelHelperService.createText(sheet, indWorkloadItems.getOtherInstructorsInTeam(), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
                         startingDataIndivColumnNumber++;
-                        cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, topBorder, false, true, false);
-                        createText(sheet, String.valueOf(indWorkloadItems.getTotalSsch()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
+                        cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, topBorder, false, true, false);
+                        excelHelperService.createText(sheet, String.valueOf(indWorkloadItems.getTotalSsch()), cellFormat, startingDataIndivColumnNumber, startingDataIndivRowNumber);
 
                         startingDataIndivRowNumber++;
                         endingDataIndivRowNumber = startingDataIndivRowNumber;
@@ -784,16 +786,16 @@ public class WorkloadReportService {
 
                 if (rawIndivCounter > 0) {
                     // NOT APPLICABLE 1 PRINTING
-                    cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-                    cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THIN, true, false, false, false, false);
-                    createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, firstNotApplicableFromColumnNumber, endingIndivRowNumber + 1);
+                    cellFont = excelHelperService.createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
+                    cellFormat = excelHelperService.createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THIN, true, false, false, false, false);
+                    excelHelperService.createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, firstNotApplicableFromColumnNumber, endingIndivRowNumber + 1);
                     // mergeCells(colStart, rowStart, colEnd, rowEnd)
                     sheet.mergeCells(firstNotApplicableFromColumnNumber, endingIndivRowNumber + 1, firstNotApplicableToColumnNumber, endingDataIndivRowNumber - 1);
 
                     // NOT APPLICABLE 2 PRINTING
-                    cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-                    cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THIN, true, false, false, false, false);
-                    createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, secondNotApplicableFromColumnNumber, endingIndivRowNumber + 1);
+                    cellFont = excelHelperService.createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
+                    cellFormat = excelHelperService.createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THIN, true, false, false, false, false);
+                    excelHelperService.createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, secondNotApplicableFromColumnNumber, endingIndivRowNumber + 1);
                     // mergeCells(colStart, rowStart, colEnd, rowEnd)
                     sheet.mergeCells(secondNotApplicableFromColumnNumber, endingIndivRowNumber + 1, secondNotApplicableToColumnNumber, endingDataIndivRowNumber - 1);
                 }
@@ -804,9 +806,9 @@ public class WorkloadReportService {
                 int startingAdminRowNumber = endingDataIndivRowNumber;
                 int endingAdminRowNumber = startingAdminRowNumber + 2;
 
-                cellFont = createCellFont("workloadReport.administrative.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "workloadReport.administrative.name", null, cellFormat, startingColumnFrame, startingAdminRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.administrative.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.administrative.name", null, cellFormat, startingColumnFrame, startingAdminRowNumber);
                 sheet.mergeCells(startingColumnFrame, startingAdminRowNumber, endingColumnFrame, endingAdminRowNumber);
 
 
@@ -821,9 +823,9 @@ public class WorkloadReportService {
                 // FOR LOOP WILL BE BUILDING FOR FILTERED ADMIN DATA
 
                 endingDataAdminColumnNumber = startingDataAdminColumnNumber + 15;
-                cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, true, true, true, true, true);
-                createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, true, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
                 // mergeCells(colStart, rowStart, colEnd, rowEnd)
                 sheet.mergeCells(startingColumnFrame, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
 
@@ -831,9 +833,9 @@ public class WorkloadReportService {
                 endingDataAdminColumnNumber = startingDataAdminColumnNumber + 2;
                 endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
                 for (int i = 1; i < 6; i++) {
-                    cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
-                    createText(sheet, "workloadReport.administrative" + i + "Col1.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
+                    cellFont = excelHelperService.createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                    cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+                    excelHelperService.createText(sheet, "workloadReport.administrative" + i + "Col1.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
                     // mergeCells(colStart, rowStart, colEnd, rowEnd)1
                     sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
                     startingDataAdminRowNumber = endingDataAdminRowNumber + 1;
@@ -845,18 +847,18 @@ public class WorkloadReportService {
                 startingDataAdminColumnNumber = endingDataAdminColumnNumber + 1;
                 endingDataAdminColumnNumber = startingDataAdminColumnNumber + 2;
 
-                cellFont = createCellFont("workloadReport.administrativeCol2.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
-                createText(sheet, "workloadReport.administrative1Col2.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.administrativeCol2.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.administrative1Col2.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
                 // mergeCells(colStart, rowStart, colEnd, rowEnd)1
                 sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
 
                 startingDataAdminRowNumber = endingDataAdminRowNumber + 1;
                 endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
 
-                cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, true, true, true, true, true);
-                createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, true, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
                 // mergeCells(colStart, rowStart, colEnd, rowEnd)1
                 sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
 
@@ -864,9 +866,9 @@ public class WorkloadReportService {
                 endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
 
                 for (int i = 1; i < 4; i++) {
-                    cellFont = createCellFont("workloadReport.administrativeCol2.name.fontsize", Colour.BLACK, true);
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
-                    createText(sheet, "", cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
+                    cellFont = excelHelperService.createCellFont("workloadReport.administrativeCol2.name.fontsize", Colour.BLACK, true);
+                    cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+                    excelHelperService.createText(sheet, "", cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
                     // mergeCells(colStart, rowStart, colEnd, rowEnd)1
                     sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
                     startingDataAdminRowNumber = endingDataAdminRowNumber + 1;
@@ -878,9 +880,9 @@ public class WorkloadReportService {
                 startingDataAdminColumnNumber = endingDataAdminColumnNumber + 1;
                 endingDataAdminColumnNumber = startingDataAdminColumnNumber;
 
-                cellFont = createCellFont("workloadReport.administrativeCol3.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
-                createText(sheet, "workloadReport.administrative1Col3.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.administrativeCol3.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.administrative1Col3.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
                 // mergeCells(colStart, rowStart, colEnd, rowEnd)1
                 sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
 
@@ -888,9 +890,9 @@ public class WorkloadReportService {
                 endingDataAdminRowNumber = startingDataAdminRowNumber + 1;
 
                 for (int i = 1; i < 5; i++) {
-                    cellFont = createCellFont("workloadReport.administrativeCol3.name.fontsize", Colour.BLACK, true);
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
-                    createText(sheet, "", cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
+                    cellFont = excelHelperService.createCellFont("workloadReport.administrativeCol3.name.fontsize", Colour.BLACK, true);
+                    cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+                    excelHelperService.createText(sheet, "", cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
                     // mergeCells(colStart, rowStart, colEnd, rowEnd)1
                     sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
                     startingDataAdminRowNumber = endingDataAdminRowNumber + 1;
@@ -903,9 +905,9 @@ public class WorkloadReportService {
                 startingDataAdminColumnNumber = endingDataAdminColumnNumber + 1;
                 endingDataAdminColumnNumber = startingDataAdminColumnNumber + 1;
 
-                cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, true, true, true, true, true);
-                createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, true, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataAdminColumnNumber, startingDataAdminRowNumber);
                 // mergeCells(colStart, rowStart, colEnd, rowEnd)
                 sheet.mergeCells(startingDataAdminColumnNumber, startingDataAdminRowNumber, endingDataAdminColumnNumber, endingDataAdminRowNumber);
 
@@ -915,9 +917,9 @@ public class WorkloadReportService {
                 int startingNonAdminRowNumber = endingDataAdminRowNumber + 1;
                 int endingNonAdminRowNumber = startingNonAdminRowNumber + 2;
 
-                cellFont = createCellFont("workloadReport.nonadministrative.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "workloadReport.nonadministrative.name", null, cellFormat, startingColumnFrame, startingNonAdminRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.nonadministrative.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.nonadministrative.name", null, cellFormat, startingColumnFrame, startingNonAdminRowNumber);
                 sheet.mergeCells(startingColumnFrame, startingNonAdminRowNumber, endingColumnFrame, endingNonAdminRowNumber);
 
 
@@ -931,17 +933,17 @@ public class WorkloadReportService {
 
                 // COLUMN HEADER
 
-                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "workloadReport.item.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.item.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
                 sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
                 for (int i = 1; i < 15; i++) {
                     startingDataNonAdminRowNumber = endingDataNonAdminRowNumber + 1;
                     endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
-                    cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
-                    createText(sheet, "", cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
+                    cellFont = excelHelperService.createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
+                    cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+                    excelHelperService.createText(sheet, "", cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
                     sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
                 }
@@ -952,9 +954,9 @@ public class WorkloadReportService {
                 startingDataNonAdminColumnNumber = endingDataNonAdminColumnNumber + 1;
                 endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber + 18;
 
-                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "workloadReport.detailsofitem.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.detailsofitem.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
                 sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
                 endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber + 16;
@@ -962,9 +964,9 @@ public class WorkloadReportService {
                 for (int i = 1; i < 15; i++) {
                     startingDataNonAdminRowNumber = endingDataNonAdminRowNumber + 1;
                     endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
-                    cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
-                    createText(sheet, "", cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
+                    cellFont = excelHelperService.createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
+                    cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+                    excelHelperService.createText(sheet, "", cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
                     sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
                 }
@@ -974,9 +976,9 @@ public class WorkloadReportService {
                 startingDataNonAdminRowNumber = endingNonAdminRowNumber + 2;
                 endingDataNonAdminRowNumber = startingDataNonAdminRowNumber + 13;
 
-                cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, true, true, true, true, true);
-                createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, true, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
                 sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
                 startingDataNonAdminRowNumber = endingNonAdminRowNumber + 1;
@@ -988,9 +990,9 @@ public class WorkloadReportService {
                 for (int i = 1; i < 15; i++) {
                     startingDataNonAdminRowNumber = endingDataNonAdminRowNumber + 1;
                     endingDataNonAdminRowNumber = startingDataNonAdminRowNumber;
-                    cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
-                    cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
-                    createText(sheet, "", cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
+                    cellFont = excelHelperService.createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
+                    cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, true, true, true, true, true);
+                    excelHelperService.createText(sheet, "", cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
                     sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
                 }
@@ -1001,9 +1003,9 @@ public class WorkloadReportService {
                 startingDataNonAdminColumnNumber = endingDataNonAdminColumnNumber + 1;
                 endingDataNonAdminColumnNumber = startingDataNonAdminColumnNumber + 1;
 
-                cellFont = createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, true, true, true, true, true);
-                createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.notapplicable.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, true, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.notapplicable.name", null, cellFormat, startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber);
                 sheet.mergeCells(startingDataNonAdminColumnNumber, startingDataNonAdminRowNumber, endingDataNonAdminColumnNumber, endingDataNonAdminRowNumber);
 
 
@@ -1016,97 +1018,97 @@ public class WorkloadReportService {
                 int startingTotalEverythingColumnNumber = startingColumnFrame;
                 int endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber + 9;
 
-                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
                 sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
                 startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
                 endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber + 4;
 
-                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, VerticalAlignment.CENTRE, Alignment.RIGHT, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "workloadReport.total.name", null, cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, VerticalAlignment.CENTRE, Alignment.RIGHT, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.total.name", null, cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
                 sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
                 startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
                 endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
-                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
                 sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
                 startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
                 endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
-                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, String.valueOf(simplifiedWorkload.getTotal11thDayCount()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, String.valueOf(simplifiedWorkload.getTotal11thDayCount()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
                 sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
                 startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
                 endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
-                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, String.valueOf(simplifiedWorkload.getTotalCreditHours()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, String.valueOf(simplifiedWorkload.getTotalCreditHours()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
                 sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
                 startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
                 endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
-                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, String.valueOf(simplifiedWorkload.getTotalLectureHours()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, String.valueOf(simplifiedWorkload.getTotalLectureHours()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
                 sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
                 startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
                 endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
-                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
                 sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
                 startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
                 endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
-                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, String.valueOf(simplifiedWorkload.getTotalLabHours()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, String.valueOf(simplifiedWorkload.getTotalLabHours()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
                 sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
                 startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
                 endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
-                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
                 sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
                 startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
                 endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
-                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.RED, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, String.valueOf(simplifiedWorkload.getTotalTotalIUs()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.RED, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, String.valueOf(simplifiedWorkload.getTotalTotalIUs()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
                 sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
                 startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
                 endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
-                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.ORANGE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "N/A", cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
                 sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
                 startingTotalEverythingColumnNumber = endingTotalEverythingColumnNumber + 1;
                 endingTotalEverythingColumnNumber = startingTotalEverythingColumnNumber;
 
-                cellFont = createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, String.valueOf(simplifiedWorkload.getTotalSsch()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, String.valueOf(simplifiedWorkload.getTotalSsch()), cellFormat, startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber);
                 sheet.mergeCells(startingTotalEverythingColumnNumber, startingTotalEverythingRowNumber, endingTotalEverythingColumnNumber, endingTotalEverythingRowNumber);
 
 
@@ -1119,25 +1121,25 @@ public class WorkloadReportService {
                 int startingAddCommentsColumnNumber = startingColumnFrame;
                 int endingAddCommentsColumnNumber = endingColumnFrame;
 
-                cellFont = createCellFont("workloadReport.comments.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.GRAY_25, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "workloadReport.comments.name", null, cellFormat, startingAddCommentsColumnNumber, startingAddCommentsRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.comments.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.GRAY_25, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.comments.name", null, cellFormat, startingAddCommentsColumnNumber, startingAddCommentsRowNumber);
                 sheet.mergeCells(startingAddCommentsColumnNumber, startingAddCommentsRowNumber, endingAddCommentsColumnNumber, endingAddCommentsRowNumber);
 
                 startingAddCommentsRowNumber = endingAddCommentsRowNumber + 1;
                 endingAddCommentsRowNumber = startingAddCommentsRowNumber + 7;
 
-                cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, VerticalAlignment.CENTRE, Alignment.LEFT, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "", cellFormat, startingAddCommentsColumnNumber, startingAddCommentsRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, VerticalAlignment.CENTRE, Alignment.LEFT, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "", cellFormat, startingAddCommentsColumnNumber, startingAddCommentsRowNumber);
                 sheet.mergeCells(startingAddCommentsColumnNumber, startingAddCommentsRowNumber, endingAddCommentsColumnNumber, endingAddCommentsRowNumber);
 
                 startingAddCommentsRowNumber = endingAddCommentsRowNumber + 1;
                 endingAddCommentsRowNumber = startingAddCommentsRowNumber;
 
-                cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, VerticalAlignment.CENTRE, Alignment.LEFT, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "", cellFormat, startingAddCommentsColumnNumber, startingAddCommentsRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, VerticalAlignment.CENTRE, Alignment.LEFT, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "", cellFormat, startingAddCommentsColumnNumber, startingAddCommentsRowNumber);
                 sheet.mergeCells(startingAddCommentsColumnNumber, startingAddCommentsRowNumber, endingAddCommentsColumnNumber, endingAddCommentsRowNumber);
 
                 // *****************************************************************************************************
@@ -1149,9 +1151,9 @@ public class WorkloadReportService {
                 int startingSignatureColumnNumber = startingColumnFrame;
                 int endingSignatureColumnNumber = startingSignatureColumnNumber + 5;
 
-                cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
                 sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
 
@@ -1161,26 +1163,26 @@ public class WorkloadReportService {
                 startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
                 endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
                 sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
                 startingSignatureRowNumber = endingSignatureRowNumber + 1;
                 endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "workloadReport.chair.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.chair.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
                 sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
 
                 startingSignatureRowNumber = endingSignatureRowNumber + 1;
                 endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "workloadReport.dean.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.dean.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
                 sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
                 startingSignatureRowNumber = endingSignatureRowNumber + 1;
@@ -1198,59 +1200,25 @@ public class WorkloadReportService {
                 startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
                 endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "workloadReport.signatures.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.signatures.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
                 sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
                 startingSignatureRowNumber = endingSignatureRowNumber + 1;
                 endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
                 sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
                 startingSignatureRowNumber = endingSignatureRowNumber + 1;
                 endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
-
-                startingSignatureRowNumber = endingSignatureRowNumber + 1;
-                endingSignatureRowNumber = startingSignatureRowNumber;
-
-           /* cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-            createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);*/
-
-                startingSignatureColumnNumber = endingSignatureColumnNumber + 1;
-                endingSignatureColumnNumber = startingSignatureColumnNumber + 1;
-
-                startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
-                endingSignatureRowNumber = startingSignatureRowNumber + 1;
-
-                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "workloadReport.date.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
-                startingSignatureRowNumber = endingSignatureRowNumber + 1;
-                endingSignatureRowNumber = startingSignatureRowNumber + 1;
-
-                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
-                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
-
-                startingSignatureRowNumber = endingSignatureRowNumber + 1;
-                endingSignatureRowNumber = startingSignatureRowNumber + 1;
-
-                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
                 sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
                 startingSignatureRowNumber = endingSignatureRowNumber + 1;
@@ -1267,24 +1235,58 @@ public class WorkloadReportService {
                 startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
                 endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-                cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "workloadReport.names.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.date.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
                 sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
                 startingSignatureRowNumber = endingSignatureRowNumber + 1;
                 endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-                cellFont = createCellFont("workloadReport.signatures.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, simplifiedWorkload.getChairNameAndSurname(), cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
                 sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
                 startingSignatureRowNumber = endingSignatureRowNumber + 1;
                 endingSignatureRowNumber = startingSignatureRowNumber + 1;
 
-                cellFont = createCellFont("workloadReport.signatures.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, simplifiedWorkload.getDeanNameAndSurname(), cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+
+                startingSignatureRowNumber = endingSignatureRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber;
+
+           /* cellFont = createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+            cellFormat = createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+            createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+            sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);*/
+
+                startingSignatureColumnNumber = endingSignatureColumnNumber + 1;
+                endingSignatureColumnNumber = startingSignatureColumnNumber + 1;
+
+                startingSignatureRowNumber = endingAddCommentsRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber + 1;
+
+                cellFont = excelHelperService.createCellFont("workloadReport.administrativeCol1.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "workloadReport.names.name", null, cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+                startingSignatureRowNumber = endingSignatureRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber + 1;
+
+                cellFont = excelHelperService.createCellFont("workloadReport.signatures.name.fontsize", Colour.BLACK, true);
+                cellFormat =excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, simplifiedWorkload.getChairNameAndSurname(), cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
+
+                startingSignatureRowNumber = endingSignatureRowNumber + 1;
+                endingSignatureRowNumber = startingSignatureRowNumber + 1;
+
+                cellFont = excelHelperService.createCellFont("workloadReport.signatures.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.WHITE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, simplifiedWorkload.getDeanNameAndSurname(), cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
                 sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
                 startingSignatureRowNumber = endingSignatureRowNumber + 1;
@@ -1301,9 +1303,9 @@ public class WorkloadReportService {
                 endingSignatureRowNumber = startingSignatureRowNumber + 6;
 
 
-                cellFont = createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
-                cellFormat = createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
-                createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
+                cellFont = excelHelperService.createCellFont("workloadReport.regularvalue.name.fontsize", Colour.BLACK, true);
+                cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, false, true, true, true, true);
+                excelHelperService.createText(sheet, "", cellFormat, startingSignatureColumnNumber, startingSignatureRowNumber);
                 sheet.mergeCells(startingSignatureColumnNumber, startingSignatureRowNumber, endingSignatureColumnNumber, endingSignatureRowNumber);
 
                 //Writes out the data held in this workbook in Excel format
@@ -1385,42 +1387,6 @@ public class WorkloadReportService {
         return workloadReport;
     }
 
-    private WritableFont createCellFont(String propertyNameForFontSize, Colour color, boolean isBold) throws WriteException {
-        WritableFont cellFont = new WritableFont(WritableFont.ARIAL,
-                Integer.valueOf(messageSource.getMessage(propertyNameForFontSize, null, Locale.US)),
-                (isBold) ? WritableFont.BOLD : WritableFont.NO_BOLD);
-        cellFont.setColour(color);
-        return cellFont;
-    }
-
-    private WritableCellFormat createCellFormat(WritableFont cellFont, Colour backroundColor, BorderLineStyle borderStyle, boolean isWrapped, boolean hasTopBorder, boolean hasLeftBorder, boolean hasRightBorder, boolean hasBottomBorder) throws WriteException {
-        return createCellFormat(cellFont, backroundColor, VerticalAlignment.CENTRE, Alignment.CENTRE, borderStyle, isWrapped, hasTopBorder, hasLeftBorder, hasRightBorder, hasBottomBorder);
-    }
-
-    private WritableCellFormat createCellFormat(WritableFont cellFont, Colour backroundColor, VerticalAlignment verticalAlignment, Alignment horizontalAlignment, BorderLineStyle borderStyle, boolean isWrapped, boolean hasTopBorder, boolean hasLeftBorder, boolean hasRightBorder, boolean hasBottomBorder) throws WriteException {
-        WritableCellFormat cellFormat = new WritableCellFormat(cellFont);
-        cellFormat.setBackground(backroundColor);
-        cellFormat.setAlignment(horizontalAlignment);
-        cellFormat.setWrap(isWrapped);
-        cellFormat.setVerticalAlignment(verticalAlignment);
-        cellFormat.setBorder(Border.TOP, (hasTopBorder) ? borderStyle : BorderLineStyle.NONE);
-        cellFormat.setBorder(Border.LEFT, (hasLeftBorder) ? borderStyle : BorderLineStyle.NONE);
-        cellFormat.setBorder(Border.RIGHT, (hasRightBorder) ? borderStyle : BorderLineStyle.NONE);
-        cellFormat.setBorder(Border.BOTTOM, (hasBottomBorder) ? borderStyle : BorderLineStyle.NONE);
-        return cellFormat;
-    }
-
-    private void createText(WritableSheet sheet, String propertyName, Object[] appendedTextValues, WritableCellFormat cell, int startingColIndex, int startingRowIndex) throws WriteException {
-        Label label = new Label(startingColIndex, startingRowIndex,
-                messageSource.getMessage(propertyName, appendedTextValues, Locale.US), cell);
-        sheet.addCell(label);
-    }
-
-    private void createText(WritableSheet sheet, String textValue, WritableCellFormat cell, int startingColIndex, int startingRowIndex) throws WriteException {
-        Label label = new Label(startingColIndex, startingRowIndex,
-                textValue, cell);
-        sheet.addCell(label);
-    }
 
     private List<TypeSafeRawWorkload> convertRawToTypeSafeData(List<RawWorkload> rawWorkloads) {
 

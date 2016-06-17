@@ -30,8 +30,8 @@ import java.util.Set;
 /**
  * Created by txcakaloglu on 6/15/16.
  */
-@Component
-@Service
+//@Component
+//@Service
 public class EmployeeSyncronizationService extends BatchService {
 
 
@@ -46,7 +46,7 @@ public class EmployeeSyncronizationService extends BatchService {
         validator = validatorFactory.getValidator();
     }
 
-    @Scheduled(fixedDelay = SchedulingConstant.WORKLOAD_REPORT_SERVICE_EXECUTE_FIXED_DELAY)
+  //  @Scheduled(fixedDelay = SchedulingConstant.WORKLOAD_REPORT_SERVICE_EXECUTE_FIXED_DELAY)
     public void executeService() {
 
         List<FTPFile> ftpFiles = ftpService.listFiles(getPrefixNameOfFTPFile() + "*.txt");

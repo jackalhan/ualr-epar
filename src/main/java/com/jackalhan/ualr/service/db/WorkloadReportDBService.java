@@ -3,8 +3,10 @@ package com.jackalhan.ualr.service.db;
 import com.jackalhan.ualr.domain.model.Faculty;
 import com.jackalhan.ualr.domain.model.WorkloadReport;
 import com.jackalhan.ualr.domain.model.WorkloadReportTerm;
+import com.jackalhan.ualr.domain.model.WorkloadReportValues;
 import com.jackalhan.ualr.repository.WorkloadReportRepository;
 import com.jackalhan.ualr.repository.WorkloadReportTermRepository;
+import com.jackalhan.ualr.repository.WorkloadReportValuesRepository;
 import com.jackalhan.ualr.service.utils.StringUtilService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +29,8 @@ public class WorkloadReportDBService {
     private WorkloadReportRepository workloadReportRepository;
     @Autowired
     private WorkloadReportTermRepository workloadReportTermRepository;
+    @Autowired
+    private WorkloadReportValuesRepository workloadReportValuesRepository;
 
 
     @Transactional
@@ -110,6 +114,18 @@ public class WorkloadReportDBService {
     public List<WorkloadReport>  listAllWorkloadReportsBasedOnWorkloadReportTermId(Long workloadReportTermId) {
         log.info("listAllWorkloadReportsBasedOnWorkloadReportTermId " + " listed successfully");
         return workloadReportRepository.findByWorkloadReportTermIdOrderByInstructorNameSurnameAsc(workloadReportTermId);
+    }
+
+    @Transactional
+    public List<WorkloadReport>  listAllWorkloadReportsBasedOnWorkloadReportTermIdOrderByDepartmentCode(Long workloadReportTermId) {
+        log.info("listAllWorkloadReportsBasedOnWorkloadReportTermId " + " listed successfully");
+        return workloadReportRepository.findByWorkloadReportTermIdOrderByDepartmentCode(workloadReportTermId);
+    }
+
+    @Transactional
+    public List<WorkloadReportValues>  listAllWorkloadReportValuesBasedOnWorkloadReportTermId(Long workloadReportId) {
+        log.info("listAllWorkloadReportValuesBasedOnWorkloadReportTermId " + " listed successfully");
+        return workloadReportValuesRepository.findByWorkloadReportId(workloadReportId);
     }
 
 

@@ -87,12 +87,16 @@
                             <td th:text="${facultyWorkloadsReportTerm.importedFileDate}"></td>
                             <td>
                                 <div class="pull-right hidden-phone">
-                                    <a href="workload_reports_downloaded.html" th:href="${'allWorkloadsOfEachImportedFileDateforAllDepartmentAsAZipBasedOnImportedFileDate?workloadReportTermId=' + facultyWorkloadsReportTerm.id}" target="_blank"><button class="btn btn-default btn-sm"><i class="fa fa-download"></i>
-                                    </button></a>
+                                    <a href="workload_reports_downloaded.html" th:href="${'summaryReportOfAllWorkloadsOfEachImportedFileDateforAllDepartment?workloadReportTermId=' + facultyWorkloadsReportTerm.id}" title="Download Summary Report" target="_blank"><button class="btn btn-default btn-sm"><i class="fa fa-file-excel-o"></i>
+                                    </button></a>&nbsp;
                                 </div>
                                 <div class="pull-right hidden-phone">
-                                    <a href="workload_reports_department.html" th:href="${'workload_reports_department?workloadReportTermId='+ facultyWorkloadsReportTerm.id}"><button class="btn btn-default btn-sm"><i class="fa fa-search"></i>
-                                    </button></a>
+                                    <a href="workload_reports_downloaded.html" th:href="${'allWorkloadsOfEachImportedFileDateforAllDepartmentAsAZipBasedOnImportedFileDate?workloadReportTermId=' + facultyWorkloadsReportTerm.id}"  title="Download All Work Loads" target="_blank"><button class="btn btn-default btn-sm"><i class="fa fa-download"></i>
+                                    </button></a>&nbsp;
+                                </div>
+                                <div class="pull-right hidden-phone">
+                                    <a href="workload_reports_department.html" th:href="${'workload_reports_department?workloadReportTermId='+ facultyWorkloadsReportTerm.id}" title="Browse Departments"><button class="btn btn-default btn-sm"><i class="fa fa-search"></i>
+                                    </button></a>&nbsp;
                                 </div>
                                 <!--<div class="pull-right hidden-phone">
                                     <a href="workload_reports.html" th:href="${'workload_reports?workloadReportTermId='+ facultyWorkloadsReportTerm.id}"><button class="btn btn-default btn-sm"><i class="fa fa-search"></i>
