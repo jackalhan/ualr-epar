@@ -5,7 +5,9 @@ package com.jackalhan.ualr.enums;
  */
 public enum InstructionTypeEnum {
     PEDAGOGICAL("PED"),
-    INDIVIDUALIZED("IND");
+    INDIVIDUALIZED("IND"),
+    ADMINISTRATIVE("ADM"),
+    NONADMINISTRATIVE("NON");
 
     private String type;
     private InstructionTypeEnum(String type) {

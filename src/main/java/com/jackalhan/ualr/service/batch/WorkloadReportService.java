@@ -581,7 +581,7 @@ public class WorkloadReportService {
                         endingColHeadercolumnNumber = startingColHeadercolumnNumber;
                     }
 
-                    columnTitle = "workloadReport.column." + i + ".name";
+                    columnTitle = "summary_reports.column." + i + ".name";
 
                     cellFont = excelHelperService.createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
                     cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, true, true, true, true, true);
@@ -1376,6 +1376,7 @@ public class WorkloadReportService {
                 workloadReportValues.setTotalIus(typeSafeRawWorkload.getTotalIus());
                 workloadReportValues.setOtherInstructorsInTeam(typeSafeRawWorkload.getOtherInstructorsInTeam());
                 workloadReportValues.setTotalSsch(typeSafeRawWorkload.getTotalSsch());
+                workloadReportValues.setWorkloadReport(workloadReport);
                 workloadReportValuesList.add(workloadReportValues);
             }
             workloadReport.setWorkloadReportValuesList(workloadReportValuesList);

@@ -1,6 +1,9 @@
 package com.jackalhan.ualr.service.utils;
 
+import com.jackalhan.ualr.domain.ExcelTemplate;
 import com.jackalhan.ualr.service.LogService;
+import com.jackalhan.ualr.service.db.FacultyDBService;
+import com.jackalhan.ualr.service.db.WorkloadReportDBService;
 import jxl.format.*;
 import jxl.format.Alignment;
 import jxl.format.Border;
@@ -22,6 +25,20 @@ import java.util.Locale;
 @Service
 public abstract class ExcelHelperService extends LogService {
 
+
+    public final int excelZoomFactor = 85;
+    public final int excelScaleFactor = 50;
+    public final double excelLeftMargin = 0.75;
+    public final double excelRightMargin = 0.75;
+    public final double excelTopMargin = 0.30;
+    public final double excelBottomMargin = 0.33;
+
+
+    @Autowired
+    public WorkloadReportDBService workloadReportDBService;
+
+    @Autowired
+    public FacultyDBService facultyDBService;
 
     @Autowired
     public MessageSource messageSource;
@@ -67,4 +84,45 @@ public abstract class ExcelHelperService extends LogService {
                 textValue, cell);
         sheet.addCell(label);
     }
+
+    public ExcelTemplate createPartsInExcel(ExcelTemplate excelTemplate) {
+
+
+
+        try {
+            excelTemplate.setCellFont(createCellFont(excelTemplate.getLabelFontSizePropertyName(), excelTemplate.getCellFontColor(), true));
+            excelTemplate.setWritableCellFormat(createCellFormat(
+                    excelTemplate.getCellFont(),
+                    excelTemplate.getCellBackgroundColor(),
+                    excelTemplate.getCellVerticalAlignment(),
+                    excelTemplate.getCellHorizontalAlignment(),
+                    excelTemplate.getCellBorderLineStyle(),
+                    excelTemplate.isCellWrapped(),
+                    excelTemplate.isHasCellTopBorder(),
+                    excelTemplate.isHasCellLeftBorder(),
+                    excelTemplate.isHasCellRightBorder(),
+                    excelTemplate.isHasCellBottomBorder()));
+            excelTemplate.getSheet().mergeCells(excelTemplate.getStartingColumnNumber(), excelTemplate.getStartingRowNumber(), excelTemplate.getEndingColumnNumber(), excelTemplate.getEndingRowNumber());
+
+            if (!excelTemplate.isLabelReceivedFromProperties())
+            {
+                createText(excelTemplate.getSheet(), excelTemplate.getLabelNameOrValue(), null, excelTemplate.getWritableCellFormat(), excelTemplate.getStartingColumnNumber(), excelTemplate.getStartingRowNumber());
+            }
+            else
+            {
+                createText(excelTemplate.getSheet(), excelTemplate.getLabelNameOrValue(), excelTemplate.getValues(), excelTemplate.getWritableCellFormat(), excelTemplate.getStartingColumnNumber(), excelTemplate.getStartingRowNumber());
+
+            }
+            excelTemplate.setStartingColumnNumber(excelTemplate.getEndingColumnNumber() + 1);
+            excelTemplate.setStartingRowNumber(excelTemplate.getEndingRowNumber() + 1);
+
+        }
+        catch (Exception ex)
+        {
+            getLog().error(" createPartsInExcel has errors " + ex.toString());
+        }
+        return excelTemplate;
+    }
+
+
 }

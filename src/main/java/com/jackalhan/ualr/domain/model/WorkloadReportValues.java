@@ -63,6 +63,7 @@ public class WorkloadReportValues extends AbstractAuditingEntity implements Seri
 
     private double totalSsch;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="workload_report_id", referencedColumnName = "id")
     private WorkloadReport workloadReport;

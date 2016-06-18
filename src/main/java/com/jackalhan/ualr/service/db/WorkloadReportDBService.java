@@ -99,6 +99,12 @@ public class WorkloadReportDBService {
     }
 
     @Transactional
+    public List<WorkloadReport>  listAllGroupByDepartmentNameAndCodeOrderedByDepartmentNameBasedOnTermIdAndDepartmentCode(Long workloadReportTermId,String departmentCode) {
+        log.info("listAllGroupByDepartmentNameAndCodeOrderedByDepartmentNameBasedOnTermIdAndDepartmentCode " + " listed successfully");
+        return workloadReportRepository.listAllGroupByDepartmentNameAndCodeOrderedByDepartmentName(workloadReportTermId, departmentCode);
+    }
+
+    @Transactional
     public WorkloadReport listOneWorkloadReportsBasedOnId(Long workloadReportId) {
         log.info("listOneWorkloadReportsBasedOnId " + " listed successfully");
         return workloadReportRepository.getOne(workloadReportId);
@@ -127,6 +133,12 @@ public class WorkloadReportDBService {
         log.info("listAllWorkloadReportValuesBasedOnWorkloadReportTermId " + " listed successfully");
         return workloadReportValuesRepository.findByWorkloadReportId(workloadReportId);
     }
+/*
+    @Transactional
+    public List<WorkloadReport>  listAllGroupByDepartmentCodeOrderedByDepartmentCodeBasedOnTermId(Long workloadReportTermId) {
+        log.info("listAllGroupByDepartmentCodeOrderedByDepartmentCodeBasedOnTermId " + " listed successfully");
+        return workloadReportRepository.listAllGroupByDepartmentCodeOrderedByDepartmentCode(workloadReportTermId);
+    }*/
 
 
 
