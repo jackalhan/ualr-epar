@@ -145,7 +145,7 @@ public class SummarizeReportService extends ExcelHelperService {
                 // *****************************************************************************************************
                 //DEPARTMENT HEADER
                 excelTemplate.setCellFontColor(Colour.BLACK);
-                excelTemplate.setLabelFontSizePropertyName("summary_reports.column.value.fontSize");
+                excelTemplate.setLabelFontSizePropertyName("summary_reports.department.name.fontsize");
 
                 excelTemplate.setCellBackgroundColor(Colour.PALE_BLUE);
                 excelTemplate.setCellBorderLineStyle(BorderLineStyle.THICK);
@@ -201,7 +201,7 @@ public class SummarizeReportService extends ExcelHelperService {
                     // *****************************************************************************************************
                     // INSTRUCTOR
                     excelTemplate.setCellFontColor(Colour.BLACK);
-                    excelTemplate.setLabelFontSizePropertyName("summary_reports.column.name.fontSize");
+                    excelTemplate.setLabelFontSizePropertyName("summary_reports.column.value.fontSize");
                     excelTemplate.setCellBackgroundColor(Colour.WHITE);
                     excelTemplate.setCellBorderLineStyle(BorderLineStyle.THIN);
                     excelTemplate.setCellHorizontalAlignment(Alignment.CENTRE);
