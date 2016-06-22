@@ -42,7 +42,7 @@ public class SummarizeReportService extends ExcelHelperService {
             WritableSheet sheet = workbook.createSheet(messageSource.getMessage("summary_report.sheet.name", new Object[]{faculty.getShortName(), workloadReportTerm.getSemesterTerm() + " " + workloadReportTerm.getSemesterYear()}, Locale.US), 0);
             ExcelTemplate excelTemplate = new ExcelTemplate();
             final int startingColumnFrame = 1;
-            final int endingColumnFrame = 25;
+            final int endingColumnFrame = 15;
 
             int startingRowNumber = 1;
             int endingRowNumber = 3;
@@ -126,10 +126,10 @@ public class SummarizeReportService extends ExcelHelperService {
                 } else {
                     subColumnStartingColumnNumber = excelTemplate.getStartingColumnNumber();
                     excelTemplate.setStartingColumnNumber(subColumnStartingColumnNumber);
-                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber() + 1);
+                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber());
                 }
                 excelTemplate.setStartingRowNumber(startingRowNumber);
-                excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber() + 4);
+                excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber() + 5);
                 excelTemplate.setLabelNameOrValue("summary_reports.column." + i + ".name");
                 excelTemplate.setLabelReceivedFromProperties(true);
                 excelTemplate.setValues(null);
@@ -214,7 +214,7 @@ public class SummarizeReportService extends ExcelHelperService {
                     excelTemplate.setStartingColumnNumber(startingColumnFrame);
                     excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber() + 4);
                     excelTemplate.setStartingRowNumber(startingRowNumber);
-                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber() + 2);
+                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber());
                     excelTemplate.setLabelNameOrValue(workloadReport.getInstructorNameSurname());
                     excelTemplate.setLabelReceivedFromProperties(false);
                     excelTemplate.setValues(null);
@@ -222,9 +222,9 @@ public class SummarizeReportService extends ExcelHelperService {
                     excelTemplate = (ExcelTemplate) createPartsInExcel(excelTemplate).clone();
                     // TA SUPPORT
                     excelTemplate.setStartingColumnNumber(excelTemplate.getStartingColumnNumber());
-                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber() + 1);
+                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber());
                     excelTemplate.setStartingRowNumber(startingRowNumber);
-                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber() + 2);
+                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber());
 
                     excelTemplate.setLabelNameOrValue(String.valueOf(simplifiedWorkload.getTotalTaSupport()));
                     excelTemplate.setLabelReceivedFromProperties(false);
@@ -232,9 +232,9 @@ public class SummarizeReportService extends ExcelHelperService {
                     excelTemplate = (ExcelTemplate) createPartsInExcel(excelTemplate).clone();
                     // 11TH DAY
                     excelTemplate.setStartingColumnNumber(excelTemplate.getStartingColumnNumber());
-                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber() + 1);
+                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber());
                     excelTemplate.setStartingRowNumber(startingRowNumber);
-                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber() + 2);
+                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber());
 
                     excelTemplate.setLabelNameOrValue(String.valueOf(simplifiedWorkload.getTotal11thDayCount()));
                     excelTemplate.setLabelReceivedFromProperties(false);
@@ -243,9 +243,9 @@ public class SummarizeReportService extends ExcelHelperService {
 
                     // CREDIT HOURS
                     excelTemplate.setStartingColumnNumber(excelTemplate.getStartingColumnNumber());
-                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber() + 1);
+                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber());
                     excelTemplate.setStartingRowNumber(startingRowNumber);
-                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber() + 2);
+                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber());
 
                     excelTemplate.setLabelNameOrValue(String.valueOf(simplifiedWorkload.getTotalCreditHours()));
                     excelTemplate.setLabelReceivedFromProperties(false);
@@ -254,9 +254,9 @@ public class SummarizeReportService extends ExcelHelperService {
 
                     // LECTURE HOURS
                     excelTemplate.setStartingColumnNumber(excelTemplate.getStartingColumnNumber());
-                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber() + 1);
+                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber());
                     excelTemplate.setStartingRowNumber(startingRowNumber);
-                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber() + 2);
+                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber());
 
                     excelTemplate.setLabelNameOrValue(String.valueOf(simplifiedWorkload.getTotalLectureHours()));
                     excelTemplate.setLabelReceivedFromProperties(false);
@@ -265,9 +265,9 @@ public class SummarizeReportService extends ExcelHelperService {
 
                     // LAB HOURS
                     excelTemplate.setStartingColumnNumber(excelTemplate.getStartingColumnNumber());
-                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber() + 1);
+                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber());
                     excelTemplate.setStartingRowNumber(startingRowNumber);
-                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber() + 2);
+                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber());
 
                     excelTemplate.setLabelNameOrValue(String.valueOf(simplifiedWorkload.getTotalLabHours()));
                     excelTemplate.setLabelReceivedFromProperties(false);
@@ -276,9 +276,9 @@ public class SummarizeReportService extends ExcelHelperService {
 
                     // INDV INST HOURS
                     excelTemplate.setStartingColumnNumber(excelTemplate.getStartingColumnNumber());
-                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber() + 1);
+                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber());
                     excelTemplate.setStartingRowNumber(startingRowNumber);
-                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber() + 2);
+                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber());
 
                     excelTemplate.setLabelNameOrValue(String.valueOf(individualInstructionHours));
                     excelTemplate.setLabelReceivedFromProperties(false);
@@ -287,9 +287,9 @@ public class SummarizeReportService extends ExcelHelperService {
 
                     // ADMIN TOTAL
                     excelTemplate.setStartingColumnNumber(excelTemplate.getStartingColumnNumber());
-                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber() + 1);
+                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber());
                     excelTemplate.setStartingRowNumber(startingRowNumber);
-                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber() + 2);
+                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber());
 
                     excelTemplate.setLabelNameOrValue(String.valueOf(administrativeTotal));
                     excelTemplate.setLabelReceivedFromProperties(false);
@@ -298,9 +298,9 @@ public class SummarizeReportService extends ExcelHelperService {
 
                     // NON-ADMIN TOTAL
                     excelTemplate.setStartingColumnNumber(excelTemplate.getStartingColumnNumber());
-                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber() + 1);
+                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber());
                     excelTemplate.setStartingRowNumber(startingRowNumber);
-                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber() + 2);
+                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber());
 
                     excelTemplate.setLabelNameOrValue(String.valueOf(nonadministrativeTotal));
                     excelTemplate.setLabelReceivedFromProperties(false);
@@ -309,9 +309,9 @@ public class SummarizeReportService extends ExcelHelperService {
 
                     // TOTAL IU
                     excelTemplate.setStartingColumnNumber(excelTemplate.getStartingColumnNumber());
-                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber() + 1);
+                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber());
                     excelTemplate.setStartingRowNumber(startingRowNumber);
-                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber() + 2);
+                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber());
 
                     excelTemplate.setLabelNameOrValue(String.valueOf(simplifiedWorkload.getTotalTotalIUs()));
                     excelTemplate.setLabelReceivedFromProperties(false);
@@ -320,9 +320,9 @@ public class SummarizeReportService extends ExcelHelperService {
 
                     // TOTAL SSCH
                     excelTemplate.setStartingColumnNumber(excelTemplate.getStartingColumnNumber());
-                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber() + 1);
+                    excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber());
                     excelTemplate.setStartingRowNumber(startingRowNumber);
-                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber() + 2);
+                    excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber());
 
                     excelTemplate.setLabelNameOrValue(String.valueOf(simplifiedWorkload.getTotalSsch()));
                     excelTemplate.setLabelReceivedFromProperties(false);
