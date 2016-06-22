@@ -97,7 +97,7 @@ public class SummarizeReportService extends ExcelHelperService {
             excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber() + 2);
             excelTemplate.setLabelNameOrValue("summary_reports.subtitle.name");
             excelTemplate.setLabelReceivedFromProperties(true);
-            excelTemplate.setValues(new Object[]{workloadReportTerm.getSemesterTerm() + " " + workloadReportTerm.getSemesterYear(), workloadReportTerm.getImportedFileDate()});
+            excelTemplate.setValues(new Object[]{workloadReportTerm.getSemesterTerm() + " - " + workloadReportTerm.getSemesterYear(), workloadReportTerm.getImportedFileDate()});
 
             excelTemplate = (ExcelTemplate) createPartsInExcel(excelTemplate).clone();
 
@@ -129,7 +129,7 @@ public class SummarizeReportService extends ExcelHelperService {
                     excelTemplate.setEndingColumnNumber(excelTemplate.getStartingColumnNumber() + 1);
                 }
                 excelTemplate.setStartingRowNumber(startingRowNumber);
-                excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber() + 3);
+                excelTemplate.setEndingRowNumber(excelTemplate.getStartingRowNumber() + 4);
                 excelTemplate.setLabelNameOrValue("summary_reports.column." + i + ".name");
                 excelTemplate.setLabelReceivedFromProperties(true);
                 excelTemplate.setValues(null);
@@ -145,7 +145,7 @@ public class SummarizeReportService extends ExcelHelperService {
                 // *****************************************************************************************************
                 //DEPARTMENT HEADER
                 excelTemplate.setCellFontColor(Colour.BLACK);
-                excelTemplate.setLabelFontSizePropertyName("summary_reports.department.name.fontsize");
+                excelTemplate.setLabelFontSizePropertyName("summary_reports.column.value.fontSize");
 
                 excelTemplate.setCellBackgroundColor(Colour.PALE_BLUE);
                 excelTemplate.setCellBorderLineStyle(BorderLineStyle.THICK);
