@@ -11,7 +11,7 @@ public class RawEmployeeWithValidationResult {
 
     private boolean hasInvalidatedData;
     private String caughtErrors;
-    private List<RawEmployee> rawWorkloadList;
+    private List<RawEmployee> rawEmployeeList;
 
 
     public boolean isHasInvalidatedData() {
@@ -22,12 +22,12 @@ public class RawEmployeeWithValidationResult {
         this.hasInvalidatedData = hasInvalidatedData;
     }
 
-    public List<RawEmployee> getRawWorkloadList() {
-        return rawWorkloadList;
+    public List<RawEmployee> getRawEmployeeList() {
+        return rawEmployeeList;
     }
 
-    public void setRawWorkloadList(List<RawEmployee> rawWorkloadList) {
-        this.rawWorkloadList = rawWorkloadList;
+    public void setRawEmployeeList(List<RawEmployee> rawEmployeeList) {
+        this.rawEmployeeList = rawEmployeeList;
     }
 
     public String getCaughtErrors() {
@@ -43,7 +43,7 @@ public class RawEmployeeWithValidationResult {
         return "RawEmployeeWithValidationResult{" +
                 "hasInvalidatedData=" + hasInvalidatedData +
                 ", caughtErrors='" + caughtErrors + '\'' +
-                ", rawWorkloadList=" + rawWorkloadList +
+                ", rawEmployeeList=" + rawEmployeeList +
                 '}';
     }
 }

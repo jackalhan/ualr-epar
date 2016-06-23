@@ -27,6 +27,8 @@ public class FTPConfiguration {
     private String fileTempPath;
     @Value("${ftp.file.error.path}")
     private String fileErrorPath;
+    @Value("${ftp.file.ignored.path}")
+    private String fileIgnoredPath;
 
 
     public String getFileProcessedPath() {
@@ -61,6 +63,10 @@ public class FTPConfiguration {
         return fileErrorPath;
     }
 
+    public String getFileIgnoredPath() {
+        return fileIgnoredPath;
+    }
+
     @Override
     public String toString() {
         return "FTPConfiguration{" +
@@ -72,6 +78,7 @@ public class FTPConfiguration {
                 ", fileProcessedPath=" + fileProcessedPath +
                 ", fileTempPath=" + fileTempPath +
                 ", fileErrorPath=" + fileErrorPath +
+                ", fileIgnoredPath=" + fileIgnoredPath+
                 '}';
     }
 }

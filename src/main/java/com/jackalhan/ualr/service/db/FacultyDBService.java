@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 /**
  * Created by txcakaloglu on 5/16/16.
  */
@@ -36,5 +38,11 @@ public class FacultyDBService {
     public Faculty findByCode(String code) {
         log.info("findByCode " + " listed data successfully");
         return facultyRepository.findByCode(code);
+    }
+
+    @Transactional
+    public List<Faculty> listAll() {
+        log.info("findByCode " + " listed data successfully");
+        return facultyRepository.findAll();
     }
 }
