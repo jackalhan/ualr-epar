@@ -45,6 +45,9 @@ public class Employee extends AbstractAuditingEntity implements Serializable {
     @NotNull
     private String role;
 
+    @NotNull
+    private String sourceDataName;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="department_id", referencedColumnName = "id")
     private Department department;
@@ -181,7 +184,16 @@ public class Employee extends AbstractAuditingEntity implements Serializable {
         this.citationTrendList = citationTrendList;
     }
 
-    public Employee(String name, String surname, String middleName, String tNumber, String email, String netid, String positionCode, String positionDescription, String role, Department department, List<Publication> publicationList, List<ScholarlyActivity> scholarlyActivityList, List<CitationTrend> citationTrendList, List<YearlyCitation> yearlyCitationList) {
+    public String getSourceDataName() {
+        return sourceDataName;
+    }
+
+    public void setSourceDataName(String sourceDataName) {
+        this.sourceDataName = sourceDataName;
+    }
+
+
+    public Employee(String name, String surname, String middleName, String tNumber, String email, String netid, String positionCode, String positionDescription, String role, String sourceDataName, Department department, List<Publication> publicationList, List<ScholarlyActivity> scholarlyActivityList, List<CitationTrend> citationTrendList, List<YearlyCitation> yearlyCitationList) {
         this.name = name;
         this.surname = surname;
         this.middleName = middleName;
@@ -191,6 +203,7 @@ public class Employee extends AbstractAuditingEntity implements Serializable {
         this.positionCode = positionCode;
         this.positionDescription = positionDescription;
         this.role = role;
+        this.sourceDataName = sourceDataName;
         this.department = department;
         this.publicationList = publicationList;
         this.scholarlyActivityList = scholarlyActivityList;
@@ -211,6 +224,7 @@ public class Employee extends AbstractAuditingEntity implements Serializable {
                 ", positionCode='" + positionCode + '\'' +
                 ", positionDescription='" + positionDescription + '\'' +
                 ", role='" + role + '\'' +
+                ", sourceDataName='" + sourceDataName + '\'' +
                 ", department=" + department +
                 ", publicationList=" + publicationList +
                 ", scholarlyActivityList=" + scholarlyActivityList +

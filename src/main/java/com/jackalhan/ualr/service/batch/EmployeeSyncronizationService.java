@@ -2,13 +2,11 @@ package com.jackalhan.ualr.service.batch;
 
 import com.jackalhan.ualr.constant.GenericConstant;
 import com.jackalhan.ualr.constant.SchedulingConstant;
-import com.jackalhan.ualr.domain.FTPFile;
-import com.jackalhan.ualr.domain.RawEmployee;
-import com.jackalhan.ualr.domain.RawEmployeeWithValidationResult;
-import com.jackalhan.ualr.domain.RawWorkloadWithValidationResult;
+import com.jackalhan.ualr.domain.*;
 import com.jackalhan.ualr.service.rest.FTPService;
 import com.jackalhan.ualr.service.rest.MailService;
 import com.jackalhan.ualr.service.utils.FileUtilService;
+import com.jackalhan.ualr.service.utils.StringUtilService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +24,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Created by txcakaloglu on 6/15/16.
@@ -37,63 +36,83 @@ public class EmployeeSyncronizationService extends BatchService {
 
     private ValidatorFactory validatorFactory;
     private Validator validator;
+    //private String fileName;
+    //private String NEW_MAIL_SUBJECT;
 
     @Override
     public void initialize() {
         setLog(LoggerFactory.getLogger(EmployeeSyncronizationService.class));
-        setMailSubject("Employee Syncronization Service");
+        setMailSubject("Employee Syncronization Service ");
         validatorFactory = Validation.buildDefaultValidatorFactory();
         validator = validatorFactory.getValidator();
     }
 
-  //  @Scheduled(fixedDelay = SchedulingConstant.WORKLOAD_REPORT_SERVICE_EXECUTE_FIXED_DELAY)
-    public void executeService() {
+    //  @Scheduled(fixedDelay = SchedulingConstant.WORKLOAD_REPORT_SERVICE_EXECUTE_FIXED_DELAY)
+/*    public void executeService() {
 
         List<FTPFile> ftpFiles = ftpService.listFiles(getPrefixNameOfFTPFile() + "*.txt");
         List<File> fileList = getDownloadedFiles(ftpFiles);
-        //dokumanlar sirayla islenmesi icin stream yapilacak.
-        List<RawEmployeeWithValidationResult> rawEmployeeWithValidationResults  = processFiles(fileList);
+        List<RawEmployeeWithValidationResult> rawEmployeeWithValidationResults = processAndValidateFiles(fileList);
+        if (rawEmployeeWithValidationResults.size() == 0) {
+            mailService.sendNewsletterMail(getMailSubject(), "No file found to be executed", "There is no valid file found based on expected pattern " + getPrefixNameOfFTPFile() + " in FTP server");
+        } else {
+            result = generateExcelContent(simplifiedWorkloadList, importedFileDate, importedFileTerm);
+            if (result) {
+                mailService.sendNewsletterMail(getMailSubject(), "It was completed ", "Excel files are generated based on following file " + file + ". You can view all generated files by clicking following link......");
 
-
-
-    }
-
-
-    public void evaluateValidations(List<RawEmployeeWithValidationResult> rawEmployeeWithValidationResults)
-    {
-            //buraya isHasInvalidated kontorolu yapilacak.
-
-    }
-
-
-    public List<RawEmployeeWithValidationResult> processFiles(List<File> fileList)
-    {
-        List<RawEmployeeWithValidationResult> rawEmployeeWithValidationResults = new ArrayList<RawEmployeeWithValidationResult>();
-        try
-        {
-            for(File file : fileList)
-            {
-                BufferedReader bufferedReader = FileUtilService.getInstance().getFileContent(file);
-                rawEmployeeWithValidationResults.add(parseContent(bufferedReader));
+            } else {
+                mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during excel generating", "Excel generating based on following file " + file + " is failed. ");
             }
 
+
         }
-        catch (Exception ex)
-        {
-            log.error(ex.toString());
+    }
+
+    public void saveEmployee(List<RawEmployeeWithValidationResult> rawEmployeeWithValidationResults)
+    {
+        for ()
+    }*/
+
+    public List<RawEmployeeWithValidationResult> processAndValidateFiles(List<File> fileList) {
+        List<RawEmployeeWithValidationResult> rawEmployeeWithValidationResults = new ArrayList<RawEmployeeWithValidationResult>();
+        RawEmployeeWithValidationResult rawEmployeeWithValidationResult;
+        boolean result;
+        for (File file : fileList) {
+            BufferedReader bufferedReader = FileUtilService.getInstance().getFileContent(file);
+            rawEmployeeWithValidationResult = parseContent(bufferedReader);
+            if (!rawEmployeeWithValidationResult.isHasInvalidatedData()) {
+                rawEmployeeWithValidationResults.add(parseContent(bufferedReader));
+                result = FileUtilService.getInstance().moveTo(GenericConstant.EMPLOYEE_FILES_RAWTXT_TEMP_PATH, GenericConstant.EMPLOYEE_FILES_RAWTXT_PROCESSED_PATH, file.getName());
+                if (result) {
+                    result = ftpService.moveTo(ftpConfiguration.getFileTempPath(), ftpConfiguration.getFileProcessedPath(), file.getName());
+                    if (!result) {
+                        mailService.sendNewsletterMail(getMailSubject(), "Problem occured during file ftp moving", "Problem occured during file moving in ftp. " + file + " was moving from " + ftpConfiguration.getFileTempPath() + " to " + ftpConfiguration.getFileProcessedPath());
+                    }
+
+                } else {
+                    mailService.sendNewsletterMail(getMailSubject(), "Problem occured during file moving", "Problem occured during file moving. " + file + " was moving from " + GenericConstant.EMPLOYEE_FILES_RAWTXT_TEMP_PATH + " to " + GenericConstant.EMPLOYEE_FILES_RAWTXT_PROCESSED_PATH);
+
+                }
+            } else {
+                mailService.sendNewsletterMail(getMailSubject(), "Problem occured during data parsing", rawEmployeeWithValidationResult.getCaughtErrors());
+                result = FileUtilService.getInstance().moveTo(GenericConstant.EMPLOYEE_FILES_RAWTXT_TEMP_PATH, GenericConstant.EMPLOYEE_FILES_RAWTXT_ERROR_PATH, file.getName());
+                if (!result) {
+                    result = ftpService.moveTo(ftpConfiguration.getFileTempPath(), ftpConfiguration.getFileErrorPath(), file.getName());
+                    if (!result)
+                        mailService.sendNewsletterMail(getMailSubject(), "Problem occured during file ftp moving", "Problem occured during file moving in ftp. " + file + " was moving from " + ftpConfiguration.getFileTempPath() + " to " + ftpConfiguration.getFileProcessedPath());
+                } else {
+                    mailService.sendNewsletterMail(getMailSubject(), "Problem occured during file moving", "Problem occured during file moving. " + file + " was moving from " + GenericConstant.EMPLOYEE_FILES_RAWTXT_TEMP_PATH + " to " + GenericConstant.EMPLOYEE_FILES_RAWTXT_ERROR_PATH);
+                }
+            }
         }
         return rawEmployeeWithValidationResults;
     }
 
     public List<File> getDownloadedFiles(List<FTPFile> ftpFiles) {
         List<File> files = new ArrayList<File>();
-        try {
-            for (FTPFile ftpFile : ftpFiles) {
-                files.add(FileUtilService.getInstance().getFile(GenericConstant.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH + ftpFile.getFileName()));
-            }
-
-        } catch (Exception ex) {
-            log.error(ex.toString());
+        for (FTPFile ftpFile : ftpFiles.stream().sorted((f1, f2) -> Integer.compare(f1.getFileUploadedDateAsInt(),
+                f2.getFileUploadedDateAsInt())).collect(Collectors.toList())) {
+            files.add(FileUtilService.getInstance().getFile(GenericConstant.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH + ftpFile.getFileName()));
         }
         return files;
     }

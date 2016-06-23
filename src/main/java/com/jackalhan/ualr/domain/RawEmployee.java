@@ -1,8 +1,10 @@
 package com.jackalhan.ualr.domain;
 
 import com.jackalhan.ualr.constant.ValidateMessageConstant;
+import org.hibernate.validator.constraints.Email;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.hibernate.validator.constraints.Range;
+import org.springframework.format.annotation.NumberFormat;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -40,14 +42,14 @@ public class RawEmployee implements Serializable, Cloneable {
 
     @NotNull
     @NotEmpty
+    @NumberFormat
     private String organizationCode;
 
     @NotNull
     @NotEmpty
     private String organizationName;
 
-    @NotNull
-    @NotEmpty
+
     private String organizationShortname;
 
     @NotNull
@@ -56,6 +58,7 @@ public class RawEmployee implements Serializable, Cloneable {
 
     @NotNull
     @NotEmpty
+    @Email
     private String email;
 
     @NotNull

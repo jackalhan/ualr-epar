@@ -166,7 +166,7 @@ public class WorkloadReportService {
 
                         }
                     } else {
-                        mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during file moving", "Problem occured during file moving. " + file + " was moving from " + GenericConstant.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH + " to " + GenericConstant.WORKLOAD_REPORTS_RAWTXT_PROCESSED_PATH);
+                        mailService.sendNewsletterMail(NEW_MAIL_SUBJECT, "Problem occured during file moving", "Problem occured during file moving. " + file + " was moving from " + GenericConstant.WORKLOAD_REPORTS_RAWTXT_TEMP_PATH + " to " + GenericConstant.WORKLOAD_REPORTS_RAWTXT_ERROR_PATH);
 
                     }
                 }

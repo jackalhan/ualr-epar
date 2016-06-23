@@ -1,30 +1,34 @@
 package com.jackalhan.ualr.service.batch;
 
+import com.jackalhan.ualr.config.FTPConfiguration;
+import com.jackalhan.ualr.constant.GenericConstant;
+import com.jackalhan.ualr.domain.SimplifiedWorkload;
+import com.jackalhan.ualr.domain.TypeSafeRawWorkload;
 import com.jackalhan.ualr.service.LogService;
 import com.jackalhan.ualr.service.rest.FTPService;
 import com.jackalhan.ualr.service.rest.MailService;
-import org.aspectj.lang.annotation.Before;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.jackalhan.ualr.service.utils.FileUtilService;
+import com.jackalhan.ualr.service.utils.StringUtilService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
-import javax.validation.Validation;
+import java.util.List;
 
 /**
  * Created by txcakaloglu on 6/15/16.
  */
-public abstract class BatchService extends LogService{
+public abstract class BatchService extends LogService {
 
     @Autowired
     public FTPService ftpService;
 
     @Autowired
+    public FTPConfiguration ftpConfiguration;
+
+    @Autowired
     public MailService mailService;
 
     private String mailSubject;
-
-
 
     public String getMailSubject() {
         return mailSubject;
@@ -35,8 +39,11 @@ public abstract class BatchService extends LogService{
     }
 
     @PostConstruct
-    public abstract void initialize() ;
+    public abstract void initialize();
     /*public BatchService() {
         initialize();
     }*/
+
+
+
 }
