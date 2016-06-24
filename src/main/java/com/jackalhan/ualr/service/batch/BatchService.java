@@ -5,6 +5,9 @@ import com.jackalhan.ualr.constant.GenericConstant;
 import com.jackalhan.ualr.domain.SimplifiedWorkload;
 import com.jackalhan.ualr.domain.TypeSafeRawWorkload;
 import com.jackalhan.ualr.service.LogService;
+import com.jackalhan.ualr.service.db.DepartmentDBService;
+import com.jackalhan.ualr.service.db.EmployeeDBService;
+import com.jackalhan.ualr.service.db.FacultyDBService;
 import com.jackalhan.ualr.service.rest.FTPService;
 import com.jackalhan.ualr.service.rest.MailService;
 import com.jackalhan.ualr.service.utils.FileUtilService;
@@ -30,6 +33,15 @@ public abstract class BatchService extends LogService {
 
     @Autowired
     public FTPConfiguration ftpConfiguration;
+
+    @Autowired
+    public FacultyDBService facultyDBService;
+
+    @Autowired
+    public DepartmentDBService departmentDBService;
+
+    @Autowired
+    public EmployeeDBService employeeDBService;
 
     @Autowired
     public MailService mailService;

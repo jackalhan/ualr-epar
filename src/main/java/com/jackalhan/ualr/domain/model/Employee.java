@@ -12,13 +12,6 @@ import java.util.List;
 @Table(name = "Employee")
 public class Employee extends AbstractAuditingEntity implements Serializable {
 
-
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name="id", nullable = false)
-    private long id;
-
     @NotNull
     private String name;
 
@@ -33,6 +26,7 @@ public class Employee extends AbstractAuditingEntity implements Serializable {
     @NotNull
     private String email;
 
+    @Id
     @NotNull
     private String netid;
 
@@ -64,12 +58,10 @@ public class Employee extends AbstractAuditingEntity implements Serializable {
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<YearlyCitation> yearlyCitationList;
 
-    public long getId() {
-        return id;
-    }
+    @NotNull
+    private boolean isActive;
 
-    public void setId(long id) {
-        this.id = id;
+    public Employee() {
     }
 
     public String getName() {
@@ -192,8 +184,16 @@ public class Employee extends AbstractAuditingEntity implements Serializable {
         this.sourceDataName = sourceDataName;
     }
 
+    public boolean isActive() {
+        return isActive;
+    }
 
-    public Employee(String name, String surname, String middleName, String tNumber, String email, String netid, String positionCode, String positionDescription, String role, String sourceDataName, Department department, List<Publication> publicationList, List<ScholarlyActivity> scholarlyActivityList, List<CitationTrend> citationTrendList, List<YearlyCitation> yearlyCitationList) {
+    public void setActive(boolean active) {
+        isActive = active;
+    }
+
+
+    public Employee(String name, String surname, String middleName, String tNumber, String email, String netid, String positionCode, String positionDescription, String role, String sourceDataName, Department department, List<Publication> publicationList, List<ScholarlyActivity> scholarlyActivityList, List<CitationTrend> citationTrendList, List<YearlyCitation> yearlyCitationList, boolean isActive) {
         this.name = name;
         this.surname = surname;
         this.middleName = middleName;
@@ -209,13 +209,13 @@ public class Employee extends AbstractAuditingEntity implements Serializable {
         this.scholarlyActivityList = scholarlyActivityList;
         this.citationTrendList = citationTrendList;
         this.yearlyCitationList = yearlyCitationList;
+        this.isActive = isActive;
     }
 
     @Override
     public String toString() {
         return "Employee{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
+                "name='" + name + '\'' +
                 ", surname='" + surname + '\'' +
                 ", middleName='" + middleName + '\'' +
                 ", tNumber='" + tNumber + '\'' +
@@ -230,6 +230,7 @@ public class Employee extends AbstractAuditingEntity implements Serializable {
                 ", scholarlyActivityList=" + scholarlyActivityList +
                 ", citationTrendList=" + citationTrendList +
                 ", yearlyCitationList=" + yearlyCitationList +
+                ", isActive=" + isActive +
                 '}';
     }
 }
