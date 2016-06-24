@@ -14,6 +14,7 @@ import com.jackalhan.ualr.service.rest.FTPService;
 import com.jackalhan.ualr.service.rest.LoginService;
 import com.jackalhan.ualr.service.utils.DateUtilService;
 import com.jackalhan.ualr.service.utils.FileUtilService;
+import com.jackalhan.ualr.service.utils.MinimumEnrollmentService;
 import com.jackalhan.ualr.service.utils.SummarizeReportService;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
@@ -48,7 +49,7 @@ import java.util.zip.ZipOutputStream;
  * Created by jackalhan on 5/15/16.
  */
 @Controller
-public class WorkloadController extends BaseController{
+public class WorkloadController extends BaseController {
 
     @Autowired
     private WorkloadReportDBService workloadReportDBService;
@@ -64,6 +65,12 @@ public class WorkloadController extends BaseController{
 
     @Autowired
     private SummarizeReportService summarizeReportService;
+
+    @Autowired
+    private MinimumEnrollmentService minimumEnrollmentService;
+
+    private final String SUMMARY_REPORT = "summary_report";
+    private final String MINIMUM_ENROLLMENT_REPORT = "minimum_enrollment_report";
 
     public WorkloadController() {
         setLog(LoggerFactory.getLogger(WorkloadController.class));
@@ -232,54 +239,104 @@ public class WorkloadController extends BaseController{
 
     }
 
-    @RequestMapping(value = "summaryReportOfAllWorkloadsOfSelectedImportedFileDateforAllDepartment", method = RequestMethod.GET)
-    public String getSummaryReportOfAllWorkloadsOfSelectedImportedFileDateforAllDepartment(@RequestParam("workloadReportTermId") Long workloadReportTermId, HttpServletResponse httpServletResponse, Model model, Principal principal) {
-        String reportName = null;
+    public HttpServletResponse composeAllDataRelatedToDepartmentToGenerateExcel(Long workloadReportTermId, String departmentCode, String callPurpose, HttpServletResponse httpServletResponse) throws IOException {
+        WorkloadReportTerm workloadReportTerm = workloadReportDBService.listOneWorkloadReportTermBasedOnId(workloadReportTermId);
+        Faculty faculty = facultyDBService.findByCode(workloadReportTerm.getFaculty().getCode());
+        List<WorkloadReport> groupWorkloadReports = workloadReportDBService.listAllGroupByDepartmentNameAndCodeOrderedByDepartmentNameBasedOnTermIdAndDepartmentCode(workloadReportTerm.getId(), departmentCode);
+
+        org.apache.commons.io.output.ByteArrayOutputStream byteArrayOutputStream = null;
+
+        if (callPurpose.equals(SUMMARY_REPORT)) {
+            byteArrayOutputStream = summarizeReportService.generateExcelDocument(faculty, workloadReportTerm, groupWorkloadReports);
+
+        } else {
+            byteArrayOutputStream = minimumEnrollmentService.generateExcelDocument(faculty, workloadReportTerm, groupWorkloadReports);
+        }
+
+        String reportName = messageSource.getMessage(callPurpose + ".faculty.department.file.name",
+                new Object[]{faculty.getShortName(),
+                        departmentCode,
+                        workloadReportTerm.getSemesterYear() + workloadReportTerm.getSemesterTerm(),
+                        workloadReportTerm.getImportedFileDate()}, Locale.US);
+
+        httpServletResponse.setHeader("Content-Disposition", "attachment;filename=" + reportName);
+        httpServletResponse.setContentType("application/vnd.ms-excel");
+        httpServletResponse.getOutputStream().write(byteArrayOutputStream.toByteArray());
+        httpServletResponse.flushBuffer();
+
+        return httpServletResponse;
+    }
+
+    @RequestMapping(value = "summaryReportOfAllWorkloadsOfSelectedImportedFileDateforSelectedDepartment", method = RequestMethod.GET)
+    public String getSummaryReportOfAllWorkloadsOfSelectedImportedFileDateforSelectedDepartment(@RequestParam("workloadReportTermId") Long workloadReportTermId, @RequestParam("departmentCode") String departmentCode, HttpServletResponse httpServletResponse, Model model, Principal principal) {
+
         try {
-            WorkloadReportTerm workloadReportTerm = workloadReportDBService.listOneWorkloadReportTermBasedOnId(workloadReportTermId);
-            Faculty faculty = facultyDBService.findByCode(workloadReportTerm.getFaculty().getCode());
-            List<WorkloadReport> groupWorkloadReports = workloadReportDBService.listAllGroupByDepartmentNameAndCodeOrderedByDepartmentNameBasedOnTermId(workloadReportTerm.getId());
-
-            org.apache.commons.io.output.ByteArrayOutputStream byteArrayOutputStream = summarizeReportService.generateExcelDocument(faculty, workloadReportTerm, groupWorkloadReports);
-            reportName = messageSource.getMessage("summary_report.faculty.file.name",
-                    new Object[]{faculty.getShortName(),
-                                 workloadReportTerm.getSemesterYear() + workloadReportTerm.getSemesterTerm(),
-                                 workloadReportTerm.getImportedFileDate()}, Locale.US);
-
-            httpServletResponse.setHeader("Content-Disposition", "attachment;filename=" + reportName);
-            httpServletResponse.setContentType("application/vnd.ms-excel");
-            httpServletResponse.getOutputStream().write(byteArrayOutputStream.toByteArray());
-            httpServletResponse.flushBuffer();
-
+            composeAllDataRelatedToDepartmentToGenerateExcel(workloadReportTermId, departmentCode, SUMMARY_REPORT, httpServletResponse);
         } catch (IOException ex) {
-            log.error("Error writing file to output stream. Filename was '{}'", reportName, ex);
+            log.error("Error writing file to output stream.",ex);
         }
         return "workload_reports_downloaded";
 
     }
 
-    @RequestMapping(value = "summaryReportOfAllWorkloadsOfSelectedImportedFileDateforSelectedDepartment", method = RequestMethod.GET)
-    public String getSummaryReportOfAllWorkloadsOfSelectedImportedFileDateforSelectedDepartment(@RequestParam("workloadReportTermId") Long workloadReportTermId, @RequestParam("departmentCode") String departmentCode, HttpServletResponse httpServletResponse, Model model, Principal principal) {
-        String reportName = null;
+    @RequestMapping(value = "minimumEnrollmentReportOfAllWorkloadsOfSelectedImportedFileDateforSelectedDepartment", method = RequestMethod.GET)
+    public String getMinimumEnrollmentReportOfAllWorkloadsOfSelectedImportedFileDateforSelectedDepartment(@RequestParam("workloadReportTermId") Long workloadReportTermId, @RequestParam("departmentCode") String departmentCode, HttpServletResponse httpServletResponse, Model model, Principal principal) {
         try {
-            WorkloadReportTerm workloadReportTerm = workloadReportDBService.listOneWorkloadReportTermBasedOnId(workloadReportTermId);
-            Faculty faculty = facultyDBService.findByCode(workloadReportTerm.getFaculty().getCode());
-            List<WorkloadReport> groupWorkloadReports = workloadReportDBService.listAllGroupByDepartmentNameAndCodeOrderedByDepartmentNameBasedOnTermIdAndDepartmentCode(workloadReportTerm.getId(), departmentCode);
+            composeAllDataRelatedToDepartmentToGenerateExcel(workloadReportTermId, departmentCode, MINIMUM_ENROLLMENT_REPORT, httpServletResponse);
+        } catch (IOException ex) {
+            log.error("Error writing file to output stream.", ex);
+        }
+        return "workload_reports_downloaded";
 
-            org.apache.commons.io.output.ByteArrayOutputStream byteArrayOutputStream = summarizeReportService.generateExcelDocument(faculty, workloadReportTerm, groupWorkloadReports);
-            reportName = messageSource.getMessage("summary_report.faculty.department.file.name",
-                    new Object[]{faculty.getShortName(),
-                            departmentCode,
-                            workloadReportTerm.getSemesterYear() + workloadReportTerm.getSemesterTerm(),
-                            workloadReportTerm.getImportedFileDate()}, Locale.US);
+    }
 
-            httpServletResponse.setHeader("Content-Disposition", "attachment;filename=" + reportName);
-            httpServletResponse.setContentType("application/vnd.ms-excel");
-            httpServletResponse.getOutputStream().write(byteArrayOutputStream.toByteArray());
-            httpServletResponse.flushBuffer();
+
+    public HttpServletResponse composeAllDataRelatedToAllDepartmentToGenerateExcel(Long workloadReportTermId, String callPurpose, HttpServletResponse httpServletResponse) throws IOException {
+        WorkloadReportTerm workloadReportTerm = workloadReportDBService.listOneWorkloadReportTermBasedOnId(workloadReportTermId);
+        Faculty faculty = facultyDBService.findByCode(workloadReportTerm.getFaculty().getCode());
+        List<WorkloadReport> groupWorkloadReports = workloadReportDBService.listAllGroupByDepartmentNameAndCodeOrderedByDepartmentNameBasedOnTermId(workloadReportTerm.getId());
+
+        org.apache.commons.io.output.ByteArrayOutputStream byteArrayOutputStream = null;
+
+        if (callPurpose.equals(SUMMARY_REPORT)) {
+            byteArrayOutputStream = summarizeReportService.generateExcelDocument(faculty, workloadReportTerm, groupWorkloadReports);
+
+        } else {
+           byteArrayOutputStream = minimumEnrollmentService.generateExcelDocument(faculty, workloadReportTerm, groupWorkloadReports);
+        }
+
+        String reportName = messageSource.getMessage(callPurpose + ".faculty.file.name",
+                new Object[]{faculty.getShortName(),
+                        workloadReportTerm.getSemesterYear() + workloadReportTerm.getSemesterTerm(),
+                        workloadReportTerm.getImportedFileDate()}, Locale.US);
+
+        httpServletResponse.setHeader("Content-Disposition", "attachment;filename=" + reportName);
+        httpServletResponse.setContentType("application/vnd.ms-excel");
+        httpServletResponse.getOutputStream().write(byteArrayOutputStream.toByteArray());
+        httpServletResponse.flushBuffer();
+
+        return httpServletResponse;
+    }
+
+    @RequestMapping(value = "summaryReportOfAllWorkloadsOfSelectedImportedFileDateforAllDepartment", method = RequestMethod.GET)
+    public String getSummaryReportOfAllWorkloadsOfSelectedImportedFileDateforAllDepartment(@RequestParam("workloadReportTermId") Long workloadReportTermId, HttpServletResponse httpServletResponse, Model model, Principal principal) {
+        try {
+            composeAllDataRelatedToAllDepartmentToGenerateExcel(workloadReportTermId, SUMMARY_REPORT, httpServletResponse);
 
         } catch (IOException ex) {
-            log.error("Error writing file to output stream. Filename was '{}'", reportName, ex);
+            log.error("Error writing file to output stream.", ex);
+        }
+        return "workload_reports_downloaded";
+
+    }
+
+    @RequestMapping(value = "minimumEnrollmentReportOfAllWorkloadsOfSelectedImportedFileDateforAllDepartment", method = RequestMethod.GET)
+    public String getMinimumEnrollmentReportOfAllWorkloadsOfSelectedImportedFileDateforAllDepartment(@RequestParam("workloadReportTermId") Long workloadReportTermId, HttpServletResponse httpServletResponse, Model model, Principal principal) {
+        try {
+            composeAllDataRelatedToAllDepartmentToGenerateExcel(workloadReportTermId, MINIMUM_ENROLLMENT_REPORT, httpServletResponse);
+
+        } catch (IOException ex) {
+            log.error("Error writing file to output stream.", ex);
         }
         return "workload_reports_downloaded";
 

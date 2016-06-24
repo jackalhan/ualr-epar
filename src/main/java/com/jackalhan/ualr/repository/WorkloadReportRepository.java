@@ -33,6 +33,8 @@ public interface WorkloadReportRepository extends JpaRepository<WorkloadReport, 
 
     List<WorkloadReport> findByWorkloadReportTermIdAndDepartmentCodeOrderByInstructorNameSurnameAsc(Long workloadreporttermid, String departmentCode);
 
+    List<WorkloadReport> findByWorkloadReportTermIdAndDepartmentCodeOrderByDepartmentCodeAsc(Long workloadreporttermid, String departmentCode);
+
     List<WorkloadReport> findByWorkloadReportTermIdOrderByDepartmentCode(Long workloadreporttermid);
 
 

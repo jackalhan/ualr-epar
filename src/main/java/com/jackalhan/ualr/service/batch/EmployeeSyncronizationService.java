@@ -34,8 +34,6 @@ import java.util.stream.Collectors;
 public class EmployeeSyncronizationService extends BatchService {
 
 
-    private ValidatorFactory validatorFactory;
-    private Validator validator;
     //private String fileName;
     //private String NEW_MAIL_SUBJECT;
 

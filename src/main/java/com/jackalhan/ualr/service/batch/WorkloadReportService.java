@@ -67,7 +67,6 @@ public class WorkloadReportService {
     @Autowired
     private MailService mailService;
 
-    @Autowired
     private ExcelHelperService excelHelperService;
 
     @Autowired
@@ -109,6 +108,7 @@ public class WorkloadReportService {
     public void executeService() throws IOException, WriteException, CloneNotSupportedException, JSchException, SftpException {
 
         log.info("TypeSafeRawWorkload Reports execution started");
+        excelHelperService = new ExcelHelperService();
         initializeValidator();
 
         // StringUtilService.getInstance().isEmpty(getFileName()) ? getFilePatternAccordingToSemesterTerm() : ---> This is important if the algorithm needs to be run automatically
@@ -581,7 +581,7 @@ public class WorkloadReportService {
                         endingColHeadercolumnNumber = startingColHeadercolumnNumber;
                     }
 
-                    columnTitle = "summary_reports.column." + i + ".name";
+                    columnTitle = "workloadReport.column." + i + ".name";
 
                     cellFont = excelHelperService.createCellFont("workloadReport.columnHeaders.name.fontsize", Colour.BLACK, true);
                     cellFormat = excelHelperService.createCellFormat(cellFont, Colour.PALE_BLUE, BorderLineStyle.THICK, true, true, true, true, true);

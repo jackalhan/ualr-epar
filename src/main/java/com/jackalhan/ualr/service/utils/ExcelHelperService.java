@@ -2,7 +2,6 @@ package com.jackalhan.ualr.service.utils;
 
 import com.jackalhan.ualr.domain.ExcelTemplate;
 import com.jackalhan.ualr.service.LogService;
-import com.jackalhan.ualr.service.db.FacultyDBService;
 import com.jackalhan.ualr.service.db.WorkloadReportDBService;
 import jxl.format.*;
 import jxl.format.Alignment;
@@ -23,8 +22,11 @@ import java.util.Locale;
  * Created by jackalhan on 6/16/16.
  */
 @Service
-public abstract class ExcelHelperService extends LogService {
+public class ExcelHelperService extends LogService {
 
+
+    @Autowired
+    public WorkloadReportDBService workloadReportDBService;
 
     public final int excelZoomFactor = 85;
     public final int excelScaleFactor = 50;
@@ -33,12 +35,6 @@ public abstract class ExcelHelperService extends LogService {
     public final double excelTopMargin = 0.30;
     public final double excelBottomMargin = 0.33;
 
-
-    @Autowired
-    public WorkloadReportDBService workloadReportDBService;
-
-    @Autowired
-    public FacultyDBService facultyDBService;
 
     @Autowired
     public MessageSource messageSource;

@@ -94,6 +94,11 @@
                             <td th:text="${importedFileDate}"></td>
                             <td>
                                 <div class="pull-right hidden-phone">
+                                    <a href="workload_reports_downloaded.html" th:href="${'minimumEnrollmentReportOfAllWorkloadsOfSelectedImportedFileDateforSelectedDepartment?workloadReportTermId=' + workloadReportTermId + '&amp;departmentCode=' + department.departmentCode}" title="Download Minimum Enrollment Report" target="_blank"><button class="btn btn-default btn-sm"><i class="fa fa-file"></i>
+                                    </button></a>&nbsp;
+                                </div>
+
+                                <div class="pull-right hidden-phone">
                                     <a href="workload_reports_downloaded.html" th:href="${'summaryReportOfAllWorkloadsOfSelectedImportedFileDateforSelectedDepartment?workloadReportTermId=' + workloadReportTermId + '&amp;departmentCode=' + department.departmentCode}" title="Download Summary Report" target="_blank"><button class="btn btn-default btn-sm"><i class="fa fa-file-excel-o"></i>
                                     </button></a>&nbsp;
                                 </div>

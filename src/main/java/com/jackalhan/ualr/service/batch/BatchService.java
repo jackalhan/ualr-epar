@@ -12,12 +12,18 @@ import com.jackalhan.ualr.service.utils.StringUtilService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import java.util.List;
 
 /**
  * Created by txcakaloglu on 6/15/16.
  */
 public abstract class BatchService extends LogService {
+
+
+    public ValidatorFactory validatorFactory;
+    public Validator validator;
 
     @Autowired
     public FTPService ftpService;

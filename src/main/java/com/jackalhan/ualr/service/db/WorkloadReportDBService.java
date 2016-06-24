@@ -92,6 +92,13 @@ public class WorkloadReportDBService {
         return workloadReportRepository.findByWorkloadReportTermIdAndDepartmentCodeOrderByInstructorNameSurnameAsc(workloadReportTermId, departmentCode);
     }
 
+
+    @Transactional
+    public List<WorkloadReport>  listAllWorkloadReportsBasedOnTermIdAndDepartmentCodeOrderByDepartmentCode(Long workloadReportTermId, String departmentCode) {
+        log.info("listAllWorkloadReportsBasedOnTermId " + " listed successfully");
+        return workloadReportRepository.findByWorkloadReportTermIdAndDepartmentCodeOrderByDepartmentCodeAsc(workloadReportTermId, departmentCode);
+    }
+
     @Transactional
     public List<WorkloadReport>  listAllGroupByDepartmentNameAndCodeOrderedByDepartmentNameBasedOnTermId(Long workloadReportTermId) {
         log.info("listAllWorkloadReportsBasedOnTermId " + " listed successfully");
@@ -131,7 +138,7 @@ public class WorkloadReportDBService {
     @Transactional
     public List<WorkloadReportValues>  listAllWorkloadReportValuesBasedOnWorkloadReportTermId(Long workloadReportId) {
         log.info("listAllWorkloadReportValuesBasedOnWorkloadReportTermId " + " listed successfully");
-        return workloadReportValuesRepository.findByWorkloadReportId(workloadReportId);
+        return workloadReportValuesRepository.findByWorkloadReportIdOrderBySubjectCodeAscCourseNumberAsc(workloadReportId);
     }
 /*
     @Transactional

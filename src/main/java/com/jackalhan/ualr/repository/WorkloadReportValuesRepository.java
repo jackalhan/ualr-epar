@@ -10,5 +10,5 @@ import java.util.List;
  */
 public interface WorkloadReportValuesRepository extends JpaRepository<WorkloadReportValues, Long> {
 
-    List<WorkloadReportValues> findByWorkloadReportId (Long workloadReportId);
+    List<WorkloadReportValues> findByWorkloadReportIdOrderBySubjectCodeAscCourseNumberAsc(Long workloadReportId);
 }
