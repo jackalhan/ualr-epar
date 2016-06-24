@@ -2,6 +2,7 @@ package com.jackalhan.ualr.service.db;
 
 
 import com.jackalhan.ualr.domain.model.Department;
+import com.jackalhan.ualr.domain.model.Faculty;
 import com.jackalhan.ualr.repository.DepartmentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +27,8 @@ public class DepartmentDBService {
 
 
     @Transactional
-    public Department createDepartmentIfNotFound(Department department) {
-        Department dep = departmentRepository.findByCodeFacultyCode(department.getCode(), department.getFaculty().getCode());
+    public Department createDepartmentIfNotFound(Department department, Faculty faculty) {
+        Department dep = departmentRepository.findByCodeAndFacultyCode(department.getCode(), faculty);
         if (dep == null) {
             departmentRepository.save(department);
             log.info("createDepartmentIfNotFound " + "saved data successfully");

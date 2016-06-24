@@ -28,6 +28,7 @@ public class Employee extends AbstractAuditingEntity implements Serializable {
 
     @Id
     @NotNull
+    @Column(name = "id")
     private String netid;
 
     @NotNull
@@ -59,7 +60,7 @@ public class Employee extends AbstractAuditingEntity implements Serializable {
     private List<YearlyCitation> yearlyCitationList;
 
     @NotNull
-    private boolean isActive;
+    private int isActive;
 
     public Employee() {
     }
@@ -184,16 +185,16 @@ public class Employee extends AbstractAuditingEntity implements Serializable {
         this.sourceDataName = sourceDataName;
     }
 
-    public boolean isActive() {
+    public int isActive() {
         return isActive;
     }
 
-    public void setActive(boolean active) {
+    public void setActive(int active) {
         isActive = active;
     }
 
 
-    public Employee(String name, String surname, String middleName, String tNumber, String email, String netid, String positionCode, String positionDescription, String role, String sourceDataName, Department department, List<Publication> publicationList, List<ScholarlyActivity> scholarlyActivityList, List<CitationTrend> citationTrendList, List<YearlyCitation> yearlyCitationList, boolean isActive) {
+    public Employee(String name, String surname, String middleName, String tNumber, String email, String netid, String positionCode, String positionDescription, String role, String sourceDataName, Department department, List<Publication> publicationList, List<ScholarlyActivity> scholarlyActivityList, List<CitationTrend> citationTrendList, List<YearlyCitation> yearlyCitationList, int isActive) {
         this.name = name;
         this.surname = surname;
         this.middleName = middleName;

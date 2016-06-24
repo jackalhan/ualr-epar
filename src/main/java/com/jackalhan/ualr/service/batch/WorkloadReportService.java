@@ -67,6 +67,7 @@ public class WorkloadReportService {
     @Autowired
     private MailService mailService;
 
+    @Autowired
     private ExcelHelperService excelHelperService;
 
     @Autowired
@@ -108,7 +109,7 @@ public class WorkloadReportService {
     public void executeService() throws IOException, WriteException, CloneNotSupportedException, JSchException, SftpException {
 
         log.info("TypeSafeRawWorkload Reports execution started");
-        excelHelperService = new ExcelHelperService();
+        //excelHelperService = new ExcelHelperService();
         initializeValidator();
 
         // StringUtilService.getInstance().isEmpty(getFileName()) ? getFilePatternAccordingToSemesterTerm() : ---> This is important if the algorithm needs to be run automatically

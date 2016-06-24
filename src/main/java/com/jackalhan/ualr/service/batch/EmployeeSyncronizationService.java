@@ -98,7 +98,7 @@ public class EmployeeSyncronizationService extends BatchService {
                         department.setCode(typeSafeRawEmployee.getOrganizationShortname());
                         department.setDescription(typeSafeRawEmployee.getOrganizationName());
                         department.setFaculty(faculty);
-                        departmentDBService.createDepartmentIfNotFound(department);
+                        departmentDBService.createDepartmentIfNotFound(department, faculty);
                     }
                 }
             }
