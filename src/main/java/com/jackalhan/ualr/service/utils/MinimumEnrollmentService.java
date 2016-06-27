@@ -8,8 +8,7 @@ import com.jackalhan.ualr.domain.model.WorkloadReport;
 import com.jackalhan.ualr.domain.model.WorkloadReportTerm;
 import com.jackalhan.ualr.domain.model.WorkloadReportValues;
 import com.jackalhan.ualr.enums.InstructionTypeEnum;
-import com.jackalhan.ualr.service.db.WorkloadReportDBService;
-import com.sun.deploy.security.ValidationState;
+
 import jxl.SheetSettings;
 import jxl.Workbook;
 import jxl.format.*;
@@ -17,7 +16,6 @@ import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
